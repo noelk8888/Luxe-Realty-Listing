@@ -20,7 +20,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, isSelected = 
 
     return (
         <div
-            onClick={() => onToggleSelection && !isDisabled && onToggleSelection(listing.id)}
+            onClick={() => onToggleSelection && (!isDisabled || isSelected) && onToggleSelection(listing.id)}
             className={`rounded-xl shadow-sm border p-5 hover:shadow-md transition-all cursor-pointer relative group
                 ${isSelected
                     ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500' // Selected State

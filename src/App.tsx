@@ -180,8 +180,8 @@ function App() {
         // Deselect
         return prev.filter(id => id !== listingId);
       } else {
-        // Select (only if less than 3)
-        if (prev.length < 3) {
+        // Select (only if less than 5)
+        if (prev.length < 5) {
           return [...prev, listingId];
         }
         return prev;
@@ -382,7 +382,7 @@ function App() {
               {selectedListings.length === 0 && (
                 <div className="w-full max-w-2xl mt-6 text-center animate-fade-in-up">
                   <p className="text-sm text-gray-500 font-medium">
-                    If you're interested in any of our listings, please select up to 3 and send us the completed form.
+                    If you're interested in any of our listings, please select up to 5 and send us the completed form.
                   </p>
                 </div>
               )}
@@ -394,8 +394,8 @@ function App() {
         {selectedListings.length > 0 && (
           <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-white shadow-2xl border-4 border-blue-500 rounded-xl px-8 py-4 max-w-3xl flex flex-col items-center">
             <p className="text-base text-gray-700 font-medium text-center">
-              You may select up to 3{" "}
-              <span className="font-bold text-blue-600">({selectedListings.length}/3 selected)</span>{" "}
+              You may select up to 5{" "}
+              <span className="font-bold text-blue-600">({selectedListings.length}/5 selected)</span>{" "}
               -{" "}
               <button
                 onClick={handleSendForm}
@@ -437,7 +437,7 @@ function App() {
                     listing={listing}
                     isSelected={selectedListings.includes(listing.id)}
                     onToggleSelection={handleToggleSelection}
-                    isDisabled={selectedListings.length >= 3}
+                    isDisabled={selectedListings.length >= 5}
                   />
                 ))}
               </div>

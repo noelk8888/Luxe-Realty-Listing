@@ -54,30 +54,41 @@ export const searchListings = (listings: Listing[], query: string, minScore: num
 
         // --- SCORING (Relevance) ---
 
-        const listingText = [
+        const primaryText = [
             listing.city,
             listing.province,
             listing.barangay,
-            listing.region,
             listing.area,
             listing.building,
+            listing.id
+        ].join(' . ').toLowerCase();
+
+        const secondaryText = [
             listing.summary,
             listing.columnJ,
             listing.columnK,
-            listing.columnP,
-            listing.id // Allow searching by ID
-        ].join(' ').toLowerCase();
+            listing.columnP
+        ].join(' . ').toLowerCase();
+
+        const listingText = primaryText + ' . ' + secondaryText;
 
         // A. Exact Phrase Match (The "Holy Grail")
-        // Checks if the full user query appears inside the listing text
-        if (listingText.includes(cleanQuery)) {
+        // Checks if the full user query appears inside the text
+        if (primaryText.includes(cleanQuery)) {
             score += 100;
+        } else if (secondaryText.includes(cleanQuery)) {
+            score += 60; // Lower score for description-only matches
         }
 
         // B. Token Matching
         let matchedTokensCount = 0;
         queryTokens.forEach(token => {
-            if (listingText.includes(token)) {
+            // Use word boundary to avoid partial matches (e.g. "roces" matching "process")
+            // Escape special regex chars just in case
+            const escapedToken = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(`\\b${escapedToken}\\b`, 'i');
+
+            if (regex.test(listingText)) {
                 matchedTokensCount++;
                 score += 15; // Increased from 10 to make keyword matches more valuable
             }
@@ -93,7 +104,9 @@ export const searchListings = (listings: Listing[], query: string, minScore: num
         if (criteria.locations.length > 0) {
             const locString = [listing.city, listing.province, listing.barangay].join(' ').toLowerCase();
             criteria.locations.forEach(loc => {
-                if (locString.includes(loc)) score += 20;
+                const escapedLoc = loc.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(`\\b${escapedLoc}\\b`, 'i');
+                if (regex.test(locString)) score += 20;
             });
         }
 
