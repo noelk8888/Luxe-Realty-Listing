@@ -97,6 +97,14 @@ export const searchListings = (listings: Listing[], query: string, minScore: num
             });
         }
 
+        // D. ID Priority Boost (G + Number)
+        // If query looks like an ID (starts with G followed by numbers), prioritize ID matches
+        if (/^g\d+/i.test(cleanQuery)) {
+            if (listing.id.toLowerCase().includes(cleanQuery)) {
+                score += 2000; // Massive boost to ensure it's top
+            }
+        }
+
         return { listing, score };
     });
 

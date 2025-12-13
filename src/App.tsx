@@ -12,8 +12,8 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [allListings, setAllListings] = useState<Listing[]>([]);
   const [results, setResults] = useState<Listing[]>([]);
-  const [selectedType, setSelectedType] = useState<string | null>(null); // Default null
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedType, setSelectedType] = useState<string | null>('Sale'); // Default 'Sale'
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null); // Single Select (null = All)
   const [sortConfig, setSortConfig] = useState<{ key: 'price' | 'pricePerSqm' | 'relevance' | 'lotArea' | 'floorArea', direction: 'asc' | 'desc' } | null>(null);
 
   // Relevance Score: 0-100.
@@ -28,6 +28,25 @@ function App() {
   const [relevanceScore, setRelevanceScore] = useState<number>(getInitialScore());
   const [selectedListings, setSelectedListings] = useState<string[]>([]);
   const [showFormModal, setShowFormModal] = useState(false);
+
+  // Dynamic Placeholder Text
+  const [placeholderText, setPlaceholderText] = useState('Ready. Try "Lot in Caloocan"');
+  useEffect(() => {
+    const examples = [
+      "Lot in Quezon City",
+      "Condo in Makati",
+      "Office Space in Ortigas",
+      "Warehouse in Paranaque",
+      "Lot in Caloocan",
+      "BGC Condo"
+    ];
+    let index = 0;
+    const interval = setInterval(() => {
+      index = (index + 1) % examples.length;
+      setPlaceholderText(`Ready. Try "${examples[index]}"`);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Initial Data Load
   useEffect(() => {
@@ -82,33 +101,28 @@ function App() {
 
   // Re-run filter and sort when filters change
   const displayedResults = results.filter(item => {
-    // 1. If no type is selected, show NOTHING (as per requirements)
-    if (!selectedType) return false;
+    // 1. Type Match Logic (If null, allow all types)
+    let typeMatch = true;
+    if (selectedType) {
+      const itemType = item.saleType?.toLowerCase() || '';
+      if (selectedType === 'Sale') typeMatch = (itemType === 'sale' || itemType === 'sale/lease');
+      else if (selectedType === 'Lease') typeMatch = (itemType === 'lease' || itemType === 'sale/lease');
+      else if (selectedType === 'Sale/Lease') typeMatch = (itemType === 'sale/lease');
+    }
 
-    // 2. Type Match Logic (Single Select)
-    let typeMatch = false;
-    const itemType = item.saleType?.toLowerCase() || '';
-    if (selectedType === 'Sale') typeMatch = (itemType === 'sale' || itemType === 'sale/lease');
-    else if (selectedType === 'Lease') typeMatch = (itemType === 'lease' || itemType === 'sale/lease');
-    else if (selectedType === 'Sale/Lease') typeMatch = (itemType === 'sale/lease');
-
-    // 3. Category Match Logic (Multi Select)
-    // If NO category selected, allow ALL (ignore category filter)
+    // 2. Category Match Logic (Single Select)
+    // If NO category selected (null), allow ALL
     let categoryMatch = true;
-    if (selectedCategories.length > 0) {
+    if (selectedCategory) {
       const itemCat = (item.category || '').trim().toLowerCase();
       const itemAE = (item.columnAE || '').trim().toLowerCase(); // Check visual badge source (Col AE) too
 
-      categoryMatch = selectedCategories.some(filter => {
-        if (filter === 'Residential') {
-          return itemCat === 'residential' || itemAE === 'residential';
-        }
-        if (filter === 'Commercial') {
-          const targets = ['industrial', 'commercial', 'industrial/commercial'];
-          return targets.includes(itemCat) || targets.includes(itemAE);
-        }
-        return false;
-      });
+      if (selectedCategory === 'Residential') {
+        categoryMatch = itemCat === 'residential' || itemAE === 'residential';
+      } else if (selectedCategory === 'Commercial') {
+        const targets = ['industrial', 'commercial', 'industrial/commercial'];
+        categoryMatch = targets.includes(itemCat) || targets.includes(itemAE);
+      }
     }
 
     return typeMatch && categoryMatch;
@@ -182,15 +196,16 @@ function App() {
 
 
 
-          {/* Filter Buttons - Split with separator */}
-          <div className="flex flex-wrap items-center justify-center gap-4 mb-8 max-w-4xl mx-auto">
+          {/* Filter Buttons - iOS Style Segmented Controls */}
+          <div className="flex flex-col gap-4 mb-8 w-full max-w-5xl mx-auto items-center">
 
-            {/* Group 1: Property Type (Single Select) */}
-            <div className="flex gap-2">
+            {/* Row 1: Property Type */}
+            <div className="inline-flex bg-gray-100 p-1.5 rounded-xl shadow-inner relative z-0">
               {['Sale', 'Lease', 'Sale/Lease'].map((filter) => {
                 let label = filter.toUpperCase();
                 if (filter === 'Sale') label = 'FOR SALE';
                 if (filter === 'Lease') label = 'FOR LEASE';
+                if (filter === 'Sale/Lease') label = 'SALE OR LEASE';
 
                 const isActive = selectedType === filter;
 
@@ -198,10 +213,10 @@ function App() {
                   <button
                     key={filter}
                     onClick={() => setSelectedType(current => current === filter ? null : filter)}
-                    className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all border
+                    className={`relative px-4 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all duration-200 min-w-[100px]
                           ${isActive
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-md transform scale-105'
-                        : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600 hover:shadow-sm'
+                        ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
+                        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
                       }
                     `}
                   >
@@ -211,34 +226,37 @@ function App() {
               })}
             </div>
 
-            {/* Separator Line */}
-            <div className="h-8 w-px bg-blue-600 mx-2"></div>
-
-            {/* Group 2: Category (Multi Select) */}
-            <div className="flex gap-2">
+            {/* Row 2: Category */}
+            <div className="inline-flex bg-gray-100 p-1.5 rounded-xl shadow-inner relative z-0">
               {['Residential', 'Commercial'].map((filter) => {
-                const isActive = selectedCategories.includes(filter);
+                const isActive = selectedCategory === filter;
                 return (
                   <button
                     key={filter}
-                    onClick={() => {
-                      setSelectedCategories(prev => {
-                        if (prev.includes(filter)) return prev.filter(f => f !== filter);
-                        return [...prev, filter];
-                      });
-                    }}
-                    className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all border
+                    onClick={() => setSelectedCategory(current => current === filter ? null : filter)}
+                    className={`relative px-4 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all duration-200 min-w-[100px]
                           ${isActive
-                        ? 'border-blue-600 text-blue-600 bg-white ring-2 ring-blue-600 font-extrabold'
-                        : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600 hover:shadow-sm'
+                        ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
+                        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
                       }
-                          ${isActive ? 'shadow-md' : ''}
                     `}
                   >
                     {filter.toUpperCase()}
                   </button>
                 )
               })}
+
+              <button
+                onClick={() => setSelectedCategory(null)}
+                className={`relative px-4 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all duration-200 min-w-[100px]
+                    ${selectedCategory === null
+                    ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
+                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
+                  }
+                `}
+              >
+                BOTH
+              </button>
             </div>
 
           </div>
@@ -253,7 +271,7 @@ function App() {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="" // Placeholder removed for cleaner look or keep if needed?
+              placeholder={placeholderText}
               className={`w-full bg-white border-2 transition-all duration-300 rounded-2xl outline-none text-lg
                         ${hasSearched
                   ? 'py-3 pl-14 pr-20 border-gray-200 focus:border-blue-500 shadow-sm'
@@ -272,7 +290,7 @@ function App() {
                     setHasSearched(false);
                     setResults([]);
                     setSelectedType(null);
-                    setSelectedCategories([]);
+                    setSelectedCategory(null);
                     window.location.href = window.location.pathname;
                   }}
                   className="text-sm font-bold text-red-500 hover:text-red-700 underline tracking-wide bg-white pl-2"
@@ -289,8 +307,8 @@ function App() {
               <div className="flex flex-col md:flex-row items-center justify-center gap-4 mt-6 animate-fade-in-up w-full">
                 {/* Relevance Slider */}
                 <div className="flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-full border border-gray-100">
-                  <span className="text-sm font-bold text-gray-500">Relevance:</span>
-                  <div className="relative group flex items-center">
+                  <span className="text-sm font-bold text-gray-500">Search Precision:</span>
+                  <div className="relative group flex items-center" title="100% -Exact Match">
                     <Info className="w-4 h-4 text-gray-400 cursor-help mr-2" />
                     <input
                       type="range"
@@ -372,11 +390,7 @@ function App() {
         )}
 
 
-        {!hasSearched && (
-          <p className="text-gray-500 text-sm animate-pulse">
-            {loading ? 'Initializing AI Engine...' : 'Ready. Try "Lot in Cavite" or "BGC Condo"'}
-          </p>
-        )}
+
       </div>
 
       {/* Results Section */}
@@ -390,7 +404,7 @@ function App() {
                 <p className="text-lg">
                   No matches found for "{query}"
                   {selectedType ? ` with type "${selectedType}"` : ''}
-                  {selectedCategories.length > 0 ? ` and category "${selectedCategories.join(', ')}"` : ''}
+                  {selectedCategory ? ` and category "${selectedCategory}"` : ''}
                 </p>
                 <p className="text-sm mt-2">Try adjusting your price, location, or filters.</p>
               </div>

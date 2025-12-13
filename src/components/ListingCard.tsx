@@ -19,7 +19,16 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, isSelected = 
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow cursor-pointer">
+        <div
+            onClick={() => onToggleSelection && !isDisabled && onToggleSelection(listing.id)}
+            className={`rounded-xl shadow-sm border p-5 hover:shadow-md transition-all cursor-pointer relative group
+                ${isSelected
+                    ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500' // Selected State
+                    : 'bg-white border-gray-100 hover:border-blue-200'  // Normal State
+                }
+                ${isDisabled && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}
+            `}
+        >
             <div className="flex justify-between items-start mb-3">
                 <div className="flex gap-2">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${listing.columnAE ? 'bg-blue-50 text-blue-600' : 'bg-gray-50 text-gray-600'}`}>
@@ -32,15 +41,8 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, isSelected = 
                     )}
                 </div>
                 <div className="flex items-center gap-2">
-                    {onToggleSelection && (
-                        <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => onToggleSelection(listing.id)}
-                            disabled={isDisabled && !isSelected}
-                            className="w-4 h-4 text-red-600 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                        />
-                    )}
+                    {/* Checkbox removed per update - Card is clickable */}
+
                     <span className="text-lg font-bold text-black font-mono">{listing.id}</span>
                 </div>
             </div>
