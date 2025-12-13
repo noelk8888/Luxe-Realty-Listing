@@ -12,8 +12,9 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [allListings, setAllListings] = useState<Listing[]>([]);
   const [results, setResults] = useState<Listing[]>([]);
-  const [filterType, setFilterType] = useState<string | null>('Sale'); // Default 'Sale'
-  const [sortConfig, setSortConfig] = useState<{ key: 'price' | 'pricePerSqm' | 'relevance', direction: 'asc' | 'desc' } | null>(null);
+  const [selectedType, setSelectedType] = useState<string | null>(null); // Default null
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [sortConfig, setSortConfig] = useState<{ key: 'price' | 'pricePerSqm' | 'relevance' | 'lotArea' | 'floorArea', direction: 'asc' | 'desc' } | null>(null);
 
   // Relevance Score: 0-100.
   // We align this with the 5 stages requested: 100, 75, 50, 25, 0.
@@ -79,27 +80,38 @@ function App() {
     }
   }, [relevanceScore]); // Trigger re-search on score change
 
-  // Re-run filter and sort when filterType, sortType, or query results change
+  // Re-run filter and sort when filters change
   const displayedResults = results.filter(item => {
-    if (!filterType) return true;
-    const type = filterType.toLowerCase();
+    // 1. If no type is selected, show NOTHING (as per requirements)
+    if (!selectedType) return false;
+
+    // 2. Type Match Logic (Single Select)
+    let typeMatch = false;
     const itemType = item.saleType?.toLowerCase() || '';
+    if (selectedType === 'Sale') typeMatch = (itemType === 'sale' || itemType === 'sale/lease');
+    else if (selectedType === 'Lease') typeMatch = (itemType === 'lease' || itemType === 'sale/lease');
+    else if (selectedType === 'Sale/Lease') typeMatch = (itemType === 'sale/lease');
 
-    // Logic:
-    // Sale -> Sale OR Sale/Lease
-    // Lease -> Lease OR Sale/Lease
-    // Sale/Lease -> ONLY Sale/Lease
+    // 3. Category Match Logic (Multi Select)
+    // If NO category selected, allow ALL (ignore category filter)
+    let categoryMatch = true;
+    if (selectedCategories.length > 0) {
+      const itemCat = (item.category || '').trim().toLowerCase();
+      const itemAE = (item.columnAE || '').trim().toLowerCase(); // Check visual badge source (Col AE) too
 
-    if (type === 'sale/lease') {
-      return itemType === 'sale/lease';
+      categoryMatch = selectedCategories.some(filter => {
+        if (filter === 'Residential') {
+          return itemCat === 'residential' || itemAE === 'residential';
+        }
+        if (filter === 'Commercial') {
+          const targets = ['industrial', 'commercial', 'industrial/commercial'];
+          return targets.includes(itemCat) || targets.includes(itemAE);
+        }
+        return false;
+      });
     }
-    if (type === 'sale') {
-      return itemType === 'sale' || itemType === 'sale/lease';
-    }
-    if (type === 'lease') {
-      return itemType === 'lease' || itemType === 'sale/lease';
-    }
-    return true;
+
+    return typeMatch && categoryMatch;
   }).sort((a, b) => {
     if (!sortConfig) return 0;
 
@@ -108,13 +120,17 @@ function App() {
       comparison = a.price - b.price;
     } else if (sortConfig.key === 'pricePerSqm') {
       comparison = a.pricePerSqm - b.pricePerSqm;
+    } else if (sortConfig.key === 'lotArea') {
+      comparison = a.lotArea - b.lotArea;
+    } else if (sortConfig.key === 'floorArea') {
+      comparison = a.floorArea - b.floorArea;
     }
 
     return sortConfig.direction === 'asc' ? comparison : -comparison;
   });
 
   // Relevance sort = null sortConfig (uses original array order from searchEngine)
-  const handleSort = (key: 'price' | 'pricePerSqm' | 'relevance') => {
+  const handleSort = (key: 'price' | 'pricePerSqm' | 'relevance' | 'lotArea' | 'floorArea') => {
     if (key === 'relevance') {
       setSortConfig(null);
       return;
@@ -136,8 +152,8 @@ function App() {
         // Deselect
         return prev.filter(id => id !== listingId);
       } else {
-        // Select (only if less than 5)
-        if (prev.length < 5) {
+        // Select (only if less than 3)
+        if (prev.length < 3) {
           return [...prev, listingId];
         }
         return prev;
@@ -158,159 +174,176 @@ function App() {
         <div className={`w-full max-w-2xl text-center space-y-6 transition-all duration-500 ${hasSearched ? 'translate-y-0' : '-translate-y-8'
           }`}>
           <p className={`font-bold text-gray-900 tracking-tight transition-all duration-500 ${hasSearched ? 'text-2xl mb-4' : 'text-4xl sm:text-5xl mb-8'}`}>
-            {allListings.length > 0 ? `${allListings.length} Available Listings` : 'Loading properties...'}
+            {(selectedType || hasSearched)
+              ? `Found ${displayedResults.length} of ${allListings.length} Available Listings`
+              : allListings.length > 0 ? `${allListings.length} Available Listings` : 'Loading properties...'
+            }
           </p>
 
 
 
+          {/* Filter Buttons - Split with separator */}
+          <div className="flex flex-wrap items-center justify-center gap-4 mb-8 max-w-4xl mx-auto">
+
+            {/* Group 1: Property Type (Single Select) */}
+            <div className="flex gap-2">
+              {['Sale', 'Lease', 'Sale/Lease'].map((filter) => {
+                let label = filter.toUpperCase();
+                if (filter === 'Sale') label = 'FOR SALE';
+                if (filter === 'Lease') label = 'FOR LEASE';
+
+                const isActive = selectedType === filter;
+
+                return (
+                  <button
+                    key={filter}
+                    onClick={() => setSelectedType(current => current === filter ? null : filter)}
+                    className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all border
+                          ${isActive
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-md transform scale-105'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600 hover:shadow-sm'
+                      }
+                    `}
+                  >
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Separator Line */}
+            <div className="h-8 w-px bg-blue-600 mx-2"></div>
+
+            {/* Group 2: Category (Multi Select) */}
+            <div className="flex gap-2">
+              {['Residential', 'Commercial'].map((filter) => {
+                const isActive = selectedCategories.includes(filter);
+                return (
+                  <button
+                    key={filter}
+                    onClick={() => {
+                      setSelectedCategories(prev => {
+                        if (prev.includes(filter)) return prev.filter(f => f !== filter);
+                        return [...prev, filter];
+                      });
+                    }}
+                    className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all border
+                          ${isActive
+                        ? 'border-blue-600 text-blue-600 bg-white ring-2 ring-blue-600 font-extrabold'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600 hover:shadow-sm'
+                      }
+                          ${isActive ? 'shadow-md' : ''}
+                    `}
+                  >
+                    {filter.toUpperCase()}
+                  </button>
+                )
+              })}
+            </div>
+
+          </div>
+
           <form onSubmit={handleSearch} className="relative w-full group">
-            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-              {/* Removed Sparkles icon */}
+            <div className="absolute inset-y-0 left-2 flex items-center">
+              <div className="bg-blue-600 p-2 rounded-full cursor-pointer hover:bg-blue-700 transition-colors shadow-sm" onClick={handleSearch}>
+                <Search className="w-5 h-5 text-white" />
+              </div>
             </div>
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Describe what you're looking for ..."
-              className={`w-full bg-white border-2 transition-all duration-300 rounded-2xl outline-none placeholder:text-gray-400
+              placeholder="" // Placeholder removed for cleaner look or keep if needed?
+              className={`w-full bg-white border-2 transition-all duration-300 rounded-2xl outline-none text-lg
                         ${hasSearched
-                  ? 'py-3 pl-4 pr-4 text-base border-gray-200 focus:border-blue-500 shadow-sm'
-                  : 'py-5 pl-4 pr-6 text-lg border-transparent shadow-xl hover:shadow-2xl focus:ring-4 focus:ring-blue-100'
+                  ? 'py-3 pl-14 pr-20 border-gray-200 focus:border-blue-500 shadow-sm'
+                  : 'py-4 pl-14 pr-20 border-transparent shadow-xl hover:shadow-2xl focus:ring-4 focus:ring-blue-100'
                 }
                     `}
             />
-            <button
-              type="submit"
-              className={`absolute right-3 top-1/2 -translate-y-1/2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all
-                        ${hasSearched ? 'p-1.5' : 'px-4 py-2 font-medium'}
-                    `}
-            >
-              {hasSearched ? <Search className="w-4 h-4" /> : 'Search'}
-            </button>
+            {/* RESET Button inside Search Bar */}
+            {(hasSearched || selectedType) && (
+              <div className="absolute inset-y-0 right-4 flex items-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuery('');
+                    setSelectedListings([]);
+                    setHasSearched(false);
+                    setResults([]);
+                    setSelectedType(null);
+                    setSelectedCategories([]);
+                    window.location.href = window.location.pathname;
+                  }}
+                  className="text-sm font-bold text-red-500 hover:text-red-700 underline tracking-wide bg-white pl-2"
+                >
+                  RESET
+                </button>
+              </div>
+            )}
           </form>
 
-          {/* Results Bar: Found Count (Left) + Sort Buttons (Right) - Visible after search */}
-          {hasSearched && (
+          {/* Results Bar: Sort Controls Only (Centered below search) */}
+          {(hasSearched || selectedType) && (
             <>
-              <div className="flex flex-col sm:flex-row items-center justify-between w-full max-w-2xl mt-4 gap-4 animate-fade-in-up">
-                {/* Found Count + Reset Button + Filter Buttons */}
-                <div className="flex flex-col sm:flex-row items-center gap-4 order-2 sm:order-1">
-                  <div className="flex items-center gap-3">
-                    <span className="text-gray-600 font-medium whitespace-nowrap">
-                      Found {displayedResults.length} properties
-                    </span>
-                    <button
-                      onClick={() => {
-                        setQuery('');
-                        setSelectedListings([]);
-                        setHasSearched(false);
-                        setResults([]);
-                        window.location.href = window.location.pathname;
-                      }}
-                      className="text-xs text-red-500 hover:text-red-700 font-medium underline"
-                    >
-                      RESET
-                    </button>
-                  </div>
-
-                  {/* Inline Filter Buttons */}
-                  <div className="flex gap-2">
-                    {['Sale', 'Lease', 'Sale/Lease'].map((type) => {
-                      let label = type.toUpperCase();
-                      if (type === 'Sale') label = 'FOR SALE';
-                      if (type === 'Lease') label = 'FOR LEASE';
-
-                      return (
-                        <button
-                          key={type}
-                          onClick={() => setFilterType(current => current === type ? null : type)}
-                          className={`px-3 py-1 rounded-full text-xs font-bold transition-all border
-                                ${filterType === type
-                              ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                              : 'bg-white text-gray-500 border-gray-200 hover:border-blue-300 hover:text-blue-600'
-                            }
-                          `}
-                        >
-                          {label}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                {/* Controls: Slider + Sort Buttons (One Row) */}
-                <div className="flex flex-col sm:flex-row items-center gap-4 order-1 sm:order-2 w-full sm:w-auto">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-gray-500">Relevance:</span>
-                    <div className="relative group">
-                      <Info className="w-3 h-3 text-gray-400 cursor-help" />
-                      <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-100 pointer-events-none">
-                        100% - exact match
-                      </div>
-                    </div>
+              <div className="flex flex-col md:flex-row items-center justify-center gap-4 mt-6 animate-fade-in-up w-full">
+                {/* Relevance Slider */}
+                <div className="flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-full border border-gray-100">
+                  <span className="text-sm font-bold text-gray-500">Relevance:</span>
+                  <div className="relative group flex items-center">
+                    <Info className="w-4 h-4 text-gray-400 cursor-help mr-2" />
                     <input
                       type="range"
                       min="0"
                       max="4"
                       step="1"
-                      // Map specific score back to index for slider: 100->0, 75->1, 50->2, 25->3, 0->4
-                      // Inverse: Index = (100 - score) / 25
                       value={(100 - relevanceScore) / 25}
                       onChange={(e) => {
                         const index = parseInt(e.target.value);
-                        // Map index back to score: 0->100, 1->75, ...
                         const newScore = 100 - (index * 25);
                         setRelevanceScore(newScore);
                       }}
-                      className="w-24 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      className="w-24 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                     />
-                    <span className="text-xs font-bold text-gray-700 w-8 text-right">
+                    <span className="text-sm font-extrabold text-gray-800 ml-3 min-w-[3ch]">
                       {relevanceScore}%
                     </span>
                   </div>
+                </div>
 
-                  <div className="h-4 w-px bg-gray-300 hidden sm:block"></div>
+                <div className="h-6 w-px bg-gray-300 hidden md:block"></div>
 
-                  <div className="flex gap-2">
+                {/* Sort Buttons */}
+                <div className="flex gap-2 bg-white p-1 rounded-full border border-gray-100 shadow-sm">
+                  {[
+                    { id: 'price', label: 'Price' },
+                    { id: 'pricePerSqm', label: 'Price/Sqm' },
+                    { id: 'lotArea', label: 'Lot Area' },
+                    { id: 'floorArea', label: 'Floor Area' }
+                  ].map((btn) => (
                     <button
-                      onClick={() => handleSort('price')}
-                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border flex items-center gap-1 relative group
-                            ${sortConfig?.key === 'price'
-                          ? 'bg-gray-800 text-white border-gray-800'
-                          : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                      key={btn.id}
+                      onClick={() => handleSort(btn.id as any)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1
+                            ${sortConfig?.key === btn.id
+                          ? 'bg-gray-900 text-white shadow-md'
+                          : 'bg-transparent text-gray-500 hover:bg-gray-100'
                         }
                         `}
                     >
-                      Price {sortConfig?.key === 'price' ? (sortConfig.direction === 'desc' ? '↓' : '↑') : ''}
-                      <Info className="w-3 h-3 opacity-50" />
-                      <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-100 pointer-events-none">
-                        Sort Property Price
-                      </div>
+                      {btn.label}
+                      {sortConfig?.key === btn.id && (sortConfig.direction === 'desc' ? '↓' : '↑')}
                     </button>
-                    <button
-                      onClick={() => handleSort('pricePerSqm')}
-                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border flex items-center gap-1 relative group
-                            ${sortConfig?.key === 'pricePerSqm'
-                          ? 'bg-gray-800 text-white border-gray-800'
-                          : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
-                        }
-                        `}
-                    >
-                      Price/Sqm {sortConfig?.key === 'pricePerSqm' ? (sortConfig.direction === 'desc' ? '↓' : '↑') : ''}
-                      <Info className="w-3 h-3 opacity-50" />
-                      <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-100 pointer-events-none">
-                        Sort Price/Sqm
-                      </div>
-                    </button>
-                  </div>
+                  ))}
                 </div>
               </div>
 
+
               {/* Instructional Text - Shows in middle when no selections */}
               {selectedListings.length === 0 && (
-                <div className="w-full max-w-2xl mt-4 text-center">
-                  <p className="text-sm text-gray-600">
-                    If you're interested in any of our listings, please select up to 5 and send us the completed form.
+                <div className="w-full max-w-2xl mt-6 text-center animate-fade-in-up">
+                  <p className="text-sm text-gray-500 font-medium">
+                    If you're interested in any of our listings, please select up to 3 and send us the completed form.
                   </p>
                 </div>
               )}
@@ -320,16 +353,20 @@ function App() {
 
         {/* Floating Selection Status Bar - Only shows when selections > 0 */}
         {selectedListings.length > 0 && (
-          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-white shadow-2xl border-4 border-blue-500 rounded-xl px-8 py-4 max-w-3xl">
+          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-white shadow-2xl border-4 border-blue-500 rounded-xl px-8 py-4 max-w-3xl flex flex-col items-center">
             <p className="text-base text-gray-700 font-medium text-center">
-              If you're interested in any of our listings, please select up to 5{" "}
-              <span className="font-bold text-blue-600">({selectedListings.length}/5 selected)</span>{" "}
+              You may select up to 3{" "}
+              <span className="font-bold text-blue-600">({selectedListings.length}/3 selected)</span>{" "}
+              -{" "}
               <button
                 onClick={handleSendForm}
-                className="font-bold text-red-600 underline hover:text-red-800 transition-colors cursor-pointer"
+                className="font-bold text-red-600 underline hover:text-red-800 transition-colors cursor-pointer ml-1"
               >
                 SEND FORM
               </button>
+            </p>
+            <p className="text-xs text-gray-400 mt-1 italic">
+              Listed details are subject to change without prior notice
             </p>
           </div>
         )}
@@ -343,30 +380,35 @@ function App() {
       </div>
 
       {/* Results Section */}
-      {hasSearched && (
-        <div className="max-w-7xl mx-auto px-4 pb-20 animate-fade-in-up">
+      {
+        hasSearched && (
+          <div className="max-w-7xl mx-auto px-4 pb-20 animate-fade-in-up">
 
 
-          {displayedResults.length === 0 ? (
-            <div className="text-center py-20 text-gray-500 bg-white rounded-2xl border border-gray-100">
-              <p className="text-lg">No matches found for "{query}" {filterType ? ` with filter "${filterType}"` : ''}</p>
-              <p className="text-sm mt-2">Try adjusting your price, location, or filters.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {displayedResults.map((listing, idx) => (
-                <ListingCard
-                  key={`${listing.id}-${idx}`}
-                  listing={listing}
-                  isSelected={selectedListings.includes(listing.id)}
-                  onToggleSelection={handleToggleSelection}
-                  isDisabled={selectedListings.length >= 5}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )
+            {displayedResults.length === 0 ? (
+              <div className="text-center py-20 text-gray-500 bg-white rounded-2xl border border-gray-100">
+                <p className="text-lg">
+                  No matches found for "{query}"
+                  {selectedType ? ` with type "${selectedType}"` : ''}
+                  {selectedCategories.length > 0 ? ` and category "${selectedCategories.join(', ')}"` : ''}
+                </p>
+                <p className="text-sm mt-2">Try adjusting your price, location, or filters.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {displayedResults.map((listing, idx) => (
+                  <ListingCard
+                    key={`${listing.id}-${idx}`}
+                    listing={listing}
+                    isSelected={selectedListings.includes(listing.id)}
+                    onToggleSelection={handleToggleSelection}
+                    isDisabled={selectedListings.length >= 3}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )
       }
 
       {/* Contact Form Modal */}

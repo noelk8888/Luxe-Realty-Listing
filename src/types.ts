@@ -22,6 +22,7 @@ export interface Listing {
     columnJ: string; // Col J
     columnK: string; // Col K
     columnP: string; // Col P
+    category: string; // Column B
     columnAE: string; // Col AE: Property Category
     lotArea: number; // Col E
     floorArea: number; // Col F
