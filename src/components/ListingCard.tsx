@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Listing } from '../types';
-import { MapPin, Building, Maximize } from 'lucide-react';
+import { MapPin, Building, Maximize, Facebook } from 'lucide-react';
 
 interface ListingCardProps {
     listing: Listing;
@@ -38,6 +38,18 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, isSelected = 
                         <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-600">
                             {listing.saleType}
                         </span>
+                    )}
+                    {listing.facebookLink && (
+                        <a
+                            href={listing.facebookLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex items-center justify-center w-6 h-6 rounded-full bg-[#1877F2] text-white hover:opacity-90 transition-opacity"
+                            title="View on Facebook"
+                        >
+                            <Facebook size={14} fill="currentColor" strokeWidth={0} />
+                        </a>
                     )}
                 </div>
                 <div className="flex items-center gap-2">

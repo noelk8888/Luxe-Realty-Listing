@@ -74,6 +74,7 @@ const normalizeListing = (row: string[]): Listing => {
         columnP: row[15] || '', // Col P
         columnAE: row[30] || '', // Col AE
         category: row[1] || '', // Col B
+        facebookLink: row[17] || '', // Col R
         lotArea,
         floorArea,
         type

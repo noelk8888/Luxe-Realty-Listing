@@ -136,6 +136,9 @@ function App() {
       } else if (selectedCategory === 'Commercial') {
         const targets = ['industrial', 'commercial', 'industrial/commercial'];
         categoryMatch = targets.includes(itemCat) || targets.includes(itemAE);
+      } else if (selectedCategory === 'Agricultural') {
+        // Agricultural: Strict check on Column B (category)
+        categoryMatch = itemCat === 'agricultural';
       }
     }
 
@@ -245,8 +248,11 @@ function App() {
 
             {/* Group 2: Category */}
             <div className="inline-flex bg-gray-100 p-0.5 rounded-lg shadow-inner relative z-0">
-              {['Residential', 'Commercial'].map((filter) => {
+              {['Residential', 'Commercial', 'Agricultural'].map((filter) => {
                 const isActive = selectedCategory === filter;
+                let label = filter.toUpperCase();
+                if (filter === 'Agricultural') label = 'AGRI'; // Short label
+
                 return (
                   <button
                     key={filter}
@@ -258,22 +264,10 @@ function App() {
                       }
                     `}
                   >
-                    {filter.toUpperCase()}
+                    {label}
                   </button>
                 )
               })}
-
-              <button
-                onClick={() => setSelectedCategory(null)}
-                className={`relative px-2 sm:px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold transition-all duration-200 min-w-[50px] whitespace-nowrap
-                    ${selectedCategory === null
-                    ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
-                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
-                  }
-                `}
-              >
-                BOTH
-              </button>
             </div>
 
           </div>
