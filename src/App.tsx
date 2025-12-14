@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Search } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { Search, ArrowUp, ArrowDown } from 'lucide-react';
+import { DualRangeSlider } from './components/DualRangeSlider';
 import { fetchListings } from './services/dataService';
 import { searchListings } from './services/searchEngine';
 import type { Listing } from './types';
@@ -16,6 +18,46 @@ function App() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null); // Single Select (null = All)
   const [sortConfig, setSortConfig] = useState<{ key: 'price' | 'pricePerSqm' | 'relevance' | 'lotArea' | 'floorArea', direction: 'asc' | 'desc' } | null>(null);
 
+  // Price Range State
+  const [isPriceFilterOpen, setIsPriceFilterOpen] = useState(false);
+  const [priceRange, setPriceRange] = useState<[number, number] | null>(null);
+
+  useEffect(() => {
+    // Reset selections on search
+    if (query) {
+      setSelectedListings([]);
+      setIsPriceFilterOpen(false);
+      setPriceRange(null);
+    }
+  }, [query]);
+
+  // Click-outside handler for Price Popover
+  const pricePopoverRef = useRef<HTMLDivElement>(null);
+  const priceButtonRef = useRef<HTMLButtonElement>(null);
+  const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    if (isPriceFilterOpen && priceButtonRef.current) {
+      const rect = priceButtonRef.current.getBoundingClientRect();
+      setPopoverPosition({
+        top: rect.bottom + 8,
+        left: rect.left
+      });
+    }
+  }, [isPriceFilterOpen, sortConfig]); // Recalculate when sortConfig changes (button may move)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (pricePopoverRef.current && !pricePopoverRef.current.contains(event.target as Node)) {
+        setIsPriceFilterOpen(false);
+      }
+    };
+
+    if (isPriceFilterOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isPriceFilterOpen]);
   // Relevance Score: 0-100.
   // We align this with the 5 stages requested: 100, 75, 50, 25, 0.
   // Initialize from URL if present.
@@ -100,14 +142,12 @@ function App() {
   }, [relevanceScore]); // Trigger re-search on score change
 
   // Re-run filter and sort when filters change
-  const displayedResults = results.filter(item => {
+  const baseFilteredResults = results.filter(item => {
     // 0. ID Search Override
     // If the query looks like an ID (G+Number), we IGNORE all filters to ensure the specific item is shown.
     const isIdSearch = query.trim().toUpperCase().match(/^G\d+/);
 
     if (isIdSearch) {
-      // Check if this specific item is the ID match (Optional: searchListings handles scoring, but we must not filter it out)
-      // Actually, searchEngine returns matches. If searchEngine returned it, and it's an ID search, allow it.
       return true;
     }
 
@@ -118,18 +158,16 @@ function App() {
       if (selectedType === 'Sale') typeMatch = (itemType === 'sale' || itemType === 'sale/lease' || itemType === 'sale or lease');
       else if (selectedType === 'Lease') typeMatch = (itemType === 'lease' || itemType === 'sale/lease' || itemType === 'sale or lease');
       else if (selectedType === 'Sale/Lease') {
-        // "includes SALE AND LEASE, or SALE/LEASE, SALE OR LEASE"
         typeMatch = itemType.includes('sale') && itemType.includes('lease');
         if (!typeMatch) typeMatch = itemType === 'sale or lease' || itemType === 'sale/lease';
       }
     }
 
     // 2. Category Match Logic (Single Select)
-    // If NO category selected (null), allow ALL
     let categoryMatch = true;
     if (selectedCategory) {
       const itemCat = (item.category || '').trim().toLowerCase();
-      const itemAE = (item.columnAE || '').trim().toLowerCase(); // Check visual badge source (Col AE) too
+      const itemAE = (item.columnAE || '').trim().toLowerCase();
 
       if (selectedCategory === 'Residential') {
         categoryMatch = itemCat === 'residential' || itemAE === 'residential';
@@ -137,12 +175,41 @@ function App() {
         const targets = ['industrial', 'commercial', 'industrial/commercial'];
         categoryMatch = targets.includes(itemCat) || targets.includes(itemAE);
       } else if (selectedCategory === 'Agricultural') {
-        // Agricultural: Strict check on Column B (category)
         categoryMatch = itemCat === 'agricultural';
       }
     }
 
     return typeMatch && categoryMatch;
+  });
+
+  // Derived Min/Max from BASE results (for Slider limits)
+  const availablePrices = baseFilteredResults.map(i => i.price).filter(p => p > 0);
+
+  // Helper function to determine step size based on value magnitude
+  const getStepSize = (value: number): number => {
+    if (value >= 1000000) return 1000000;    // 1M for values >= 1 million
+    if (value >= 1000) return 10000;         // 10K for values >= 1 thousand
+    return 10;                                // 10 for values < 1 thousand
+  };
+
+  // Calculate raw min/max
+  const rawMin = availablePrices.length ? Math.min(...availablePrices) : 0;
+  const rawMax = availablePrices.length ? Math.max(...availablePrices) : 1000000;
+
+  // Round min DOWN and max UP based on their respective step sizes
+  const minStep = getStepSize(rawMin);
+  const maxStep = getStepSize(rawMax);
+  const minGlob = Math.floor(rawMin / minStep) * minStep;
+  const maxGlob = Math.ceil(rawMax / maxStep) * maxStep;
+
+  // Use the smaller step for slider granularity
+  const sliderStep = Math.min(minStep, maxStep);
+
+  // Final Results (Apply Price Range)
+  const displayedResults = baseFilteredResults.filter(item => {
+    if (!priceRange) return true;
+    if (item.price === 0) return false; // Hide 0 price if filtering by range? Or allow? Usually hide.
+    return item.price >= priceRange[0] && item.price <= priceRange[1];
   }).sort((a, b) => {
     if (!sortConfig) return 0;
 
@@ -164,7 +231,13 @@ function App() {
   const handleSort = (key: 'price' | 'pricePerSqm' | 'relevance' | 'lotArea' | 'floorArea') => {
     if (key === 'relevance') {
       setSortConfig(null);
+      setIsPriceFilterOpen(false); // Close price popover
       return;
+    }
+
+    // Close price popover if sorting by non-price fields
+    if (key !== 'price') {
+      setIsPriceFilterOpen(false);
     }
 
     setSortConfig(current => {
@@ -347,21 +420,103 @@ function App() {
                 <div className="h-6 w-px bg-gray-300 hidden md:block"></div>
 
                 {/* Sort Buttons */}
-                <div className="flex gap-2 bg-white p-1 rounded-full border border-gray-100 shadow-sm">
+                <div className="flex gap-2 bg-white p-1 rounded-full border border-gray-100 shadow-sm relative group-sort-controls">
+                  <div className="relative">
+                    <button
+                      ref={priceButtonRef}
+                      disabled={displayedResults.length < 2}
+                      onClick={() => {
+                        // Clear any other active sort when Price is clicked
+                        if (sortConfig && sortConfig.key !== 'price') {
+                          setSortConfig(null);
+                        }
+                        setIsPriceFilterOpen(!isPriceFilterOpen);
+                      }}
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1 whitespace-nowrap
+                            ${sortConfig?.key === 'price'
+                          ? 'bg-gray-900 text-white shadow-md'
+                          : 'bg-transparent text-gray-500 hover:bg-gray-100'
+                        }
+                        ${displayedResults.length < 2 ? 'opacity-50 cursor-not-allowed hidden' : ''}
+                        `}
+                    >
+                      Price
+                      {sortConfig?.key === 'price' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+                    </button>
+
+                    {isPriceFilterOpen && createPortal(
+                      <div
+                        ref={pricePopoverRef}
+                        className="fixed w-72 bg-blue-50 rounded-xl shadow-2xl p-3 border border-blue-200 z-[9999] animate-fade-in-up"
+                        style={{ top: `${popoverPosition.top}px`, left: `${popoverPosition.left}px` }}
+                      >
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm font-bold text-gray-900">Price Range (PHP)</span>
+                          <button
+                            onClick={() => handleSort('price')}
+                            className="p-1 hover:bg-gray-100 rounded-md transition-colors"
+                            title="Toggle Sort Order"
+                          >
+                            {sortConfig?.key === 'price' && sortConfig.direction === 'asc'
+                              ? <ArrowUp className="w-4 h-4 text-gray-700" />
+                              : <ArrowDown className="w-4 h-4 text-gray-700" />
+                            }
+                          </button>
+                        </div>
+
+                        <DualRangeSlider
+                          min={minGlob}
+                          max={maxGlob}
+                          step={sliderStep}
+                          value={priceRange || [minGlob, maxGlob]}
+                          onChange={(val) => setPriceRange(val)}
+                          formatMinValue={(val) => {
+                            if (val >= 1000000) {
+                              const millions = val / 1000000;
+                              const rounded = Math.floor(millions / 10) * 10;
+                              return `${rounded.toLocaleString()}M`;
+                            } else if (val >= 1000) {
+                              const thousands = val / 1000;
+                              const rounded = Math.floor(thousands / 10) * 10;
+                              return `${rounded.toLocaleString()}K`;
+                            } else {
+                              return `${Math.floor(val / 10) * 10}`;
+                            }
+                          }}
+                          formatMaxValue={(val) => {
+                            if (val >= 1000000) {
+                              const millions = val / 1000000;
+                              const rounded = Math.ceil(millions / 10) * 10;
+                              return `${rounded.toLocaleString()}M`;
+                            } else if (val >= 1000) {
+                              const thousands = val / 1000;
+                              const rounded = Math.ceil(thousands / 10) * 10;
+                              return `${rounded.toLocaleString()}K`;
+                            } else {
+                              return `${Math.ceil(val / 10) * 10}`;
+                            }
+                          }}
+                        />
+                      </div>,
+                      document.body
+                    )}
+                  </div>
+
                   {[
-                    { id: 'price', label: 'Price' },
                     { id: 'pricePerSqm', label: 'Price/Sqm' },
                     { id: 'lotArea', label: 'Lot Area' },
                     { id: 'floorArea', label: 'Floor Area' }
                   ].map((btn) => (
                     <button
                       key={btn.id}
+                      disabled={displayedResults.length < 2}
                       onClick={() => handleSort(btn.id as any)}
                       className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1 whitespace-nowrap
                             ${sortConfig?.key === btn.id
                           ? 'bg-gray-900 text-white shadow-md'
                           : 'bg-transparent text-gray-500 hover:bg-gray-100'
                         }
+                        ${displayedResults.length < 2 ? 'opacity-50 cursor-not-allowed hidden' : ''}
                         `}
                     >
                       {btn.label}
