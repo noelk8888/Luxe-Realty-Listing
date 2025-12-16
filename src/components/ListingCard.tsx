@@ -9,7 +9,7 @@ interface ListingCardProps {
     isDisabled?: boolean;
 }
 
-export const ListingCard: React.FC<ListingCardProps> = ({ listing, isSelected = false, onToggleSelection, isDisabled = false }) => {
+export const ListingCard: React.FC<ListingCardProps> = React.memo(({ listing, isSelected = false, onToggleSelection, isDisabled = false }) => {
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat('en-PH', {
             style: 'currency',
@@ -57,8 +57,6 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, isSelected = 
                 </div>
             </div>
 
-            {/* Summary removed per user request */}
-
             <div className="text-xl font-bold text-gray-900 mb-4">
                 {formatPrice(listing.price)}
             </div>
@@ -101,4 +99,4 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, isSelected = 
             </div>
         </div>
     );
-};
+});

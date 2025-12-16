@@ -55,6 +55,15 @@ function App() {
     }
   }, [query]);
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 24;
+
+  // Reset page when any filter/search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query, selectedType, selectedCategory, selectedRegion, selectedProvince, selectedCity, selectedBarangay, priceRange, pricePerSqmRange, lotAreaRange, floorAreaRange, sortConfig]);
+
   // Click-outside handler for Price Popover
   const pricePopoverRef = useRef<HTMLDivElement>(null);
   const priceButtonRef = useRef<HTMLButtonElement>(null);
@@ -463,6 +472,12 @@ function App() {
 
     return sortConfig.direction === 'asc' ? comparison : -comparison;
   });
+
+  const totalPages = Math.ceil(displayedResults.length / ITEMS_PER_PAGE);
+  const paginatedResults = displayedResults.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   // Relevance sort = null sortConfig (uses original array order from searchEngine)
   const handleSort = (key: 'price' | 'pricePerSqm' | 'relevance' | 'lotArea' | 'floorArea') => {
@@ -1045,7 +1060,7 @@ function App() {
       {/* Results Section */}
       {(hasSearched || selectedType || selectedCategory) && (
         <div className="max-w-7xl mx-auto px-4 pb-20 animate-fade-in-up">
-          {displayedResults.length === 0 ? (
+          {paginatedResults.length === 0 ? (
             <div className="text-center py-20 text-gray-500 bg-white rounded-2xl border border-gray-100">
               <p className="text-lg">
                 No matches found for "{query}"
@@ -1055,17 +1070,42 @@ function App() {
               <p className="text-sm mt-2">Try adjusting your price, location, or filters.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {displayedResults.map((listing, idx) => (
-                <ListingCard
-                  key={`${listing.id}-${idx}`}
-                  listing={listing}
-                  isSelected={selectedListings.includes(listing.id)}
-                  onToggleSelection={handleToggleSelection}
-                  isDisabled={selectedListings.length >= 5}
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {paginatedResults.map((listing, idx) => (
+                  <ListingCard
+                    key={`${listing.id}-${idx}`}
+                    listing={listing}
+                    isSelected={selectedListings.includes(listing.id)}
+                    onToggleSelection={handleToggleSelection}
+                    isDisabled={selectedListings.length >= 5}
+                  />
+                ))}
+              </div>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-4 mt-8">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-4 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 font-medium transition-colors cursor-pointer"
+                  >
+                    Previous
+                  </button>
+                  <span className="text-sm font-medium text-gray-600">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-4 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 font-medium transition-colors cursor-pointer"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
