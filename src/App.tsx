@@ -1085,24 +1085,58 @@ function App() {
 
               {/* Pagination Controls */}
               {totalPages > 1 && (
-                <div className="flex justify-center items-center gap-4 mt-8">
-                  <button
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="px-4 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 font-medium transition-colors cursor-pointer"
-                  >
-                    Previous
-                  </button>
-                  <span className="text-sm font-medium text-gray-600">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  <button
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                    className="px-4 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 font-medium transition-colors cursor-pointer"
-                  >
-                    Next
-                  </button>
+                <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-8">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="px-4 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 font-medium transition-colors cursor-pointer"
+                    >
+                      Previous
+                    </button>
+
+                    <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-gray-200">
+                      <span className="text-sm text-gray-600">Page</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max={totalPages}
+                        value={currentPage}
+                        onChange={(e) => {
+                          const cls = parseInt(e.target.value);
+                          if (cls >= 1 && cls <= totalPages) {
+                            setCurrentPage(cls);
+                          }
+                        }}
+                        className="w-12 text-center border-gray-200 text-gray-700 font-medium focus:ring-blue-500 focus:border-blue-500 rounded-md py-0.5 sm:text-sm"
+                      />
+                      <span className="text-sm text-gray-600">of {totalPages}</span>
+                    </div>
+
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-4 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 font-medium transition-colors cursor-pointer"
+                    >
+                      Next
+                    </button>
+                  </div>
+
+                  {/* Quick Jump Dropdown for larger datasets */}
+                  {totalPages > 5 && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500 font-medium">Jump to:</span>
+                      <select
+                        value={currentPage}
+                        onChange={(e) => setCurrentPage(Number(e.target.value))}
+                        className="text-xs border-gray-200 rounded-md py-1.5 pl-2 pr-8 text-gray-600 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                      >
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
+                          <option key={pageNum} value={pageNum}>Page {pageNum}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
               )}
             </>
