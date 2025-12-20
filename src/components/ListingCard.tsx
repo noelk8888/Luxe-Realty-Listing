@@ -75,6 +75,11 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({ listing, is
                             {isColumnKCopied ? 'COPIED!' : listing.columnK}
                         </div>
                     )}
+                    {listing.columnP && (
+                        <div className="text-sm border p-1 rounded bg-green-50 text-green-800">
+                            {listing.columnP}
+                        </div>
+                    )}
                     <div className="flex gap-1.5 flex-wrap">
                         <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${listing.columnAE ? 'bg-blue-50 text-blue-600' : 'bg-gray-50 text-gray-600'}`}>
                             {listing.columnAE || 'OTHERS'}
