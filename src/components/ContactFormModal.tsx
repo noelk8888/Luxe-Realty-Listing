@@ -82,16 +82,19 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
         setSubmitStatus('idle');
 
         // Google Form Submission Logic
-        const GOOGLE_FORM_ACTION_URL = "https://docs.google.com/forms/d/e/1FAIpQLSe1p0vscPeDlB3BILrQ9eMuO-BFg8AdMpW4UaCfIWVRXvhv1w/formResponse";
+        // Form: 'Luxe Suggested Notes/Comments'
+        const GOOGLE_FORM_ACTION_URL = "https://docs.google.com/forms/u/0/d/e/1FAIpQLScsBzxO6PgWWJjDVf4rd1uXHiwQZlFYHOMTkg4jk-IxGPtOWg/formResponse";
 
         const formBody = new FormData();
         // Mapping fields to Google Form Entry IDs
-        formBody.append("entry.2145992684", formData.name);
-        formBody.append("entry.1794044649", formData.email);
-        formBody.append("entry.739228677", formData.viberNumber);
-        formBody.append("entry.1511942672", formData.buyerType);
-        formBody.append("entry.1683582038", selectedListings.join(', '));
-        formBody.append("entry.1094424884", formData.additionalQuestions);
+        formBody.append("entry.524309596", formData.name);
+        // Email, Viber, and BuyerType are not present in the new form
+        // formBody.append("entry.1794044649", formData.email);
+        // formBody.append("entry.739228677", formData.viberNumber);
+        // formBody.append("entry.1511942672", formData.buyerType);
+
+        formBody.append("entry.1404259207", selectedListings.join(', '));
+        formBody.append("entry.94649554", formData.additionalQuestions);
 
         try {
             await fetch(GOOGLE_FORM_ACTION_URL, {
