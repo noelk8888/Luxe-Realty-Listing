@@ -6,12 +6,14 @@ interface ContactFormModalProps {
     isOpen: boolean;
     onClose: () => void;
     selectedListings: string[];
+    initialSuggestedEdit?: string;
 }
 
 export const ContactFormModal: React.FC<ContactFormModalProps> = ({
     isOpen,
     onClose,
     selectedListings,
+    initialSuggestedEdit = '',
 }) => {
     const [formData, setFormData] = useState({
         name: '',
@@ -20,6 +22,16 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
         buyerType: 'Direct Buyer' as 'Broker' | 'Direct Buyer',
         additionalQuestions: '',
     });
+
+    // Initialize additionalQuestions with initialSuggestedEdit when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            setFormData(prev => ({
+                ...prev,
+                additionalQuestions: initialSuggestedEdit
+            }));
+        }
+    }, [isOpen, initialSuggestedEdit]);
 
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [privacyAccepted, setPrivacyAccepted] = useState(false);
@@ -46,15 +58,7 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
             newErrors.name = 'Name is required';
         }
 
-        // Email validation
-        if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-            newErrors.email = 'Invalid email format';
-        }
 
-        // Viber number validation
-        if (!formData.viberNumber) {
-            newErrors.viberNumber = 'Viber number is required';
-        }
 
         // Privacy acceptance
         if (!privacyAccepted) {
@@ -142,7 +146,7 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
             <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
                 {/* Header */}
                 <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
-                    <h2 className="text-2xl font-bold text-gray-900">Property Inquiry</h2>
+                    <h2 className="text-2xl font-bold text-gray-900">Suggested Edit on NOTES</h2>
                     <button
                         onClick={handleClose}
                         className="p-1 hover:bg-gray-100 rounded-full transition-colors"
@@ -187,58 +191,12 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
                                 {errors.name && <p className="text-red-600 text-xs mt-1">{errors.name}</p>}
                             </div>
 
-                            {/* Email */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Email Address
-                                </label>
-                                <input
-                                    type="email"
-                                    value={formData.email}
-                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    placeholder="your.email@example.com"
-                                    disabled={isSubmitting}
-                                />
-                                {errors.email && <p className="text-red-600 text-xs mt-1">{errors.email}</p>}
-                            </div>
 
-                            {/* Viber Number */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Viber Number <span className="text-red-600">*</span>
-                                </label>
-                                <input
-                                    type="tel"
-                                    value={formData.viberNumber}
-                                    onChange={(e) => setFormData({ ...formData, viberNumber: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    placeholder="+63 912 345 6789"
-                                    disabled={isSubmitting}
-                                />
-                                {errors.viberNumber && <p className="text-red-600 text-xs mt-1">{errors.viberNumber}</p>}
-                            </div>
-
-                            {/* Buyer Type */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    I am a <span className="text-red-600">*</span>
-                                </label>
-                                <select
-                                    value={formData.buyerType}
-                                    onChange={(e) => setFormData({ ...formData, buyerType: e.target.value as 'Broker' | 'Direct Buyer' })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    disabled={isSubmitting}
-                                >
-                                    <option value="Direct Buyer">Direct Buyer</option>
-                                    <option value="Broker">Broker</option>
-                                </select>
-                            </div>
 
                             {/* Selected Listings */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Selected Properties
+                                    Selected Property
                                 </label>
                                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                                     <p className="text-sm text-gray-600">
@@ -250,7 +208,7 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
                             {/* Additional Questions */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Additional Questions or Comments
+                                    Suggested Edits
                                 </label>
                                 <textarea
                                     value={formData.additionalQuestions}

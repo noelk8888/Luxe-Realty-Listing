@@ -24,6 +24,10 @@ export interface Listing {
     columnP: string; // Col P
     category: string; // Column B
     facebookLink?: string; // Col R
+    photoLink?: string; // Col O
+    mapLink?: string; // Col U
+    columnV?: string; // Col V
+    isDirect: boolean; // Col W
     columnAE: string; // Col AE: Property Category
     lotArea: number; // Col E
     floorArea: number; // Col F

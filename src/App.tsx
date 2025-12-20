@@ -9,7 +9,6 @@ import { ListingCard } from './components/ListingCard';
 import { ContactFormModal } from './components/ContactFormModal';
 import Pagination from './components/Pagination';
 import { ScrollToTop } from './components/ScrollToTop';
-import kiuLogo from './assets/kiu_logo_centered.png';
 
 function App() {
 
@@ -20,6 +19,7 @@ function App() {
   const [results, setResults] = useState<Listing[]>([]);
   const [selectedType, setSelectedType] = useState<string | null>(null); // Default null (No filter)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null); // 'Residential' | 'Commercial' | 'Agricultural' | null
+  const [selectedDirect, setSelectedDirect] = useState<boolean>(false);
 
   // Area Filter State
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
@@ -54,17 +54,18 @@ function App() {
       setLotAreaRange(null);
       setIsFloorAreaFilterOpen(false);
       setFloorAreaRange(null);
+      setSelectedDirect(false);
     }
   }, [query]);
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 24;
+  const ITEMS_PER_PAGE = 15;
 
   // Reset page when any filter/search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [query, selectedType, selectedCategory, selectedRegion, selectedProvince, selectedCity, selectedBarangay, priceRange, pricePerSqmRange, lotAreaRange, floorAreaRange, sortConfig]);
+  }, [query, selectedType, selectedCategory, selectedDirect, selectedRegion, selectedProvince, selectedCity, selectedBarangay, priceRange, pricePerSqmRange, lotAreaRange, floorAreaRange, sortConfig]);
 
   // Click-outside handler for Price Popover
   const pricePopoverRef = useRef<HTMLDivElement>(null);
@@ -296,8 +297,13 @@ function App() {
       barangayMatch = (item.barangay || '').trim() === selectedBarangay;
     }
 
-    return typeMatch && categoryMatch && regionMatch && provinceMatch && cityMatch && barangayMatch;
-    return typeMatch && categoryMatch && regionMatch && provinceMatch && cityMatch && barangayMatch;
+    // 4. Direct Filter Match Logic
+    let directMatch = true;
+    if (selectedDirect) {
+      directMatch = item.isDirect;
+    }
+
+    return typeMatch && categoryMatch && regionMatch && provinceMatch && cityMatch && barangayMatch && directMatch;
   });
 
   // Effect: Reset child area filters when parent changes
@@ -309,10 +315,10 @@ function App() {
   useEffect(() => {
     // If a filter is selected but no results yet (and no query), we should populate results with allListings
     // so filtering can happen on the full set.
-    if ((selectedType || selectedCategory || selectedRegion || selectedProvince || selectedCity || selectedBarangay) && results.length === 0 && !query) {
+    if ((selectedType || selectedCategory || selectedDirect || selectedRegion || selectedProvince || selectedCity || selectedBarangay) && results.length === 0 && !query) {
       setResults(allListings);
     }
-  }, [selectedType, selectedCategory, selectedRegion, selectedProvince, selectedCity, selectedBarangay, results.length, query, allListings]);
+  }, [selectedType, selectedCategory, selectedDirect, selectedRegion, selectedProvince, selectedCity, selectedBarangay, results.length, query, allListings]);
 
   // Derived Min/Max from BASE results (for Slider limits)
   const availablePrices = baseFilteredResults.map(i => i.price).filter(p => p > 0);
@@ -529,7 +535,10 @@ function App() {
     });
   };
 
-  const handleSendForm = () => {
+  const handleSendForm = (id?: string) => {
+    if (typeof id === 'string') {
+      setSelectedListings([id]);
+    }
     setShowFormModal(true);
   };
 
@@ -542,17 +551,11 @@ function App() {
         }`}>
         <div className={`w-full max-w-2xl text-center space-y-6 transition-all duration-500 ${(hasSearched || selectedType || selectedCategory) ? 'translate-y-0' : '-translate-y-8'
           }`}>
-          <div className="flex justify-center mb-6">
-            <img
-              src={kiuLogo}
-              alt="KIU Realty PH"
-              className={`object-contain transition-all duration-500 ${(hasSearched || selectedType || selectedCategory) ? 'h-16' : 'h-24 sm:h-32'}`}
-            />
-          </div>
+
           <p className={`font-bold text-gray-900 tracking-tight transition-all duration-500 ${(hasSearched || selectedType || selectedCategory) ? 'text-2xl mb-4' : 'text-4xl sm:text-5xl mb-8'}`}>
             {(selectedType || selectedCategory || hasSearched)
-              ? `Found ${displayedResults.length} of ${allListings.length} Available Listings`
-              : allListings.length > 0 ? `${allListings.length} Available Listings` : 'Loading properties...'
+              ? `Found ${displayedResults.length} of ${allListings.length} Listings`
+              : allListings.length > 0 ? `${allListings.length} Listings` : 'Loading properties...'
             }
           </p>
 
@@ -567,7 +570,7 @@ function App() {
                 let label = filter.toUpperCase();
                 if (filter === 'Sale') label = 'SALE'; // Shortened
                 if (filter === 'Lease') label = 'LEASE'; // Shortened
-                if (filter === 'Sale/Lease') label = 'SALE OR LEASE';
+                if (filter === 'Sale/Lease') label = 'SALE/LEASE';
 
                 const isActive = selectedType === filter;
 
@@ -586,6 +589,24 @@ function App() {
                   </button>
                 )
               })}
+            </div>
+
+            {/* Spacer - minimal */}
+            <div className="w-0.5"></div>
+
+            {/* Group: Direct Filter */}
+            <div className="inline-flex bg-gray-100 p-0.5 rounded-lg shadow-inner relative z-0">
+              <button
+                onClick={() => setSelectedDirect(prev => !prev)}
+                className={`relative px-2 sm:px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 min-w-[60px] whitespace-nowrap
+                  ${selectedDirect
+                    ? 'bg-blue-600 text-white shadow-sm z-10'
+                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
+                  }
+                `}
+              >
+                DIRECT
+              </button>
             </div>
 
             {/* Spacer - minimal */}
@@ -1001,7 +1022,6 @@ function App() {
                   </div>
                 </div>
               </div>
-              <p className="text-[11px] text-gray-500 italic mt-0.5 ml-1">If interested, you may choose up to 5 listings and submit the form</p>
             </div>
 
             {/* Right Column: Area Filters Sidebar (Adjusted Width) */}
@@ -1046,67 +1066,58 @@ function App() {
         </div>
       </div>
 
-      {/* Floating Selection Status Bar - Only shows when selections > 0 */}
-      {selectedListings.length > 0 && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-white shadow-2xl border-4 border-blue-500 rounded-xl px-8 py-4 max-w-3xl flex flex-col items-center">
-          <p className="text-base text-gray-700 font-medium text-center">
-            You may select up to 5{" "}
-            <span className="font-bold text-blue-600">({selectedListings.length}/5 selected)</span>{" "}
-            -{" "}
-            <button
-              onClick={handleSendForm}
-              className="font-bold text-red-600 underline hover:text-red-800 transition-colors cursor-pointer ml-1"
-            >
-              SEND FORM
-            </button>
-          </p>
-          <p className="text-sm text-gray-400 mt-1 italic">
-            Listed details are subject to change without prior notice
-          </p>
-        </div>
-      )}
-
       {/* Results Section */}
-      {(hasSearched || selectedType || selectedCategory) && (
-        <div className="max-w-7xl mx-auto px-4 pb-20 animate-fade-in-up">
-          {paginatedResults.length === 0 ? (
-            <div className="text-center py-20 text-gray-500 bg-white rounded-2xl border border-gray-100">
-              <p className="text-lg">
-                No matches found for "{query}"
-                {selectedType ? ` with type "${selectedType}"` : ''}
-                {selectedCategory ? ` and category "${selectedCategory}"` : ''}
-              </p>
-              <p className="text-sm mt-2">Try adjusting your price, location, or filters.</p>
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {paginatedResults.map((listing, idx) => (
-                  <ListingCard
-                    key={`${listing.id}-${idx}`}
-                    listing={listing}
-                    isSelected={selectedListings.includes(listing.id)}
-                    onToggleSelection={handleToggleSelection}
-                    isDisabled={selectedListings.length >= 5}
-                  />
-                ))}
+      {
+        (hasSearched || selectedType || selectedCategory) && (
+          <div className="max-w-7xl mx-auto px-4 pb-20 animate-fade-in-up">
+            {paginatedResults.length === 0 ? (
+              <div className="text-center py-20 text-gray-500 bg-white rounded-2xl border border-gray-100">
+                <p className="text-lg">
+                  No matches found for "{query}"
+                  {selectedType ? ` with type "${selectedType}"` : ''}
+                  {selectedCategory ? ` and category "${selectedCategory}"` : ''}
+                </p>
+                <p className="text-sm mt-2">Try adjusting your price, location, or filters.</p>
               </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {paginatedResults.map((listing, idx) => (
+                    <ListingCard
+                      key={`${listing.id}-${idx}`}
+                      listing={listing}
+                      isSelected={selectedListings.includes(listing.id)}
+                      onToggleSelection={handleToggleSelection}
+                      isDisabled={selectedListings.length >= 5}
+                      onNotesClick={handleSendForm}
+                    />
+                  ))}
+                </div>
 
-              {/* Pagination Controls */}
-              {/* Pagination Controls */}
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-              />
-            </>
-          )}
-        </div>
-      )}
+                {/* Pagination Controls */}
+                {/* Pagination Controls */}
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                />
+              </>
+            )}
+          </div>
+        )
+      }
       <ContactFormModal
         isOpen={showFormModal}
-        onClose={() => setShowFormModal(false)}
+        onClose={() => {
+          setShowFormModal(false);
+          setSelectedListings([]);
+        }}
         selectedListings={selectedListings}
+        initialSuggestedEdit={
+          selectedListings.length > 0
+            ? allListings.find(l => l.id === selectedListings[0])?.columnV || ''
+            : ''
+        }
       />
 
       {/* Footer */}

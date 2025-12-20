@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Listing } from '../types';
 import { MapPin, Building, Maximize, Facebook } from 'lucide-react';
 
@@ -7,9 +7,13 @@ interface ListingCardProps {
     isSelected?: boolean;
     onToggleSelection?: (id: string) => void;
     isDisabled?: boolean;
+    onNotesClick?: (id: string) => void;
 }
 
-export const ListingCard: React.FC<ListingCardProps> = React.memo(({ listing, isSelected = false, onToggleSelection, isDisabled = false }) => {
+export const ListingCard: React.FC<ListingCardProps> = React.memo(({ listing, isSelected = false, isDisabled = false, onNotesClick }) => {
+    const [isCopied, setIsCopied] = useState(false);
+    const [isColumnKCopied, setIsColumnKCopied] = useState(false);
+
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat('en-PH', {
             style: 'currency',
@@ -18,27 +22,74 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({ listing, is
         }).format(price);
     };
 
+    const handleCopy = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (listing.summary) {
+            navigator.clipboard.writeText(listing.summary);
+            setIsCopied(true);
+        }
+    };
+
+    const handleCopyColumnK = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (listing.columnK) {
+            navigator.clipboard.writeText(listing.columnK);
+            setIsColumnKCopied(true);
+        }
+    };
+
+    useEffect(() => {
+        if (isCopied) {
+            const timer = setTimeout(() => setIsCopied(false), 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [isCopied]);
+
+    useEffect(() => {
+        if (isColumnKCopied) {
+            const timer = setTimeout(() => setIsColumnKCopied(false), 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [isColumnKCopied]);
+
     return (
         <div
-            onClick={() => onToggleSelection && (!isDisabled || isSelected) && onToggleSelection(listing.id)}
-            className={`rounded-xl shadow-sm border p-5 hover:shadow-md transition-all cursor-pointer relative group
+            className={`rounded-xl shadow-sm border p-5 hover:shadow-md transition-all relative group
                 ${isSelected
                     ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500' // Selected State
                     : 'bg-white border-gray-100 hover:border-blue-200'  // Normal State
                 }
-                ${isDisabled && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}
+                ${isDisabled && !isSelected ? 'opacity-50' : ''}
             `}
         >
             <div className="flex justify-between items-start mb-3">
-                <div className="flex gap-2">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${listing.columnAE ? 'bg-blue-50 text-blue-600' : 'bg-gray-50 text-gray-600'}`}>
-                        {listing.columnAE || 'OTHERS'}
-                    </span>
-                    {listing.saleType && (
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-600">
-                            {listing.saleType}
-                        </span>
+                <div className="flex flex-col gap-1.5">
+                    {listing.columnK && (
+                        <div
+                            onClick={handleCopyColumnK}
+                            className={`text-sm font-bold leading-tight cursor-pointer transition-colors
+                                ${isColumnKCopied ? 'text-green-600' : 'text-gray-900 hover:text-blue-600'}
+                            `}
+                            title="Click to copy"
+                        >
+                            {isColumnKCopied ? 'COPIED!' : listing.columnK}
+                        </div>
                     )}
+                    <div className="flex gap-1.5 flex-wrap">
+                        <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${listing.columnAE ? 'bg-blue-50 text-blue-600' : 'bg-gray-50 text-gray-600'}`}>
+                            {listing.columnAE || 'OTHERS'}
+                        </span>
+                        {listing.saleType && (
+                            <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-purple-50 text-purple-600">
+                                {listing.saleType.toUpperCase()}
+                            </span>
+                        )}
+                        {listing.isDirect && (
+                            <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-yellow-100 text-yellow-800">
+                                DIRECT
+                            </span>
+                        )}
+                    </div>
                 </div>
                 <div className="flex items-center gap-3">
                     {listing.facebookLink && (
@@ -57,8 +108,20 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({ listing, is
                 </div>
             </div>
 
-            <div className="text-xl font-bold text-gray-900 mb-4">
-                {formatPrice(listing.price)}
+            <div className="mb-4">
+                <div className="text-xl font-bold text-gray-900">
+                    {formatPrice(listing.price)}
+                    {listing.pricePerSqm > 0 && (
+                        <span className="text-sm font-normal text-gray-500 ml-2">
+                            ({formatPrice(listing.pricePerSqm)}/sqm)
+                        </span>
+                    )}
+                </div>
+                {listing.summary && (
+                    <div className="text-sm font-medium text-black mt-1 leading-relaxed">
+                        {listing.summary}
+                    </div>
+                )}
             </div>
 
             <div className="space-y-2 text-sm text-gray-500">
@@ -77,7 +140,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({ listing, is
                     {listing.lotArea > 0 && listing.floorArea > 0 ? (
                         // Both lot and floor area present - use 2 lines
                         <div className="flex flex-col">
-                            <span>{listing.lotArea} sqm Lot Area ({formatPrice(listing.pricePerSqm)}/sqm)</span>
+                            <span>{listing.lotArea} sqm Lot Area</span>
                             <span>{listing.floorArea} sqm Floor Area</span>
                         </div>
                     ) : (
@@ -85,18 +148,69 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({ listing, is
                         <span>
                             {listing.lotArea > 0 && (
                                 <>
-                                    {listing.lotArea} sqm Lot Area ({formatPrice(listing.pricePerSqm)}/sqm)
+                                    {listing.lotArea} sqm Lot Area
                                 </>
                             )}
                             {listing.floorArea > 0 && (
                                 <>
-                                    {listing.floorArea} sqm Floor Area ({formatPrice(listing.pricePerSqm)}/sqm)
+                                    {listing.floorArea} sqm Floor Area
                                 </>
                             )}
                         </span>
                     )}
                 </div>
             </div>
+
+            <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
+                {listing.photoLink && (
+                    <a
+                        href={listing.photoLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex-1 text-center py-2 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors uppercase tracking-wider"
+                    >
+                        PHOTO
+                    </a>
+                )}
+                {listing.mapLink && (
+                    <a
+                        href={listing.mapLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex-1 text-center py-2 bg-blue-100 text-black rounded-lg text-xs font-bold hover:bg-blue-200 transition-colors uppercase tracking-wider"
+                    >
+                        MAP
+                    </a>
+                )}
+                <button
+                    onClick={handleCopy}
+                    className={`flex-1 text-center py-2 rounded-lg text-xs font-bold transition-all duration-200 uppercase tracking-wider flex items-center justify-center gap-1
+                        ${isCopied
+                            ? 'bg-green-500 text-white scale-105 shadow-sm'
+                            : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                        }
+                    `}
+                >
+                    {isCopied ? 'COPIED!' : 'COPY'}
+                </button>
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onNotesClick && onNotesClick(listing.id);
+                    }}
+                    className="flex-1 text-center py-2 bg-yellow-100 text-yellow-800 rounded-lg text-xs font-bold hover:bg-yellow-200 transition-colors uppercase tracking-wider"
+                >
+                    NOTES
+                </button>
+            </div>
+
+            {listing.columnV && (
+                <div className="mt-3 text-sm italic text-black border-t border-gray-100 pt-2">
+                    {listing.columnV}
+                </div>
+            )}
         </div>
     );
 });

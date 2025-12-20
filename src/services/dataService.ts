@@ -42,6 +42,12 @@ const normalizeListing = (row: string[]): Listing => {
         return parseFloat(val.replace(/[P,php\s]/gi, '').replace(/,/g, '')) || 0;
     };
 
+    // DEBUG: Log G00024
+    if (row[19] === 'G00024') {
+        console.log('DEBUG G00024 RAW:', row);
+        console.log('DEBUG G00024 Index 21 (Col V):', row[21]);
+    }
+
     // Column Mappings (0-indexed)
     // A=0, E=4, F=5, G=6, O=14, T=19, X=23, Y=24, Z=25, AA=26, AB=27, AC=28, AD=29
 
@@ -75,6 +81,10 @@ const normalizeListing = (row: string[]): Listing => {
         columnAE: row[30] || '', // Col AE
         category: row[1] || '', // Col B
         facebookLink: row[17] || '', // Col R
+        photoLink: row[16] || '', // Col Q
+        mapLink: row[20] || '', // Col U
+        columnV: row[21] || '', // Col V
+        isDirect: (row[22] || '').trim().toUpperCase() === 'YES', // Col W
         lotArea,
         floorArea,
         type
