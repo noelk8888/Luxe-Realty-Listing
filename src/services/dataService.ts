@@ -77,6 +77,8 @@ const normalizeListing = (row: string[]): Listing => {
         building: row[29] || '', // Col AD
         columnJ: row[9] || '', // Col J
         columnK: row[10] || '', // Col K
+        columnM: row[12] || '', // Col M
+        columnN: row[13] || '', // Col N
         columnP: row[15] || '', // Col P
         columnAE: row[30] || '', // Col AE
         category: row[1] || '', // Col B

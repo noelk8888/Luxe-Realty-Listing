@@ -21,6 +21,8 @@ export interface Listing {
     building: string; // Col AD: Building Name
     columnJ: string; // Col J
     columnK: string; // Col K
+    columnM: string; // Col M
+    columnN: string; // Col N
     columnP: string; // Col P
     category: string; // Column B
     facebookLink?: string; // Col R

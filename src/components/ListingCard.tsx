@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Listing } from '../types';
-import { MapPin, Building, Maximize, Facebook } from 'lucide-react';
+import { MapPin, Building, Maximize, Facebook, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface ListingCardProps {
     listing: Listing;
@@ -13,6 +13,8 @@ interface ListingCardProps {
 export const ListingCard: React.FC<ListingCardProps> = React.memo(({ listing, isSelected = false, isDisabled = false, onNotesClick }) => {
     const [isCopied, setIsCopied] = useState(false);
     const [isColumnKCopied, setIsColumnKCopied] = useState(false);
+
+    const [isExpanded, setIsExpanded] = useState(false);
 
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat('en-PH', {
@@ -109,7 +111,14 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({ listing, is
                             <Facebook size={16} fill="currentColor" strokeWidth={0} />
                         </a>
                     )}
-                    <span className="text-lg font-bold text-black font-mono">{listing.id}</span>
+                    <div className="flex flex-col items-end">
+                        <span className="text-lg font-bold text-black font-mono">{listing.id}</span>
+                        {(listing.columnN || listing.columnM) && (
+                            <span className="text-xs font-semibold text-gray-500">
+                                {listing.columnN || listing.columnM}
+                            </span>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -123,8 +132,27 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({ listing, is
                     )}
                 </div>
                 {listing.summary && (
-                    <div className="text-sm font-medium text-black mt-1 leading-relaxed">
-                        {listing.summary}
+                    <div className="relative">
+                        <div
+                            className={`text-sm font-medium text-black mt-1 leading-relaxed whitespace-pre-line
+                                ${!isExpanded ? 'line-clamp-4' : ''}
+                            `}
+                        >
+                            {listing.summary}
+                        </div>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setIsExpanded(!isExpanded);
+                            }}
+                            className="mt-1 flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors bg-transparent border-0 p-0 cursor-pointer"
+                        >
+                            {isExpanded ? (
+                                <>Show Less <ChevronUp size={14} /></>
+                            ) : (
+                                <>Show More <ChevronDown size={14} /></>
+                            )}
+                        </button>
                     </div>
                 )}
             </div>
