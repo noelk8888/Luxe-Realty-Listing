@@ -656,6 +656,14 @@ function App() {
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleSearch(e);
+                        e.currentTarget.blur();
+                      }
+                    }}
+                    enterKeyHint="search"
                     placeholder={placeholderText}
                     className={`w-full bg-white border-2 transition-all duration-300 rounded-2xl outline-none text-lg font-medium
                           ${hasSearched
