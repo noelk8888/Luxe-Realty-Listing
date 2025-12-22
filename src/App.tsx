@@ -1098,6 +1098,7 @@ function App() {
                       onToggleSelection={handleToggleSelection}
                       isDisabled={selectedListings.length >= 5}
                       onNotesClick={handleSendForm}
+                      index={(currentPage - 1) * ITEMS_PER_PAGE + idx + 1}
                     />
                   ))}
                 </div>

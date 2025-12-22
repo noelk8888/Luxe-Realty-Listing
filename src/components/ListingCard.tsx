@@ -8,9 +8,10 @@ interface ListingCardProps {
     onToggleSelection?: (id: string) => void;
     isDisabled?: boolean;
     onNotesClick?: (id: string) => void;
+    index?: number;
 }
 
-export const ListingCard: React.FC<ListingCardProps> = React.memo(({ listing, isSelected = false, isDisabled = false, onNotesClick }) => {
+export const ListingCard: React.FC<ListingCardProps> = React.memo(({ listing, isSelected = false, isDisabled = false, onNotesClick, index }) => {
     const [isCopied, setIsCopied] = useState(false);
     const [isColumnKCopied, setIsColumnKCopied] = useState(false);
 
@@ -74,7 +75,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({ listing, is
                             `}
                             title="Click to copy"
                         >
-                            {isColumnKCopied ? 'COPIED!' : listing.columnK}
+                            {isColumnKCopied ? 'COPIED!' : `${index ? `${index}. ` : ''}${listing.columnK}`}
                         </div>
                     )}
                     {listing.columnP && (
