@@ -8,10 +8,11 @@ interface ListingCardProps {
     onToggleSelection?: (id: string) => void;
     isDisabled?: boolean;
     onNotesClick?: (id: string) => void;
+    onMapClick?: (listing: Listing) => void;
     index?: number;
 }
 
-export const ListingCard: React.FC<ListingCardProps> = React.memo(({ listing, isSelected = false, isDisabled = false, onNotesClick, index }) => {
+export const ListingCard: React.FC<ListingCardProps> = React.memo(({ listing, isSelected = false, isDisabled = false, onNotesClick, onMapClick, index }) => {
     const [isCopied, setIsCopied] = useState(false);
     const [isColumnKCopied, setIsColumnKCopied] = useState(false);
 
@@ -113,7 +114,16 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({ listing, is
                         </a>
                     )}
                     <div className="flex flex-col items-end">
-                        <span className="text-lg font-bold text-black font-mono">{listing.id}</span>
+                        <span
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (onMapClick) onMapClick(listing);
+                            }}
+                            className="text-lg font-bold text-black font-mono cursor-pointer hover:text-blue-600 hover:underline transition-colors"
+                            title="View on Map"
+                        >
+                            {listing.id}
+                        </span>
                         {(listing.columnN || listing.columnM) && (
                             <span className="text-xs font-semibold text-gray-500">
                                 {listing.columnN || listing.columnM}

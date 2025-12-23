@@ -62,6 +62,16 @@ const normalizeListing = (row: string[]): Listing => {
         type = PropertyType.Lot;
     }
 
+    // Parse Coordinates from Column AH (Index 33)
+    const rawCoords = row[33] || '';
+    let lat = 0;
+    let lng = 0;
+    if (rawCoords.includes(',')) {
+        const [latStr, lngStr] = rawCoords.split(',');
+        lat = parseFloat(latStr.trim()) || 0;
+        lng = parseFloat(lngStr.trim()) || 0;
+    }
+
     return {
         id: row[19] || '', // Col T
         summary: row[0] || '', // Col A
@@ -87,6 +97,8 @@ const normalizeListing = (row: string[]): Listing => {
         mapLink: row[20] || '', // Col U
         columnV: row[21] || '', // Col V
         isDirect: (row[22] || '').trim().toUpperCase() === 'YES', // Col W
+        lat,
+        lng,
         lotArea,
         floorArea,
         type

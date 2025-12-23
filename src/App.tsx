@@ -7,6 +7,7 @@ import { searchListings } from './services/searchEngine';
 import type { Listing } from './types';
 import { ListingCard } from './components/ListingCard';
 import { ContactFormModal } from './components/ContactFormModal';
+import { MapModal } from './components/MapModal';
 import Pagination from './components/Pagination';
 import { ScrollToTop } from './components/ScrollToTop';
 
@@ -540,6 +541,15 @@ function App() {
       setSelectedListings([id]);
     }
     setShowFormModal(true);
+  };
+
+  // Map Modal State
+  const [showMapModal, setShowMapModal] = useState(false);
+  const [mapCenterListing, setMapCenterListing] = useState<Listing | null>(null);
+
+  const handleMapClick = (listing: Listing) => {
+    setMapCenterListing(listing);
+    setShowMapModal(true);
   };
 
   return (
@@ -1098,6 +1108,7 @@ function App() {
                       onToggleSelection={handleToggleSelection}
                       isDisabled={selectedListings.length >= 5}
                       onNotesClick={handleSendForm}
+                      onMapClick={handleMapClick}
                       index={(currentPage - 1) * ITEMS_PER_PAGE + idx + 1}
                     />
                   ))}
@@ -1127,6 +1138,13 @@ function App() {
             ? allListings.find(l => l.id === selectedListings[0])?.columnV || ''
             : ''
         }
+      />
+
+      <MapModal
+        isOpen={showMapModal}
+        onClose={() => setShowMapModal(false)}
+        centerListing={mapCenterListing}
+        allListings={allListings}
       />
 
       {/* Footer */}

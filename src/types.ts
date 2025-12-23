@@ -34,6 +34,8 @@ export interface Listing {
     lotArea: number; // Col E
     floorArea: number; // Col F
     type: PropertyType; // Inferred
+    lat: number; // Col AH (Index 33)
+    lng: number; // Col AH (Index 33)
 }
 
 export interface RawListing {
