@@ -60,10 +60,12 @@ const normalizeListing = (row: string[]): Listing => {
     }
 
     // Category Logic (Cols AK, AL, AM, AN -> 36, 37, 38, 39)
-    // Join non-empty values
-    const category = [row[36], row[37], row[38], row[39]]
-        .filter(c => c && c.trim() !== '')
-        .join(', ');
+    const categories: string[] = [];
+    if (row[36] && row[36].trim()) categories.push('RESIDENTIAL');
+    if (row[37] && row[37].trim()) categories.push('COMMERCIAL');
+    if (row[38] && row[38].trim()) categories.push('INDUSTRIAL');
+    if (row[39] && row[39].trim()) categories.push('AGRICULTURAL');
+    const category = categories.join(', ');
 
     // Summary Logic (Col AA -> 26)
     const rawSummary = row[26] || '';

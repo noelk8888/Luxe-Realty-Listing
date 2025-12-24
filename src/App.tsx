@@ -19,7 +19,7 @@ function App() {
   const [allListings, setAllListings] = useState<Listing[]>([]);
   const [results, setResults] = useState<Listing[]>([]);
   const [selectedType, setSelectedType] = useState<string | null>(null); // Default null (No filter)
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null); // 'Residential' | 'Commercial' | 'Agricultural' | null
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null); // 'Residential' | 'Commercial' | 'Industrial' | 'Agricultural' | null
   const [selectedDirect, setSelectedDirect] = useState<boolean>(false);
 
   // Area Filter State
@@ -270,12 +270,13 @@ function App() {
       const itemAE = (item.columnAE || '').trim().toLowerCase();
 
       if (selectedCategory === 'Residential') {
-        categoryMatch = itemCat === 'residential' || itemAE === 'residential';
+        categoryMatch = (itemCat + ' ' + itemAE).includes('residential');
       } else if (selectedCategory === 'Commercial') {
-        const targets = ['industrial', 'commercial', 'industrial/commercial'];
-        categoryMatch = targets.includes(itemCat) || targets.includes(itemAE);
+        categoryMatch = (itemCat + ' ' + itemAE).includes('commercial');
+      } else if (selectedCategory === 'Industrial') {
+        categoryMatch = (itemCat + ' ' + itemAE).includes('industrial');
       } else if (selectedCategory === 'Agricultural') {
-        categoryMatch = itemCat.includes('agri') || itemAE.includes('agri');
+        categoryMatch = (itemCat + ' ' + itemAE).includes('agri');
       }
     }
 
@@ -415,12 +416,13 @@ function App() {
       const itemAE = (item.columnAE || '').trim().toLowerCase();
 
       if (selectedCategory === 'Residential') {
-        categoryMatch = itemCat === 'residential' || itemAE === 'residential';
+        categoryMatch = (itemCat + ' ' + itemAE).includes('residential');
       } else if (selectedCategory === 'Commercial') {
-        const targets = ['industrial', 'commercial', 'industrial/commercial'];
-        categoryMatch = targets.includes(itemCat) || targets.includes(itemAE);
+        categoryMatch = (itemCat + ' ' + itemAE).includes('commercial');
+      } else if (selectedCategory === 'Industrial') {
+        categoryMatch = (itemCat + ' ' + itemAE).includes('industrial');
       } else if (selectedCategory === 'Agricultural') {
-        categoryMatch = itemCat.includes('agri') || itemAE.includes('agri');
+        categoryMatch = (itemCat + ' ' + itemAE).includes('agri');
       }
     }
     return typeMatch && categoryMatch;
@@ -646,14 +648,18 @@ function App() {
 
             {/* Group 2: Category */}
             <div className="inline-flex bg-gray-100 p-0.5 rounded-lg shadow-inner relative z-0">
-              {['Residential', 'Commercial', 'Agricultural'].map((filter) => {
+              {['Residential', 'Commercial', 'Industrial', 'Agricultural'].map((filter) => {
                 const isActive = selectedCategory === filter;
                 let label = filter.toUpperCase();
-                if (filter === 'Agricultural') label = 'AGRI'; // Short label
+                if (filter === 'Residential') label = "RES'L";
+                if (filter === 'Commercial') label = "COMM'L";
+                if (filter === 'Industrial') label = "IND'L";
+                if (filter === 'Agricultural') label = 'AGRI';
 
                 return (
                   <button
                     key={filter}
+                    title={filter.toUpperCase()}
                     onClick={() => setSelectedCategory(current => current === filter ? null : filter)}
                     className={`relative px-2 sm:px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 min-w-[60px] whitespace-nowrap
                           ${isActive
