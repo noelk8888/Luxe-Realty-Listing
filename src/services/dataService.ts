@@ -68,10 +68,33 @@ const normalizeListing = (row: string[]): Listing => {
     const category = categories.join(', ');
 
     // Summary Logic (Col AA -> 26)
-    const rawSummary = row[26] || '';
-    const summaryLines = rawSummary.split('\n');
+    const rawSummary = (row[26] || '').trim();
+    const allLines = rawSummary.split(/\r?\n/).map(l => l.trim());
     const fullSummary = rawSummary;
-    const displaySummary = summaryLines.length > 1 ? summaryLines.slice(1).join('\n') : rawSummary;
+
+    // Find non-empty content
+    const nonEmptyIndices = allLines.reduce((acc, line, idx) => {
+        if (line !== '') acc.push(idx);
+        return acc;
+    }, [] as number[]);
+
+    let displaySummary = '';
+    if (nonEmptyIndices.length > 2) {
+        // Exclude first and last non-empty lines
+        const firstIdx = nonEmptyIndices[0];
+        const lastIdx = nonEmptyIndices[nonEmptyIndices.length - 1];
+        displaySummary = allLines.slice(firstIdx + 1, lastIdx).join('\n').trim();
+    } else if (nonEmptyIndices.length === 2) {
+        // Just title and one more line (likely photo/contact), show nothing
+        displaySummary = '';
+    } else {
+        displaySummary = '';
+    }
+
+    if (row[28] === 'G00050') {
+        console.log('G00050 All Lines:', allLines);
+        console.log('G00050 Display Summary:', displaySummary);
+    }
 
     const lotArea = parseNumber(row[40]); // Col AO
     const floorArea = parseNumber(row[41]); // Col AP
