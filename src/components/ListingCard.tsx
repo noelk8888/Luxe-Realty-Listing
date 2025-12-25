@@ -227,20 +227,20 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                     {listing.lotArea > 0 && listing.floorArea > 0 ? (
                         // Both lot and floor area present - use 2 lines
                         <div className="flex flex-col">
-                            <span>{listing.lotArea} sqm Lot Area</span>
-                            <span>{listing.floorArea} sqm Floor Area</span>
+                            <span>{listing.lotArea.toLocaleString()} sqm Lot Area</span>
+                            <span>{listing.floorArea.toLocaleString()} sqm Floor Area</span>
                         </div>
                     ) : (
                         // Only one area present - single line
                         <span>
                             {listing.lotArea > 0 && (
                                 <>
-                                    {listing.lotArea} sqm Lot Area
+                                    {listing.lotArea.toLocaleString()} sqm Lot Area
                                 </>
                             )}
                             {listing.floorArea > 0 && (
                                 <>
-                                    {listing.floorArea} sqm Floor Area
+                                    {listing.floorArea.toLocaleString()} sqm Floor Area
                                 </>
                             )}
                         </span>

@@ -115,11 +115,24 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
                                     {centerListing.id}
                                 </div>
                                 <div className="text-xs">
-                                    {centerListing.price > 0 && <div>{`P${centerListing.price.toLocaleString()}`}</div>}
+                                    {centerListing.price > 0 && (
+                                        <div className="font-bold text-gray-900">
+                                            {`P${centerListing.price.toLocaleString()}`}
+                                            {centerListing.pricePerSqm > 0 && (
+                                                <span className="text-[10px] font-normal text-gray-500 ml-1">
+                                                    (P{centerListing.pricePerSqm.toLocaleString()}/sqm)
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
                                     {centerListing.leasePrice > 0 && (
-                                        <div>
+                                        <div className="text-gray-800">
                                             {formatPrice(centerListing.leasePrice)}/month
-                                            {centerListing.leasePricePerSqm > 0 && ` (${formatPrice(centerListing.leasePricePerSqm)}/sqm)`}
+                                            {centerListing.leasePricePerSqm > 0 && (
+                                                <span className="text-[10px] font-normal text-gray-500 ml-1">
+                                                    ({formatPrice(centerListing.leasePricePerSqm)}/sqm)
+                                                </span>
+                                            )}
                                         </div>
                                     )}
                                     {centerListing.price === 0 && centerListing.leasePrice === 0 && 'Price on Request'}
