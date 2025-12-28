@@ -135,6 +135,12 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         >
                             {listing.id}
                         </span>
+                        {/* Column BC: Below Listing ID */}
+                        {listing.columnBC && !isPopupView && (
+                            <div className="mt-1 text-xs font-bold text-gray-900 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200 shadow-sm text-right">
+                                {listing.columnBC}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -189,6 +195,12 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         </>
                     )}
                 </div>
+                {/* Column BD: Below Price */}
+                {listing.columnBD && (
+                    <div className="mt-1 inline-block text-xs font-bold text-gray-900 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200 shadow-sm">
+                        {listing.columnBD}
+                    </div>
+                )}
                 {listing.displaySummary && (
                     <div className="relative">
                         <div
@@ -252,12 +264,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                 </div>
             </div>
 
-            {(listing.columnBC || listing.columnBD) && (
-                <div className="mt-3 pt-3 border-t border-gray-100 flex flex-col gap-1 text-xs text-gray-400">
-                    {listing.columnBC && <div>{listing.columnBC}</div>}
-                    {listing.columnBD && <div>{listing.columnBD}</div>}
-                </div>
-            )}
+            {/* Removed combined BC/BD block from bottom - moved to specific locations */}
 
             <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
                 {isPopupView ? (
@@ -273,7 +280,8 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                             ${backButtonVariant === 'gray' ? 'bg-gray-400 hover:bg-gray-500' : ''}
                         `}
                     >
-                        BACK
+                        {backButtonVariant === 'red' ? 'FEATURED' :
+                            backButtonVariant === 'blue' ? 'MATCHED' : 'BACK'}
                     </button>
                 ) : (
                     <button

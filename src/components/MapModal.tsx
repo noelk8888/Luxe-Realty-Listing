@@ -23,36 +23,43 @@ let DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 
 // Custom Icons
-const redIcon = new L.Icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-});
-
-const blueIcon = new L.Icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-});
-
-const grayIcon = L.divIcon({
-    className: 'custom-gray-pin',
-    html: `
+const getIconOptions = (color: 'red' | 'blue' | 'gray') => {
+    if (color === 'red') {
+        return {
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41] as [number, number], // Type assertion for tuple
+            iconAnchor: [12, 41] as [number, number],
+            popupAnchor: [1, -34] as [number, number],
+            shadowSize: [41, 41] as [number, number],
+            className: 'marker-red'
+        };
+    }
+    if (color === 'blue') {
+        return {
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41] as [number, number],
+            iconAnchor: [12, 41] as [number, number],
+            popupAnchor: [1, -34] as [number, number],
+            shadowSize: [41, 41] as [number, number],
+            className: 'marker-blue'
+        };
+    }
+    // Gray (Default)
+    return {
+        className: 'custom-gray-pin marker-gray',
+        html: `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="25" height="41" style="filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));">
             <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 24 12 24s12-15 12-24c0-6.6-5.4-12-12-12zm0 18c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6z" fill="#9ca3af" stroke="#000000" stroke-width="1.5"/>
             <circle cx="12" cy="12" r="4" fill="white"/>
         </svg>
     `,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34]
-});
+        iconSize: [25, 41] as [number, number],
+        iconAnchor: [12, 41] as [number, number],
+        popupAnchor: [1, -34] as [number, number]
+    };
+};
 
 interface MapModalProps {
     isOpen: boolean;
@@ -107,34 +114,34 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
     // Helper to get group icon
     const getGroupIcon = (listings: Listing[], isCenterGroup: boolean) => {
         const count = listings.length;
-        // Priority 1: Red if group includes the Center (Focused) Listing
-        const hasCenter = listings.some(l => l.id === centerListing.id);
-
-        // Priority 2: Blue if any listing is in the Filtered Results AND it's not the center group
-        // But the constraint says: "if any of the group includes a match, then the circle heat map must be color BLUE"
-        // And "if the group includes the CHOSEN listing, then it must be color RED" (Higher priority)
-
+        const hasCenter = isCenterGroup;
         const hasFilteredMatch = listings.some(l => filteredListingsIds.has(l.id));
 
-        let color = '#9ca3af'; // Default Gray
+        let colorKey: 'red' | 'blue' | 'gray' = 'gray';
+        let colorHex = '#9ca3af';
+
         if (hasCenter) {
-            color = '#ef4444'; // Red
+            colorKey = 'red';
+            colorHex = '#ef4444';
         } else if (hasFilteredMatch) {
-            color = '#3b82f6'; // Blue
+            colorKey = 'blue';
+            colorHex = '#3b82f6';
         }
 
         if (count === 1) {
-            if (hasCenter) return redIcon;
-            if (hasFilteredMatch) return blueIcon;
-            return grayIcon;
+            const options = getIconOptions(colorKey);
+            if (colorKey === 'gray') {
+                return L.divIcon(options as L.DivIconOptions);
+            }
+            return new L.Icon(options as L.IconOptions);
         }
 
         return L.divIcon({
-            className: 'custom-grouped-pin',
+            className: `custom-grouped-pin marker-${colorKey}`,
             html: `
                 <div style="position: relative; width: 30px; height: 41px;">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="30" height="41" style="filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));">
-                        <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 24 12 24s12-15 12-24c0-6.6-5.4-12-12-12zm0 18c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6z" fill="${color}" stroke="#000000" stroke-width="1"/>
+                        <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 24 12 24s12-15 12-24c0-6.6-5.4-12-12-12zm0 18c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6z" fill="${colorHex}" stroke="#000000" stroke-width="1"/>
                         <circle cx="12" cy="12" r="4" fill="white"/>
                     </svg>
                     <div style="
@@ -194,6 +201,50 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
                             chunkedLoading
                             spiderfyOnMaxZoom={true}
                             showCoverageOnHover={false}
+                            iconCreateFunction={(cluster: any) => {
+                                const markers = cluster.getAllChildMarkers();
+                                let hasRed = false; // Center Listing
+                                let hasBlue = false; // Filtered Match 
+
+
+                                markers.forEach((marker: any) => {
+                                    // Check options className (Robust method)
+                                    const className = marker.options.icon?.options?.className || '';
+                                    if (className.includes('marker-red')) hasRed = true;
+                                    if (className.includes('marker-blue')) hasBlue = true;
+                                });
+
+                                let color = '#9ca3af'; // Gray
+                                if (hasRed) {
+                                    color = '#ef4444'; // Red
+                                } else if (hasBlue) {
+                                    color = '#3b82f6'; // Blue
+                                }
+
+                                return L.divIcon({
+                                    html: `
+                                        <div style="
+                                            background-color: ${color};
+                                            width: 40px;
+                                            height: 40px;
+                                            border-radius: 50%;
+                                            display: flex;
+                                            align-items: center;
+                                            justify-content: center;
+                                            color: white;
+                                            font-weight: bold;
+                                            font-family: sans-serif;
+                                            border: 3px solid white;
+                                            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+                                            font-size: 14px;
+                                        ">
+                                            ${markers.length}
+                                        </div>
+                                    `,
+                                    className: 'custom-cluster-icon',
+                                    iconSize: L.point(40, 40, true),
+                                });
+                            }}
                         >
                             {Object.entries(groupedListings).map(([coordKey, listings]) => {
                                 const isCenterGroup = listings.some(l => l.id === centerListing.id);
@@ -216,7 +267,7 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
                                         }}
                                     >
                                         {listings.length === 1 && (
-                                            <Popup minWidth={220} maxWidth={300}>
+                                            <Popup minWidth={275} maxWidth={375}>
                                                 <div className="flex flex-col gap-3 px-1 py-1">
                                                     {listings.map((l) => (
                                                         <div key={l.id}>
@@ -247,6 +298,11 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
                                                             {(l.building || l.area || l.barangay) && (
                                                                 <div className="text-[11px] text-gray-600 font-medium">
                                                                     {l.building || l.area || l.barangay}
+                                                                </div>
+                                                            )}
+                                                            {l.columnBD && (
+                                                                <div className="mt-1.5 p-1.5 bg-gray-100 rounded text-[10px] font-bold text-gray-800 border border-gray-200">
+                                                                    {l.columnBD}
                                                                 </div>
                                                             )}
                                                         </div>
