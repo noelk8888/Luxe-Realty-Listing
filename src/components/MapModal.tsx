@@ -261,7 +261,23 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
                                                 if (listings.length > 1) {
                                                     // Prevent default popup and show grid view
                                                     L.DomEvent.stopPropagation(e);
-                                                    setGroupedViewListings(listings);
+
+                                                    // Sort: Featured (Red) > Matched (Blue) > Others (Gray)
+                                                    const sorted = [...listings].sort((a, b) => {
+                                                        const aIsCenter = a.id === centerListing.id;
+                                                        const bIsCenter = b.id === centerListing.id;
+                                                        if (aIsCenter && !bIsCenter) return -1;
+                                                        if (!aIsCenter && bIsCenter) return 1;
+
+                                                        const aIsMatch = filteredListingsIds.has(a.id);
+                                                        const bIsMatch = filteredListingsIds.has(b.id);
+                                                        if (aIsMatch && !bIsMatch) return -1;
+                                                        if (!aIsMatch && bIsMatch) return 1;
+
+                                                        return 0;
+                                                    });
+
+                                                    setGroupedViewListings(sorted);
                                                 }
                                             }
                                         }}
@@ -273,30 +289,30 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
                                                         <div key={l.id}>
                                                             <div
                                                                 onClick={() => setFocusedListing(l)}
-                                                                className="text-sm font-bold cursor-pointer text-blue-600 hover:underline mb-1 flex items-center justify-between"
+                                                                className="text-base font-bold cursor-pointer text-blue-600 hover:underline mb-1 flex items-center justify-between"
                                                             >
                                                                 <span>{l.id}</span>
                                                             </div>
-                                                            <div className="text-xs">
+                                                            <div className="text-sm">
                                                                 {l.price > 0 && (
-                                                                    <div className="font-bold text-gray-900">
+                                                                    <div className="font-bold text-gray-900 text-base">
                                                                         {`P${l.price.toLocaleString()}`}
                                                                         {l.pricePerSqm > 0 && (
-                                                                            <span className="text-[10px] font-normal text-gray-500 ml-1">
+                                                                            <span className="text-xs font-normal text-gray-500 ml-1">
                                                                                 (P{l.pricePerSqm.toLocaleString()}/sqm)
                                                                             </span>
                                                                         )}
                                                                     </div>
                                                                 )}
                                                                 {l.leasePrice > 0 && (
-                                                                    <div className="text-gray-800">
+                                                                    <div className="text-gray-800 text-base">
                                                                         {formatPrice(l.leasePrice)}/month
                                                                     </div>
                                                                 )}
                                                                 {l.price === 0 && l.leasePrice === 0 && 'Price on Request'}
                                                             </div>
                                                             {(l.building || l.area || l.barangay) && (
-                                                                <div className="text-[11px] text-gray-600 font-medium">
+                                                                <div className="text-xs text-gray-600 font-medium">
                                                                     {l.building || l.area || l.barangay}
                                                                 </div>
                                                             )}

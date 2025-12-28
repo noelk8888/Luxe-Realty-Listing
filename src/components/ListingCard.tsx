@@ -135,7 +135,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         >
                             {listing.id}
                         </span>
-                        {/* Column BC: Below Listing ID */}
+                        {/* Column BC: Reverted to Below Listing ID (Gray) */}
                         {listing.columnBC && !isPopupView && (
                             <div className="mt-1 text-xs font-bold text-gray-900 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200 shadow-sm text-right">
                                 {listing.columnBC}
@@ -145,8 +145,16 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                 </div>
             </div>
 
+            {/* Removed combined BC/BD block from bottom - moved to specific locations */}
+
             <div className="mb-4 mt-2">
                 <div className="text-xl font-bold text-gray-900 flex flex-col gap-0.5">
+                    {/* Column BD: Top of Price, Light Green Theme */}
+                    {listing.columnBD && (
+                        <div className="mb-0.5 text-xs font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-200 shadow-sm w-fit">
+                            {listing.columnBD}
+                        </div>
+                    )}
                     {activeFilter === 'Lease' ? (
                         <>
                             {listing.leasePrice > 0 && (
@@ -195,12 +203,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         </>
                     )}
                 </div>
-                {/* Column BD: Below Price */}
-                {listing.columnBD && (
-                    <div className="mt-1 inline-block text-xs font-bold text-gray-900 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200 shadow-sm">
-                        {listing.columnBD}
-                    </div>
-                )}
+                {/* Column BD removed from here */}
                 {listing.displaySummary && (
                     <div className="relative">
                         <div
