@@ -32,6 +32,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
 }) => {
     const [isCopied, setIsCopied] = useState(false);
     const [isColumnKCopied, setIsColumnKCopied] = useState(false);
+    const [isColumnBDCopied, setIsColumnBDCopied] = useState(false);
 
     const [isExpanded, setIsExpanded] = useState(false);
 
@@ -58,6 +59,14 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         }
     };
 
+    const handleCopyColumnBD = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (listing.columnBD) {
+            navigator.clipboard.writeText(listing.columnBD);
+            setIsColumnBDCopied(true);
+        }
+    };
+
     useEffect(() => {
         if (isCopied) {
             const timer = setTimeout(() => setIsCopied(false), 2000);
@@ -71,6 +80,13 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             return () => clearTimeout(timer);
         }
     }, [isColumnKCopied]);
+
+    useEffect(() => {
+        if (isColumnBDCopied) {
+            const timer = setTimeout(() => setIsColumnBDCopied(false), 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [isColumnBDCopied]);
 
     return (
         <div
@@ -110,6 +126,8 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                             </span>
                         )}
                     </div>
+
+
                 </div>
                 <div className="flex items-center gap-2">
                     {listing.facebookLink && (
@@ -147,14 +165,24 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
 
             {/* Removed combined BC/BD block from bottom - moved to specific locations */}
 
-            <div className="mb-4 mt-2">
+            <div className="mb-4 mt-0.5">
                 <div className="text-xl font-bold text-gray-900 flex flex-col gap-0.5">
                     {/* Column BD: Top of Price, Light Green Theme */}
                     {listing.columnBD && (
-                        <div className="mb-0.5 text-xs font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-200 shadow-sm w-fit">
-                            {listing.columnBD}
+                        <div
+                            onClick={handleCopyColumnBD}
+                            className={`mb-0.5 text-xs font-bold px-1.5 py-0.5 rounded border shadow-sm w-fit cursor-pointer transition-colors
+                                ${isColumnBDCopied
+                                    ? 'text-green-700 bg-green-100 border-green-300'
+                                    : 'text-green-600 bg-green-50 border-green-200 hover:bg-green-100'
+                                }
+                            `}
+                            title="Click to copy"
+                        >
+                            {isColumnBDCopied ? 'COPIED!' : listing.columnBD}
                         </div>
                     )}
+
                     {activeFilter === 'Lease' ? (
                         <>
                             {listing.leasePrice > 0 && (
