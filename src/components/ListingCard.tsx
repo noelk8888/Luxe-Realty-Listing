@@ -23,7 +23,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     isDisabled = false,
     onNotesClick,
     onMapClick,
-    onShowNote,
+    // onShowNote,
     index,
     activeFilter,
     isPopupView = false,

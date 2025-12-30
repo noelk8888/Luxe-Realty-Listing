@@ -27,6 +27,7 @@ function App() {
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  const [selectedBarangay, setSelectedBarangay] = useState<string | null>(null);
 
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'price', direction: 'asc' });
 
@@ -66,7 +67,7 @@ function App() {
   // Reset page when any filter/search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [query, selectedType, selectedCategory, selectedDirect, selectedRegion, selectedProvince, selectedCity, priceRange, pricePerSqmRange, lotAreaRange, floorAreaRange, sortConfig]);
+  }, [query, selectedType, selectedCategory, selectedDirect, selectedRegion, selectedProvince, selectedCity, selectedBarangay, priceRange, pricePerSqmRange, lotAreaRange, floorAreaRange, sortConfig]);
 
   // Click-outside handler for Price Popover
   const pricePopoverRef = useRef<HTMLDivElement>(null);
@@ -302,20 +303,27 @@ function App() {
       directMatch = item.isDirect;
     }
 
-    return typeMatch && categoryMatch && regionMatch && provinceMatch && cityMatch && directMatch;
+    // 5. Barangay Filter Match Logic
+    let barangayMatch = true;
+    if (selectedBarangay) {
+      barangayMatch = (item.barangay || '').trim() === selectedBarangay;
+    }
+
+    return typeMatch && categoryMatch && regionMatch && provinceMatch && cityMatch && directMatch && barangayMatch;
   });
 
   // Effect: Reset child area filters when parent changes
-  useEffect(() => { setSelectedProvince(null); setSelectedCity(null); }, [selectedRegion]);
-  useEffect(() => { setSelectedCity(null); }, [selectedProvince]);
+  useEffect(() => { setSelectedProvince(null); setSelectedCity(null); setSelectedBarangay(null); }, [selectedRegion]);
+  useEffect(() => { setSelectedCity(null); setSelectedBarangay(null); }, [selectedProvince]);
+  useEffect(() => { setSelectedBarangay(null); }, [selectedCity]);
 
   useEffect(() => {
     // If a filter is selected but no results yet (and no query), we should populate results with allListings
     // so filtering can happen on the full set.
-    if ((selectedType || selectedCategory || selectedDirect || selectedRegion || selectedProvince || selectedCity) && results.length === 0 && !query) {
+    if ((selectedType || selectedCategory || selectedDirect || selectedRegion || selectedProvince || selectedCity || selectedBarangay) && results.length === 0 && !query) {
       setResults(allListings);
     }
-  }, [selectedType, selectedCategory, selectedDirect, selectedRegion, selectedProvince, selectedCity, results.length, query, allListings]);
+  }, [selectedType, selectedCategory, selectedDirect, selectedRegion, selectedProvince, selectedCity, selectedBarangay, results.length, query, allListings]);
 
   // Derived Min/Max from BASE results (for Slider limits)
   const availablePrices = baseFilteredResults.map(item => {
@@ -445,6 +453,14 @@ function App() {
     .filter(i => !selectedRegion || (i.region || '').trim() === selectedRegion)
     .filter(i => !selectedProvince || (i.province || '').trim() === selectedProvince)
     .map(i => (i.city || '').trim())
+    .filter(Boolean)
+  )).sort();
+
+  const availableBarangays = Array.from(new Set(typeCatFiltered
+    .filter(i => !selectedRegion || (i.region || '').trim() === selectedRegion)
+    .filter(i => !selectedProvince || (i.province || '').trim() === selectedProvince)
+    .filter(i => !selectedCity || (i.city || '').trim() === selectedCity)
+    .map(i => (i.barangay || '').trim())
     .filter(Boolean)
   )).sort();
 
@@ -755,6 +771,7 @@ function App() {
                           setSelectedRegion(null);
                           setSelectedProvince(null);
                           setSelectedCity(null);
+                          setSelectedBarangay(null);
                           setPriceRange(null);
                           setPricePerSqmRange(null);
                           setLotAreaRange(null);
@@ -1112,6 +1129,7 @@ function App() {
                   { label: 'Region', value: selectedRegion, setValue: setSelectedRegion, options: availableRegions },
                   { label: 'Province', value: selectedProvince, setValue: setSelectedProvince, options: availableProvinces },
                   { label: 'City', value: selectedCity, setValue: setSelectedCity, options: availableCities },
+                  { label: 'Barangay', value: selectedBarangay, setValue: setSelectedBarangay, options: availableBarangays },
                 ].map(({ label, value, setValue, options }) => {
                   const selectId = `filter-${label.toLowerCase()}`;
                   return (
