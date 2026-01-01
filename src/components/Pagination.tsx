@@ -13,9 +13,12 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
   const jumpRef = useRef<HTMLDivElement>(null);
 
   // Helper to change page and scroll to top
+  // Using 'auto' (instant) instead of 'smooth' for better mobile UX
+  // Smooth scroll causes jarring experience on mobile where users briefly
+  // see bottom listings before the animation completes
   const handlePageChange = (page: number) => {
     onPageChange(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'auto' });
   };
 
   useEffect(() => {
