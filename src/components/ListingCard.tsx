@@ -105,8 +105,8 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         >
             {isSponsored && (
                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-[50]">
-                    <div className="bg-gradient-to-b from-white to-gray-50 px-6 py-1 rounded-full shadow-md border border-gray-200 flex items-center justify-center min-w-[140px]">
-                        <span className="text-[11px] font-black uppercase tracking-[0.25em] text-blue-700">
+                    <div className="bg-blue-600 px-6 py-1.5 rounded-2xl shadow-md flex items-center justify-center min-w-[140px]">
+                        <span className="text-[12px] font-black uppercase tracking-[0.25em] text-white">
                             SPONSORED
                         </span>
                     </div>
