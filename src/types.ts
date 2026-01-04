@@ -42,6 +42,8 @@ export interface Listing {
     columnBC: string; // Col BC
     columnBD: string; // Col BD
     statusAQ: string; // Col AQ
+    isSponsored?: boolean;
+    sponsoredUntil?: Date | null;
 }
 
 export interface RawListing {

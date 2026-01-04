@@ -136,6 +136,24 @@ const normalizeListing = (row: string[]): Listing => {
         }
     }
 
+    // Parse Sponsored Date from Column BH (Index 59)
+    const rawSponsoredDate = row[59] || '';
+    let isSponsored = false;
+    let sponsoredUntilDate: Date | null = null;
+
+    if (rawSponsoredDate) {
+        const parsedDate = new Date(rawSponsoredDate);
+        if (!isNaN(parsedDate.getTime())) {
+            sponsoredUntilDate = parsedDate;
+            // Active if date is today or in the future
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (parsedDate >= today) {
+                isSponsored = true;
+            }
+        }
+    }
+
     return {
         id: row[28] || '', // Col AC
         summary: summaryWithV, // Full text for copy including monthly dues
@@ -180,6 +198,8 @@ const normalizeListing = (row: string[]): Listing => {
         leasePricePerSqm: parseNumber(row[47]), // Col AV
         columnBC: row[54] || '', // Col BC
         columnBD: row[55] || '', // Col BD
-        statusAQ: statusAQ // Use detected status
+        statusAQ: statusAQ, // Use detected status
+        isSponsored: isSponsored,
+        sponsoredUntil: sponsoredUntilDate
     };
 };

@@ -15,6 +15,7 @@ import { ScrollToTop } from './components/ScrollToTop';
 function App() {
 
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
   const [loading, setLoading] = useState(true);
   const [allListings, setAllListings] = useState<Listing[]>([]);
@@ -207,6 +208,15 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
+  // Debounce Effect for search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(query);
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timer);
+  }, [query]);
+
   // Initial Data Load
   useEffect(() => {
     fetchListings().then(data => {
@@ -238,33 +248,36 @@ function App() {
     window.history.replaceState({}, '', newUrl);
   }
 
+  // Effect: Re-search when debouncedQuery or relevanceScore changes
+  useEffect(() => {
+    if (debouncedQuery.trim() || hasSearched) {
+      setHasSearched(true);
+      updateUrlParams(debouncedQuery, relevanceScore);
+      let filtered = searchListings(allListings, debouncedQuery, relevanceScore);
+      setResults(filtered);
+    }
+  }, [debouncedQuery, relevanceScore, allListings]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
-
-    setHasSearched(true);
-    updateUrlParams(query, relevanceScore);
-
-    let filtered = searchListings(allListings, query, relevanceScore);
-    setResults(filtered);
+    // Debounce handles the search, this just prevents default and blurs input
   };
-
-  // Effect: Re-search when relevanceScore changes
-  useEffect(() => {
-    if (hasSearched && query.trim()) {
-      updateUrlParams(query, relevanceScore);
-      let filtered = searchListings(allListings, query, relevanceScore);
-      setResults(filtered);
-    }
-  }, [relevanceScore]); // Trigger re-search on score change
 
   // Re-run filter and sort when filters change
   const baseFilteredResults = results.filter(item => {
     // 0. ID Search Override
     // If the query looks like an ID (G+Number), we IGNORE all filters to ensure the specific item is shown.
-    const isIdSearch = query.trim().toUpperCase().match(/^G\d+/);
+    const trimmedQuery = debouncedQuery.trim().toUpperCase();
+    const isExactIdMatch = trimmedQuery === (item.id || '').toUpperCase();
+    const isAvailable = (item.statusAQ || '').toLowerCase().trim() === 'available';
 
-    if (isIdSearch) {
+    // STRICT FILTER: Only show NON-available items if it's an exact ID match
+    if (!isAvailable && !isExactIdMatch) {
+      return false;
+    }
+
+    if (isExactIdMatch) {
       return true;
     }
 
@@ -547,10 +560,43 @@ function App() {
   // For now, I will leave as is but ensure the state is correctly initialized.
 
   const totalPages = Math.ceil(displayedResults.length / ITEMS_PER_PAGE);
+
+  // Sponsored Injection Logic
+  const getSponsoredListing = (pageNum: number) => {
+    const pool = allListings.filter(l =>
+      l.isSponsored &&
+      (l.statusAQ || '').toLowerCase().trim() === 'available'
+    );
+
+    if (pool.length === 0) return null;
+
+    // Try to find matching sponsors (broad match on query or filters)
+    const matchingSponsors = pool.filter(l => {
+      const q = debouncedQuery.toLowerCase().trim();
+      if (!q) return true;
+      return (l.id || '').toLowerCase().includes(q) ||
+        (l.summary || '').toLowerCase().includes(q) ||
+        (l.city || '').toLowerCase().includes(q);
+    });
+
+    const finalPool = matchingSponsors.length > 0 ? matchingSponsors : pool;
+
+    // Stable random based on page and current date
+    const seed = pageNum + new Date().getDate();
+    return finalPool[seed % finalPool.length];
+  };
+
+  const pageSponsor = getSponsoredListing(currentPage);
+
   const paginatedResults = displayedResults.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
+
+  // Inject sponsor at index 0 if available
+  const finalResults = pageSponsor
+    ? [pageSponsor, ...paginatedResults.filter(r => r.id !== pageSponsor.id)]
+    : paginatedResults;
 
   // Relevance sort = null sortConfig (uses original array order from searchEngine)
   const handleSort = (key: 'price' | 'pricePerSqm' | 'relevance' | 'lotArea' | 'floorArea') => {
@@ -787,6 +833,7 @@ function App() {
                         type="button"
                         onClick={() => {
                           setQuery('');
+                          setDebouncedQuery('');
                           setSelectedListings([]);
                           setHasSearched(false);
                           setResults([]);
@@ -1204,7 +1251,7 @@ function App() {
             ) : (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {paginatedResults.map((listing, idx) => (
+                  {finalResults.map((listing, idx) => (
                     <ListingCard
                       key={`${listing.id}-${idx}`}
                       listing={listing}
