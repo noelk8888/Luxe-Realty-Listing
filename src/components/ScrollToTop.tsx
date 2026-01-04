@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import kiuLogo from '../assets/kiu_logo_centered.png';
+import kiuLogo from '../assets/kiu_logo_scrolled.png';
 
 export const ScrollToTop = () => {
     const [isVisible, setIsVisible] = useState(false);
@@ -33,17 +33,17 @@ export const ScrollToTop = () => {
             {isVisible && (
                 <button
                     onClick={scrollToTop}
-                    className="fixed bottom-8 right-8 z-[9999] flex flex-col items-center justify-center p-0 bg-transparent border-none outline-none group transition-transform duration-300 hover:scale-110 active:scale-95"
+                    className="fixed bottom-8 right-8 z-[9999] flex flex-col items-center justify-center p-0 bg-transparent border-none outline-none group transition-all duration-300 hover:scale-110 active:scale-95"
                     aria-label="Scroll to top"
                 >
-                    <div className="w-14 h-14 rounded-full overflow-hidden relative bg-gray-100 flex items-center justify-center shadow-2xl">
+                    <div className="w-16 h-16 rounded-full overflow-hidden relative bg-white flex items-center justify-center shadow-xl border border-gray-100 group-hover:shadow-2xl transition-shadow duration-300">
                         <img
                             src={kiuLogo}
-                            alt="Back to Top"
-                            className="w-full h-full object-contain p-0.5"
+                            alt="Kiu Realty"
+                            className="w-full h-full object-contain p-1"
                         />
                     </div>
-                    <span className="mt-1 text-[10px] font-bold text-gray-700 bg-gray-100/90 px-1.5 py-0.5 rounded-full shadow-sm backdrop-blur-sm border border-gray-200">
+                    <span className="mt-2 text-[10px] font-black uppercase tracking-widest text-gray-800 bg-white/95 px-2.5 py-1 rounded-lg shadow-md backdrop-blur-sm border border-gray-100 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         Back to Top
                     </span>
                 </button>

@@ -29,7 +29,7 @@ function App() {
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [selectedBarangay, setSelectedBarangay] = useState<string | null>(null);
 
-  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'price', direction: 'asc' });
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
 
   // Price Range State
   const [isPriceFilterOpen, setIsPriceFilterOpen] = useState(false);
@@ -89,42 +89,53 @@ function App() {
   const floorAreaButtonRef = useRef<HTMLButtonElement>(null);
   const [popoverPositionFloor, setPopoverPositionFloor] = useState({ top: 0, left: 0 });
 
+  const sortButtonsContainerRef = useRef<HTMLDivElement>(null);
+
+  const calculateCenteredLeft = (containerRect: DOMRect, popoverWidth: number = 288) => {
+    // 288 is the pixel width for w-72
+    return containerRect.left + (containerRect.width / 2) - (popoverWidth / 2);
+  };
+
   useEffect(() => {
-    if (isPriceFilterOpen && priceButtonRef.current) {
+    if (isPriceFilterOpen && priceButtonRef.current && sortButtonsContainerRef.current) {
       const rect = priceButtonRef.current.getBoundingClientRect();
+      const containerRect = sortButtonsContainerRef.current.getBoundingClientRect();
       setPopoverPosition({
         top: rect.bottom + 8,
-        left: rect.left
+        left: calculateCenteredLeft(containerRect)
       });
     }
   }, [isPriceFilterOpen, sortConfig]);
 
   useEffect(() => {
-    if (isPricePerSqmFilterOpen && pricePerSqmButtonRef.current) {
+    if (isPricePerSqmFilterOpen && pricePerSqmButtonRef.current && sortButtonsContainerRef.current) {
       const rect = pricePerSqmButtonRef.current.getBoundingClientRect();
+      const containerRect = sortButtonsContainerRef.current.getBoundingClientRect();
       setPopoverPositionPerSqm({
         top: rect.bottom + 8,
-        left: rect.left
+        left: calculateCenteredLeft(containerRect)
       });
     }
   }, [isPricePerSqmFilterOpen, sortConfig]);
 
   useEffect(() => {
-    if (isLotAreaFilterOpen && lotAreaButtonRef.current) {
+    if (isLotAreaFilterOpen && lotAreaButtonRef.current && sortButtonsContainerRef.current) {
       const rect = lotAreaButtonRef.current.getBoundingClientRect();
+      const containerRect = sortButtonsContainerRef.current.getBoundingClientRect();
       setPopoverPositionLot({
         top: rect.bottom + 8,
-        left: rect.left
+        left: calculateCenteredLeft(containerRect)
       });
     }
   }, [isLotAreaFilterOpen, sortConfig]);
 
   useEffect(() => {
-    if (isFloorAreaFilterOpen && floorAreaButtonRef.current) {
+    if (isFloorAreaFilterOpen && floorAreaButtonRef.current && sortButtonsContainerRef.current) {
       const rect = floorAreaButtonRef.current.getBoundingClientRect();
+      const containerRect = sortButtonsContainerRef.current.getBoundingClientRect();
       setPopoverPositionFloor({
         top: rect.bottom + 8,
-        left: rect.left
+        left: calculateCenteredLeft(containerRect)
       });
     }
   }, [isFloorAreaFilterOpen, sortConfig]);
@@ -494,7 +505,12 @@ function App() {
     }
     return true;
   }).sort((a, b) => {
-    if (!sortConfig) return 0;
+    if (!sortConfig) {
+      // DEFAULT SORT: Prioritize listings with Facebook links
+      if (a.facebookLink && !b.facebookLink) return -1;
+      if (!a.facebookLink && b.facebookLink) return 1;
+      return 0;
+    }
 
     let comparison = 0;
     if (sortConfig.key === 'price') {
@@ -785,7 +801,7 @@ function App() {
                           setPricePerSqmRange(null);
                           setLotAreaRange(null);
                           setFloorAreaRange(null);
-                          setSortConfig({ key: 'price', direction: 'asc' });
+                          setSortConfig(null);
                           setRelevanceScore(100);
                           window.history.replaceState({}, '', window.location.pathname);
                         }}
@@ -827,7 +843,7 @@ function App() {
 
                 {/* Sort Buttons */}
                 {/* Sort Buttons */}
-                <div className="flex w-full bg-gray-100 p-0.5 rounded-lg shadow-inner relative z-0 flex-wrap sm:flex-nowrap justify-between">
+                <div ref={sortButtonsContainerRef} className="flex w-full bg-gray-100 p-0.5 rounded-lg shadow-inner relative z-0 flex-wrap sm:flex-nowrap justify-between">
                   <div className="relative flex-1">
                     <button
                       ref={priceButtonRef}
