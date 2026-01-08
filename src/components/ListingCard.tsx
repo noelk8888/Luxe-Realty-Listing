@@ -161,10 +161,14 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         <span
                             onClick={(e) => {
                                 e.stopPropagation();
-                                if (onMapClick) onMapClick(listing);
+                                if (isPopupView && onBack) {
+                                    onBack();
+                                } else if (onMapClick) {
+                                    onMapClick(listing);
+                                }
                             }}
-                            className="text-2xl font-black text-black font-sans cursor-pointer hover:text-blue-600 hover:underline transition-colors tracking-tighter"
-                            title="View on Map"
+                            className={`text-2xl font-black text-black font-sans cursor-pointer hover:text-blue-600 hover:underline transition-colors tracking-tighter ${isPopupView ? 'underline' : ''}`}
+                            title={isPopupView ? "Back" : "View on Map"}
                         >
                             {listing.id}
                         </span>

@@ -67,13 +67,15 @@ interface MapModalProps {
     centerListing: Listing | null;
     allListings: Listing[];
     filteredListingsIds: Set<string>;
+    onNotesClick?: (id: string) => void;
+    onShowNote?: (note: string, id: string) => void;
 }
 
 
 
 
 
-export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListing, allListings, filteredListingsIds: _filteredListingsIds }) => {
+export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListing, allListings, filteredListingsIds: _filteredListingsIds, onNotesClick, onShowNote }) => {
     const [focusedListing, setFocusedListing] = useState<Listing | null>(null);
     const [groupedViewListings, setGroupedViewListings] = useState<Listing[] | null>(null);
 
@@ -81,6 +83,14 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
     const [showSimilar, setShowSimilar] = useState(true);
     const [similarRadius, setSimilarRadius] = useState<2 | 5>(2);
     const [showNearby, setShowNearby] = useState(true);
+
+    // Wrapper to close modal when notes button is clicked
+    const handleNotesClick = (id: string) => {
+        if (onNotesClick) {
+            onNotesClick(id);
+            onClose(); // Close the map modal
+        }
+    };
 
     if (!isOpen || !centerListing || !centerListing.lat || !centerListing.lng) return null;
 
@@ -232,7 +242,13 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
                 <div className="p-3 border-b border-gray-50 flex justify-between items-center bg-white z-[1001] relative">
                     <div>
                         <h3 className="text-base font-bold text-gray-900">
-                            {`Location: ${centerListing.id}`}
+                            Location: <span
+                                onClick={() => setGroupedViewListings(null)}
+                                className="cursor-pointer hover:text-blue-600 transition-colors underline"
+                                title="Click to return to map"
+                            >
+                                {centerListing.id}
+                            </span>
                         </h3>
                         <p className="text-xs text-gray-500">
                             {neighbors.length} neighbors found within 2km
@@ -441,6 +457,8 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
                                                 isPopupView={true}
                                                 onBack={() => setGroupedViewListings(null)}
                                                 backButtonVariant={variant}
+                                                onNotesClick={handleNotesClick}
+                                                onShowNote={onShowNote}
                                             />
                                         </div>
                                     );
@@ -474,6 +492,8 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
                                     // Single focused view - usually coming from popup click so variant isn't driven by group logic here
                                     // But we can default to blue or match the listing status
                                     backButtonVariant={focusedListing.id === centerListing.id ? 'red' : (similarListingIds.has(focusedListing.id) ? 'blue' : 'gray')}
+                                    onNotesClick={handleNotesClick}
+                                    onShowNote={onShowNote}
                                 />
                             </div>
                         </div>

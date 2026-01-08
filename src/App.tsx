@@ -836,7 +836,7 @@ function App() {
 
           </div>
 
-          <div className="flex flex-col-reverse xl:flex-row items-start justify-center gap-8 xl:gap-16 w-full max-w-[90rem] mx-auto px-4 mb-8">
+          <div className="flex flex-col xl:flex-row items-start justify-center gap-8 xl:gap-16 w-full max-w-[90rem] mx-auto px-4 mb-8">
 
             {/* Left Column: Search & Sort Controls (Increased Width) */}
             {/* Left Column: Search & Sort Controls (Increased Width) */}
@@ -1343,6 +1343,8 @@ function App() {
         centerListing={mapCenterListing}
         allListings={allListings}
         filteredListingsIds={new Set(displayedResults.map(l => l.id))}
+        onNotesClick={handleSendForm}
+        onShowNote={handleShowNote}
       />
 
       <NoteModal
