@@ -63,7 +63,7 @@ function App() {
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 14;
+  const ITEMS_PER_PAGE = 15;
 
   // Reset page when any filter/search changes
   useEffect(() => {
@@ -600,47 +600,13 @@ function App() {
 
   const totalPages = Math.ceil(displayedResults.length / ITEMS_PER_PAGE);
 
-  // Sponsored Injection Logic (BROAD: city > region > random)
-  const getSponsoredListing = (pageNum: number) => {
-    // Sponsored listings: Only filter by availability (must be available), not by search query
-    const pool = allListings.filter(l => {
-      if (!l.isSponsored) return false;
-      // Sponsored listings MUST always be Available
-      return (l.statusAQ || '').toLowerCase().trim() === 'available';
-    });
-
-    if (pool.length === 0) return null;
-
-    // Priority matching by location (city > region > random)
-    const resultCities = new Set(displayedResults.slice(0, 20).map(l => (l.city || '').toLowerCase().trim()).filter(c => c));
-    const resultRegions = new Set(displayedResults.slice(0, 20).map(l => (l.region || '').toLowerCase().trim()).filter(r => r));
-
-    const cityMatches = pool.filter(l => resultCities.has((l.city || '').toLowerCase().trim()));
-    const regionMatches = pool.filter(l => resultRegions.has((l.region || '').toLowerCase().trim()));
-
-    let finalPool = pool;
-    if (cityMatches.length > 0) {
-      finalPool = cityMatches;
-    } else if (regionMatches.length > 0) {
-      finalPool = regionMatches;
-    }
-
-    // Stable random based on page and current date
-    const seed = pageNum + new Date().getDate();
-    return finalPool[seed % finalPool.length];
-  };
-
-  const pageSponsor = getSponsoredListing(currentPage);
-
+  // Pagination only - no sponsored injection
   const paginatedResults = displayedResults.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
 
-  // Inject sponsor at index 0 if available
-  const finalResults = pageSponsor
-    ? [pageSponsor, ...paginatedResults.filter(r => r.id !== pageSponsor.id)]
-    : paginatedResults;
+  const finalResults = paginatedResults;
 
   // Relevance sort = null sortConfig (uses original array order from searchEngine)
   const handleSort = (key: 'price' | 'pricePerSqm' | 'relevance' | 'lotArea' | 'floorArea') => {
@@ -729,16 +695,50 @@ function App() {
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans selection:bg-blue-100">
       <ScrollToTop />
 
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 w-full py-4 bg-white border-b border-gray-100 flex items-center justify-center px-4 z-50">
+        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
+          <div className="flex items-center gap-2">
+            <img src="/footer-logo.png" alt="Kiu Realty Logo" className="h-8 w-auto" />
+            <span className="font-bold text-gray-900 text-xl tracking-tight">KiuRealtyPH</span>
+          </div>
+
+          <div className="hidden sm:block w-px h-6 bg-gray-200"></div>
+
+          <div className="flex items-center gap-3">
+            <a href="https://www.messenger.com/t/kiurealtyph" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-600 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.03 2 11c0 2.87 1.43 5.39 3.75 7.03v3.74c0 .8.88 1.28 1.59.87l2.48-1.24c.71.13 1.45.2 2.18.2 5.52 0 10-4.03 10-9S17.52 2 12 2zm1 14.24-2.5-2.73-4.86 2.73 5.35-5.68 2.5 2.73 4.86-2.73-5.35 5.68z" />
+              </svg>
+            </a>
+            <a href="https://www.facebook.com/kiurealtyph/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-[#1877F2] transition-colors">
+              <Facebook className="w-5 h-5" />
+            </a>
+            <a href="https://www.instagram.com/kiurealtyph/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-[#E4405F] transition-colors">
+              <Instagram className="w-5 h-5" />
+            </a>
+            <a href="https://www.tiktok.com/@kiurealtyph" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-black transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
+              </svg>
+            </a>
+            <a href="https://www.youtube.com/@KiuRealtyPH" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-[#FF0000] transition-colors">
+              <Youtube className="w-5 h-5" />
+            </a>
+          </div>
+        </div>
+      </header>
+
       {/* Hero / Search Section */}
-      <div className={`flex flex-col items-center justify-center transition-all duration-500 ease-out px-4 ${(hasSearched || selectedType || selectedCategory) ? 'py-12 min-h-[30vh]' : 'min-h-[100vh]'
+      <div className={`flex flex-col items-center justify-center transition-all duration-500 ease-out px-4 pt-20 ${(hasSearched || selectedType || selectedCategory) ? 'py-12 min-h-[30vh]' : 'min-h-[100vh]'
         }`}>
         <div className={`w-full max-w-2xl text-center space-y-6 transition-all duration-500 ${(hasSearched || selectedType || selectedCategory) ? 'translate-y-0' : '-translate-y-8'
           }`}>
 
           <p className={`font-bold text-gray-900 tracking-tight transition-all duration-500 ${(hasSearched || selectedType || selectedCategory) ? 'text-2xl mb-4' : 'text-4xl sm:text-5xl mb-8'}`}>
             {(selectedType || selectedCategory || hasSearched)
-              ? `Found ${displayedResults.length} of ${allListings.length} Available Listings`
-              : allListings.length > 0 ? `${allListings.length} Available Listings` : 'Loading properties...'
+              ? `Found ${displayedResults.length.toLocaleString()} of ${allListings.length.toLocaleString()} Available Listings`
+              : allListings.length > 0 ? `${allListings.length.toLocaleString()} Available Listings` : 'Loading properties...'
             }
           </p>
 
@@ -836,7 +836,7 @@ function App() {
 
           </div>
 
-          <div className="flex flex-col xl:flex-row items-start justify-center gap-8 xl:gap-16 w-full max-w-[90rem] mx-auto px-4 mb-8">
+          <div className="flex flex-col-reverse xl:flex-row items-start justify-center gap-8 xl:gap-16 w-full max-w-[90rem] mx-auto px-4 mb-8">
 
             {/* Left Column: Search & Sort Controls (Increased Width) */}
             {/* Left Column: Search & Sort Controls (Increased Width) */}
@@ -1351,40 +1351,6 @@ function App() {
         content={noteModalData.content}
         title={noteModalData.title}
       />
-
-      {/* Footer */}
-      <footer className="w-full py-8 mt-12 bg-white border-t border-gray-100 flex items-center justify-center px-4">
-        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
-          <div className="flex items-center gap-2">
-            <img src="/footer-logo.png" alt="Kiu Realty Logo" className="h-8 w-auto" />
-            <span className="font-bold text-gray-900 text-xl tracking-tight">KiuRealtyPH</span>
-          </div>
-
-          <div className="hidden sm:block w-px h-6 bg-gray-200"></div>
-
-          <div className="flex items-center gap-6">
-            <a href="https://www.messenger.com/t/kiurealtyph" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-600 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C6.48 2 2 6.03 2 11c0 2.87 1.43 5.39 3.75 7.03v3.74c0 .8.88 1.28 1.59.87l2.48-1.24c.71.13 1.45.2 2.18.2 5.52 0 10-4.03 10-9S17.52 2 12 2zm1 14.24-2.5-2.73-4.86 2.73 5.35-5.68 2.5 2.73 4.86-2.73-5.35 5.68z" />
-              </svg>
-            </a>
-            <a href="https://www.facebook.com/kiurealtyph/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-[#1877F2] transition-colors">
-              <Facebook className="w-5 h-5" />
-            </a>
-            <a href="https://www.instagram.com/kiurealtyph/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-[#E4405F] transition-colors">
-              <Instagram className="w-5 h-5" />
-            </a>
-            <a href="https://www.tiktok.com/@kiurealtyph" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-black transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
-              </svg>
-            </a>
-            <a href="https://www.youtube.com/@KiuRealtyPH" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-[#FF0000] transition-colors">
-              <Youtube className="w-5 h-5" />
-            </a>
-          </div>
-        </div>
-      </footer>
     </div >
   );
 }

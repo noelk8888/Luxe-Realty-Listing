@@ -90,12 +90,11 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
 
     const isNotAvailable = listing.statusAQ && listing.statusAQ.toLowerCase().trim() !== 'available';
     // Removed red outline per user request: "UPDATE - no red outline on all NOT AVAILABLE situations"
-    const isSponsored = listing.isSponsored;
 
     return (
         <div
             className={`rounded-xl shadow-sm border p-5 hover:shadow-md transition-all relative group
-                ${isNotAvailable ? 'border-t-4 border-red-600' : isSponsored ? 'border-t-4 border-blue-600' : ''}
+                ${isNotAvailable ? 'border-t-4 border-red-600' : ''}
                 ${isSelected
                     ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500' // Selected State
                     : isNotAvailable
@@ -110,15 +109,6 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                     <div className="bg-red-600 px-6 py-1.5 rounded-2xl shadow-md flex items-center justify-center min-w-[160px]">
                         <span className="text-[12px] font-black uppercase tracking-[0.25em] text-white">
                             {listing.statusAQ}
-                        </span>
-                    </div>
-                </div>
-            )}
-            {isSponsored && !isNotAvailable && (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-[50]">
-                    <div className="bg-blue-600 px-6 py-1.5 rounded-2xl shadow-md flex items-center justify-center min-w-[140px]">
-                        <span className="text-[12px] font-black uppercase tracking-[0.25em] text-white">
-                            SPONSORED
                         </span>
                     </div>
                 </div>
