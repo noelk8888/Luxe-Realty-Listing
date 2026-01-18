@@ -202,8 +202,23 @@ function App() {
 
       // DISMISS ON MOUSE LEAVE (with delay to allow slider dragging)
       let dismissTimeout: NodeJS.Timeout | null = null;
+      // AUTO-CLOSE AFTER 4 SECONDS OF INACTIVITY
+      let inactivityTimeout: NodeJS.Timeout | null = null;
+
+      const resetInactivityTimer = () => {
+        if (inactivityTimeout) clearTimeout(inactivityTimeout);
+        inactivityTimeout = setTimeout(() => {
+          handleScroll(); // Closes everything after 4 seconds of inactivity
+        }, 4000);
+      };
+
+      // Start the inactivity timer when popup opens
+      resetInactivityTimer();
 
       const handleMouseMove = (e: MouseEvent) => {
+        // Reset inactivity timer on any mouse movement
+        resetInactivityTimer();
+
         // Ignore if mouse button is pressed (user is dragging a slider)
         if (e.buttons !== 0) {
           if (dismissTimeout) clearTimeout(dismissTimeout);
@@ -243,6 +258,7 @@ function App() {
       return () => {
         window.removeEventListener('mousemove', handleMouseMove);
         if (dismissTimeout) clearTimeout(dismissTimeout);
+        if (inactivityTimeout) clearTimeout(inactivityTimeout);
       };
     }
   }, [isPriceFilterOpen, isPricePerSqmFilterOpen, isLotAreaFilterOpen, isFloorAreaFilterOpen, isBedroomsFilterOpen, isParkingFilterOpen, isTypeFilterOpen, sortConfig]);
@@ -564,12 +580,13 @@ function App() {
   const displayedResults = baseFilteredResults.filter(item => {
     // Filter by Price Range
     if (useExactPrice && manualPrice) {
+      const priceVal = parseFloat(manualPrice.replace(/,/g, ''));
       const getPrice = (l: Listing) => {
         if (selectedType === 'FOR LEASE') return l.leasePrice;
         if (selectedType === 'FOR SALE') return l.price;
         return l.price > 0 ? l.price : l.leasePrice;
       };
-      if (getPrice(item) !== parseFloat(manualPrice)) return false;
+      if (getPrice(item) !== priceVal) return false;
     } else if (priceRange) {
       const priceToCompare = (selectedType === 'Lease' || selectedType === 'FOR LEASE') ? item.leasePrice : item.price;
       if (priceToCompare < priceRange[0] || priceToCompare > priceRange[1]) return false;
@@ -578,8 +595,9 @@ function App() {
 
     // Filter by Price/Sqm Range
     if (useExactPricePerSqm && manualPricePerSqm) {
+      const ppsVal = parseFloat(manualPricePerSqm.replace(/,/g, ''));
       const getPps = (l: Listing) => (selectedType === 'Lease' || selectedType === 'FOR LEASE') ? l.leasePricePerSqm : l.pricePerSqm;
-      if (getPps(item) !== parseFloat(manualPricePerSqm)) return false;
+      if (getPps(item) !== ppsVal) return false;
     } else if (pricePerSqmRange) {
       const sqmToCompare = (selectedType === 'Lease' || selectedType === 'FOR LEASE') ? item.leasePricePerSqm : item.pricePerSqm;
       if (sqmToCompare < pricePerSqmRange[0] || sqmToCompare > pricePerSqmRange[1]) return false;
@@ -587,14 +605,16 @@ function App() {
 
     // Filter by Lot Area Range
     if (useExactLotArea && manualLotArea) {
-      if (item.lotArea !== parseFloat(manualLotArea)) return false;
+      const lotVal = parseFloat(manualLotArea.replace(/,/g, ''));
+      if (item.lotArea !== lotVal) return false;
     } else if (lotAreaRange) {
       if (item.lotArea < lotAreaRange[0] || item.lotArea > lotAreaRange[1]) return false;
     }
 
     // Filter by Floor Area Range
     if (useExactFloorArea && manualFloorArea) {
-      if (item.floorArea !== parseFloat(manualFloorArea)) return false;
+      const floorVal = parseFloat(manualFloorArea.replace(/,/g, ''));
+      if (item.floorArea !== floorVal) return false;
     } else if (floorAreaRange) {
       if (item.floorArea < floorAreaRange[0] || item.floorArea > floorAreaRange[1]) return false;
     }
@@ -1022,7 +1042,7 @@ function App() {
                   className="w-12 h-4 bg-gray-200 rounded-full relative cursor-pointer"
                   onClick={() => setShowAllListings(!showAllListings)}
                 >
-                  <div className={`absolute top-1/2 -translate-y-1/2 w-6 h-6 rounded-full shadow-md transition-all duration-300 ${!showAllListings ? 'left-0 bg-blue-600' : 'left-[calc(100%-1.5rem)] bg-gray-400'}`} />
+                  <div className={`absolute top-1/2 -translate-y-1/2 w-6 h-6 rounded-full shadow-md transition-all duration-300 ${!showAllListings ? 'left-0 bg-blue-600' : 'left-[calc(100%-1.5rem)] bg-blue-600'}`} />
                 </div>
                 <span className={`text-xs font-bold ${showAllListings ? 'text-blue-600' : 'text-gray-400'}`}>SHOW ALL</span>
               </div>
@@ -1040,7 +1060,7 @@ function App() {
                       setIsPriceFilterOpen(!isPriceFilterOpen);
                     }}
                     className={`relative w-full px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1
-                            ${sortConfig?.key === 'price'
+                            ${(sortConfig?.key === 'price' || priceRange !== null || (useExactPrice && manualPrice !== ''))
                         ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
                         : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
                       }
@@ -1082,9 +1102,34 @@ function App() {
                       {useExactPrice ? (
                         <div className="mb-2 px-1">
                           <input
-                            type="number"
+                            type="text"
+                            inputMode="decimal"
                             value={manualPrice}
-                            onChange={(e) => setManualPrice(e.target.value)}
+                            onChange={(e) => {
+                              // Allow digits and one dot
+                              const val = e.target.value.replace(/[^0-9.]/g, '');
+                              // Handle trailing dot or multiple dots if basic logic needed, 
+                              // but simplest robust way for "comma separation" is:
+                              // Remove all non-digits first for safety if re-formatting entire string
+                              // But easier: use standard number format logic
+                              if (val === '') {
+                                setManualPrice('');
+                                return;
+                              }
+                              // Basic parse check
+                              const parts = val.split('.');
+                              const numStr = parts[0].replace(/,/g, '');
+                              if (!/^\d*$/.test(numStr)) return;
+
+                              const num = parseInt(numStr, 10);
+                              if (isNaN(num)) return;
+
+                              let formatted = num.toLocaleString();
+                              if (parts.length > 1) {
+                                formatted += '.' + parts[1];
+                              }
+                              setManualPrice(formatted);
+                            }}
                             placeholder="Enter exact price..."
                             className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                             autoFocus
@@ -1142,7 +1187,7 @@ function App() {
                       setIsPricePerSqmFilterOpen(!isPricePerSqmFilterOpen);
                     }}
                     className={`relative w-full px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1
-                        ${sortConfig?.key === 'pricePerSqm'
+                        ${(sortConfig?.key === 'pricePerSqm' || pricePerSqmRange !== null || (useExactPricePerSqm && manualPricePerSqm !== ''))
                         ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
                         : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
                       }
@@ -1184,9 +1229,28 @@ function App() {
                       {useExactPricePerSqm ? (
                         <div className="mb-2 px-1">
                           <input
-                            type="number"
+                            type="text"
+                            inputMode="decimal"
                             value={manualPricePerSqm}
-                            onChange={(e) => setManualPricePerSqm(e.target.value)}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/[^0-9.]/g, '');
+                              if (val === '') {
+                                setManualPricePerSqm('');
+                                return;
+                              }
+                              const parts = val.split('.');
+                              const numStr = parts[0].replace(/,/g, '');
+                              if (!/^\d*$/.test(numStr)) return;
+
+                              const num = parseInt(numStr, 10);
+                              if (isNaN(num)) return;
+
+                              let formatted = num.toLocaleString();
+                              if (parts.length > 1) {
+                                formatted += '.' + parts[1];
+                              }
+                              setManualPricePerSqm(formatted);
+                            }}
                             placeholder="Enter exact price per sqm..."
                             className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                             autoFocus
@@ -1244,7 +1308,7 @@ function App() {
                       setIsLotAreaFilterOpen(!isLotAreaFilterOpen);
                     }}
                     className={`relative w-full px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1
-                        ${sortConfig?.key === 'lotArea'
+                        ${(sortConfig?.key === 'lotArea' || lotAreaRange !== null || (useExactLotArea && manualLotArea !== ''))
                         ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
                         : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
                       }
@@ -1286,9 +1350,28 @@ function App() {
                       {useExactLotArea ? (
                         <div className="mb-2 px-1">
                           <input
-                            type="number"
+                            type="text"
+                            inputMode="decimal"
                             value={manualLotArea}
-                            onChange={(e) => setManualLotArea(e.target.value)}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/[^0-9.]/g, '');
+                              if (val === '') {
+                                setManualLotArea('');
+                                return;
+                              }
+                              const parts = val.split('.');
+                              const numStr = parts[0].replace(/,/g, '');
+                              if (!/^\d*$/.test(numStr)) return;
+
+                              const num = parseInt(numStr, 10);
+                              if (isNaN(num)) return;
+
+                              let formatted = num.toLocaleString();
+                              if (parts.length > 1) {
+                                formatted += '.' + parts[1];
+                              }
+                              setManualLotArea(formatted);
+                            }}
                             placeholder="Enter exact lot area..."
                             className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                             autoFocus
@@ -1338,7 +1421,7 @@ function App() {
                       setIsFloorAreaFilterOpen(!isFloorAreaFilterOpen);
                     }}
                     className={`relative w-full px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1
-                        ${sortConfig?.key === 'floorArea'
+                        ${(sortConfig?.key === 'floorArea' || floorAreaRange !== null || (useExactFloorArea && manualFloorArea !== ''))
                         ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
                         : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
                       }
@@ -1380,9 +1463,28 @@ function App() {
                       {useExactFloorArea ? (
                         <div className="mb-2 px-1">
                           <input
-                            type="number"
+                            type="text"
+                            inputMode="decimal"
                             value={manualFloorArea}
-                            onChange={(e) => setManualFloorArea(e.target.value)}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/[^0-9.]/g, '');
+                              if (val === '') {
+                                setManualFloorArea('');
+                                return;
+                              }
+                              const parts = val.split('.');
+                              const numStr = parts[0].replace(/,/g, '');
+                              if (!/^\d*$/.test(numStr)) return;
+
+                              const num = parseInt(numStr, 10);
+                              if (isNaN(num)) return;
+
+                              let formatted = num.toLocaleString();
+                              if (parts.length > 1) {
+                                formatted += '.' + parts[1];
+                              }
+                              setManualFloorArea(formatted);
+                            }}
                             placeholder="Enter exact floor area..."
                             className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                             autoFocus
