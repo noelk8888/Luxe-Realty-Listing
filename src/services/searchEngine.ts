@@ -83,7 +83,7 @@ export const searchListings = (listings: Listing[], query: string, minScore: num
             listing.columnBD
         ].join(' . ').toLowerCase();
 
-        const listingText = primaryText + ' . ' + secondaryText;
+        const listingText = primaryText + ' . ' + secondaryText + ' . ' + (listing.statusAQ || '');
 
         // A. Exact Phrase Match (The "Holy Grail")
         // Checks if the full user query appears inside the text

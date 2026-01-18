@@ -23,6 +23,7 @@ function App() {
   const [selectedType, setSelectedType] = useState<string | null>(null); // Default null (No filter)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null); // 'Residential' | 'Commercial' | 'Industrial' | 'Agricultural' | null
   const [selectedDirect, setSelectedDirect] = useState<boolean>(false);
+  const [showAllListings, setShowAllListings] = useState<boolean>(false);
 
   // Area Filter State
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
@@ -77,9 +78,9 @@ function App() {
       setUseExactFloorArea(false);
       setManualFloorArea('');
       setSelectedDirect(false);
-      setSelectedBedrooms(['ALL']);
-      setSelectedParking(['ALL OPTIONS']);
-      setSelectedPropertyTypes(['ALL']);
+      setSelectedBedrooms([]);
+      setSelectedParking([]);
+      setSelectedPropertyTypes([]);
     }
   }, [query]);
 
@@ -298,7 +299,7 @@ function App() {
     };
   }, [isPriceFilterOpen, isPricePerSqmFilterOpen, isLotAreaFilterOpen, isFloorAreaFilterOpen, isBedroomsFilterOpen, isParkingFilterOpen, isTypeFilterOpen]);
   // Availability Toggle: Show only available listings or show all
-  const [showOnlyAvailable, setShowOnlyAvailable] = useState<boolean>(true); // Default to AVAILABLE only
+  // const [showOnlyAvailable, setShowOnlyAvailable] = useState<boolean>(true); // REMOVED
   const [selectedListings, setSelectedListings] = useState<string[]>([]);
   const [showFormModal, setShowFormModal] = useState(false);
 
@@ -337,6 +338,8 @@ function App() {
   useEffect(() => {
     fetchListings().then(data => {
       setAllListings(data);
+      // Initialize results with all data so "Show All" works immediately
+      setResults(data);
       setLoading(false);
     });
   }, []);
@@ -380,16 +383,21 @@ function App() {
 
   // Re-run filter and sort when filters change
   const baseFilteredResults = results.filter(item => {
+    // 0. Base Filter (Show All)
+    // console.log(`Filtering item: ${item.id}, status: ${item.statusAQ}, showAll: ${showAllListings}`);
+    // If showAllListings is false, hide SOLD/LEASED OUT items
+    if (!showAllListings) {
+      const status = (item.statusAQ || '').toUpperCase().trim();
+      if (status === 'SOLD' || status === 'LEASED OUT') {
+        return false;
+      }
+    }
+
     // 0. ID Search Override
     // If the query is an exact ID match, we show it regardless of other filters.
     const trimmedQuery = debouncedQuery.trim().toUpperCase();
     const isExactIdMatch = trimmedQuery === (item.id || '').toUpperCase();
-    const isAvailable = (item.statusAQ || '').toLowerCase().trim() === 'available';
 
-    // AVAILABILITY FILTER: If showOnlyAvailable is true, hide non-available items (unless exact ID match)
-    if (showOnlyAvailable && !isAvailable && !isExactIdMatch) {
-      return false;
-    }
 
     if (isExactIdMatch) {
       return true;
@@ -675,8 +683,6 @@ function App() {
   // With sortConfig initialized to { key: 'price', direction: 'asc' }, it should work.
   // Let's verify that 'price' exists and is non-zero for reliable sorting.
   // Currently, 0 prices might be floating to top or bottom depending on check.
-  // Code above: comparison = priceA - priceB. 
-  // If price is 0 (Price on Request), it will be at the top for ASC sort.
   // We might want to push 0s to the bottom? 
   // For now, I will leave as is but ensure the state is correctly initialized.
 
@@ -923,698 +929,686 @@ function App() {
 
           </div>
 
+
+
           <div className="flex flex-col xl:flex-row items-start justify-center gap-8 xl:gap-16 w-full max-w-[90rem] mx-auto px-4 mb-8">
 
             {/* Left Column: Search & Sort Controls (Increased Width) */}
             {/* Left Column: Search & Sort Controls (Increased Width) */}
             <div className="flex-grow w-full xl:w-[62.5%] flex flex-col gap-2.5 min-w-0">
 
-              {/* Search Bar */}
-              <form onSubmit={handleSearch} className="relative w-full group">
-                <div className="relative transform transition-all duration-300 hover:scale-[1.01]">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
-                    <div className="bg-blue-600 rounded-full p-2 shadow-md">
-                      <Search className="h-5 w-5 text-white" />
+              {/* Search Bar & Show All Toggle Container */}
+              <div className="flex flex-row items-center gap-3 w-full">
+                {/* Search Bar (Flex-1 to take available space) */}
+                <form onSubmit={handleSearch} className="relative flex-1 group">
+                  <div className="relative transform transition-all duration-300 hover:scale-[1.01]">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
+                      <div className="bg-blue-600 rounded-full p-2 shadow-md">
+                        <Search className="h-5 w-5 text-white" />
+                      </div>
                     </div>
+                    <input
+                      type="text"
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleSearch(e);
+                          e.currentTarget.blur();
+                        }
+                      }}
+                      enterKeyHint="search"
+                      placeholder={placeholderText}
+                      className={`w-full bg-white border-2 transition-all duration-300 rounded-2xl outline-none text-lg font-medium
+                            ${hasSearched
+                          ? 'py-3 pl-14 pr-20 border-gray-200 focus:border-blue-500 shadow-sm'
+                          : 'py-4 pl-14 pr-20 border-transparent shadow-xl hover:shadow-2xl focus:ring-4 focus:ring-blue-100'
+                        }
+                        `}
+                    />
+                    {/* RESET Button inside Search Bar */}
+                    {(hasSearched || selectedType || selectedCategory || selectedRegion || selectedProvince || selectedCity) && (
+                      <div className="absolute inset-y-0 right-4 flex items-center">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setQuery('');
+                            setDebouncedQuery('');
+                            setSelectedListings([]);
+                            setHasSearched(false);
+                            setResults(allListings); // Reset to all listings
+                            setSelectedType(null);
+                            setSelectedCategory(null);
+                            setSelectedDirect(false);
+                            setSelectedRegion(null);
+                            setSelectedProvince(null);
+                            setSelectedCity(null);
+                            setSelectedBarangay(null);
+                            setPriceRange(null);
+                            setPricePerSqmRange(null);
+                            setLotAreaRange(null);
+                            setFloorAreaRange(null);
+                            setSelectedBedrooms([]);
+                            setSelectedParking([]);
+                            setSelectedPropertyTypes([]);
+                            setSortConfig(null);
+                            setShowAllListings(false); // Reset to Available only
+                            window.history.replaceState({}, '', window.location.pathname);
+                          }}
+                          className="text-sm font-bold text-red-500 hover:text-red-700 underline tracking-wide bg-white pl-2"
+                        >
+                          RESET
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  <input
-                    type="text"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleSearch(e);
-                        e.currentTarget.blur();
+                </form>
+
+                {/* Show All Toggle (Radio Button Style) */}
+                <div
+                  className="flex items-center gap-2 bg-white px-4 py-3 rounded-2xl border border-gray-100 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer h-[calc(100%-4px)]"
+                  onClick={() => setShowAllListings(!showAllListings)}
+                >
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors duration-200 ${showAllListings ? 'border-blue-600 bg-white' : 'border-gray-300 bg-gray-50'}`}>
+                    {showAllListings && <div className="w-3 h-3 bg-blue-600 rounded-full" />}
+                  </div>
+                  <span className={`text-xs sm:text-sm font-bold uppercase tracking-wide whitespace-nowrap select-none ${showAllListings ? 'text-blue-600' : 'text-gray-400'}`}>SHOW ALL</span>
+                </div>
+              </div>
+
+              {/* Sort Buttons */}
+              {/* Sort Buttons */}
+              <div ref={sortButtonsContainerRef} className="flex w-full bg-gray-100 p-0.5 rounded-lg shadow-inner relative z-0 flex-wrap sm:flex-nowrap justify-between">
+                <div className="relative flex-1">
+                  <button
+                    ref={priceButtonRef}
+                    onClick={() => {
+                      if (sortConfig && sortConfig.key !== 'price') {
+                        setSortConfig(null);
                       }
+                      setIsPriceFilterOpen(!isPriceFilterOpen);
                     }}
-                    enterKeyHint="search"
-                    placeholder={placeholderText}
-                    className={`w-full bg-white border-2 transition-all duration-300 rounded-2xl outline-none text-lg font-medium
-                          ${hasSearched
-                        ? 'py-3 pl-14 pr-20 border-gray-200 focus:border-blue-500 shadow-sm'
-                        : 'py-4 pl-14 pr-20 border-transparent shadow-xl hover:shadow-2xl focus:ring-4 focus:ring-blue-100'
+                    className={`relative w-full px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1
+                            ${sortConfig?.key === 'price'
+                        ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
+                        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
                       }
-                      `}
-                  />
-                  {/* RESET Button inside Search Bar */}
-                  {(hasSearched || selectedType || selectedCategory || selectedRegion || selectedProvince || selectedCity) && (
-                    <div className="absolute inset-y-0 right-4 flex items-center">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setQuery('');
-                          setDebouncedQuery('');
-                          setSelectedListings([]);
-                          setHasSearched(false);
-                          setResults([]);
-                          setSelectedType(null);
-                          setSelectedCategory(null);
-                          setSelectedDirect(false);
-                          setSelectedRegion(null);
-                          setSelectedProvince(null);
-                          setSelectedCity(null);
-                          setSelectedBarangay(null);
-                          setPriceRange(null);
-                          setPricePerSqmRange(null);
-                          setLotAreaRange(null);
-                          setFloorAreaRange(null);
-                          setSelectedBedrooms([]);
-                          setSelectedParking([]);
-                          setSelectedPropertyTypes([]);
-                          setSortConfig(null);
-                          setShowOnlyAvailable(true);
-                          window.history.replaceState({}, '', window.location.pathname);
-                        }}
-                        className="text-sm font-bold text-red-500 hover:text-red-700 underline tracking-wide bg-white pl-2"
-                      >
-                        RESET
-                      </button>
-                    </div>
+                        `}
+                  >
+                    Price
+                    {sortConfig?.key === 'price' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+                  </button>
+
+                  {isPriceFilterOpen && createPortal(
+                    <div
+                      ref={pricePopoverRef}
+                      className="fixed w-72 bg-blue-50 rounded-xl shadow-2xl p-3 border border-blue-200 z-[9999] animate-fade-in-up"
+                      style={{ top: `${popoverPosition.top}px`, left: `${popoverPosition.left}px` }}
+                    >
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-bold text-gray-900">Price Range (PHP)</span>
+                        <button
+                          onClick={() => handleSort('price')}
+                          className="p-1 hover:bg-gray-100 rounded-md transition-colors"
+                          title="Toggle Sort Order"
+                        >
+                          {sortConfig?.key === 'price' && sortConfig.direction === 'asc'
+                            ? <ArrowUp className="w-4 h-4 text-gray-700" />
+                            : <ArrowDown className="w-4 h-4 text-gray-700" />
+                          }
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-2 mb-3 px-1">
+                        <div
+                          onClick={() => setUseExactPrice(!useExactPrice)}
+                          className={`w-4 h-4 rounded-full border border-gray-400 cursor-pointer flex items-center justify-center ${useExactPrice ? 'bg-blue-600 border-blue-600' : 'bg-white'}`}
+                        >
+                        </div>
+                        <span className="text-xs font-medium text-gray-700 cursor-pointer select-none" onClick={() => setUseExactPrice(!useExactPrice)}>Exact Value Match</span>
+                      </div>
+
+                      {useExactPrice ? (
+                        <div className="mb-2 px-1">
+                          <input
+                            type="number"
+                            value={manualPrice}
+                            onChange={(e) => setManualPrice(e.target.value)}
+                            placeholder="Enter exact price..."
+                            className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            autoFocus
+                          />
+                        </div>
+                      ) : (
+                        <DualRangeSlider
+                          useLogScale={true}
+                          min={minGlob}
+                          max={maxGlob}
+                          step={sliderStep}
+                          value={priceRange || [minGlob, maxGlob]}
+                          onChange={(val) => setPriceRange(val)}
+                          formatMinValue={(val) => {
+                            if (val >= 1000000) {
+                              const millions = val / 1000000;
+                              const rounded = Math.floor(millions / 10) * 10;
+                              return `${rounded.toLocaleString()}M`;
+                            } else if (val >= 1000) {
+                              const thousands = val / 1000;
+                              const rounded = Math.floor(thousands / 10) * 10;
+                              return `${rounded.toLocaleString()}K`;
+                            } else {
+                              return `${Math.floor(val / 10) * 10}`;
+                            }
+                          }}
+                          formatMaxValue={(val) => {
+                            if (val >= 1000000) {
+                              const millions = val / 1000000;
+                              const rounded = Math.floor(millions / 10) * 10;
+                              return `${rounded.toLocaleString()}M`;
+                            } else if (val >= 1000) {
+                              const thousands = val / 1000;
+                              const rounded = Math.floor(thousands / 10) * 10;
+                              return `${rounded.toLocaleString()}K`;
+                            } else {
+                              return `${Math.floor(val / 10) * 10}`;
+                            }
+                          }}
+                        />
+                      )}
+                    </div>,
+                    document.body
                   )}
                 </div>
-              </form>
 
-              {/* Controls Stack: Relevance & Sort Buttons */}
-              <div className="flex flex-col items-start gap-0">
-
-                {/* Availability Toggle (AVAILABLE - SHOW ALL) */}
-                <div className="flex items-center gap-3 bg-white px-5 py-2.5 rounded-full border border-gray-100 shadow-sm w-full animate-fade-in-up">
-                  <div className="flex items-center leading-none select-none">
-                    <span className={`text-[10px] sm:text-xs font-bold uppercase tracking-wide whitespace-nowrap ${showOnlyAvailable ? 'text-blue-600' : 'text-gray-400'}`}>AVAILABLE</span>
-                  </div>
-
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="1"
-                    value={showOnlyAvailable ? 0 : 1}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value);
-                      setShowOnlyAvailable(val === 0);
+                {/* Price/Sqm Button */}
+                <div className="relative flex-1">
+                  <button
+                    ref={pricePerSqmButtonRef}
+                    onClick={() => {
+                      if (sortConfig && sortConfig.key !== 'pricePerSqm') {
+                        setSortConfig(null);
+                      }
+                      setIsPricePerSqmFilterOpen(!isPricePerSqmFilterOpen);
                     }}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600 mx-2"
-                  />
+                    className={`relative w-full px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1
+                        ${sortConfig?.key === 'pricePerSqm'
+                        ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
+                        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
+                      }
+                    `}
+                  >
+                    Price/Sqm
+                    {sortConfig?.key === 'pricePerSqm' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+                  </button>
 
-                  <div className="flex items-center leading-none select-none">
-                    <span className={`text-[10px] sm:text-xs font-bold uppercase tracking-wide whitespace-nowrap ${!showOnlyAvailable ? 'text-blue-600' : 'text-gray-400'}`}>SHOW ALL</span>
-                  </div>
+                  {isPricePerSqmFilterOpen && createPortal(
+                    <div
+                      ref={pricePerSqmPopoverRef}
+                      className="fixed w-72 bg-blue-50 rounded-xl shadow-2xl p-3 border border-blue-200 z-[9999] animate-fade-in-up"
+                      style={{ top: `${popoverPositionPerSqm.top}px`, left: `${popoverPositionPerSqm.left}px` }}
+                    >
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-bold text-gray-900">Price/Sqm Range</span>
+                        <button
+                          onClick={() => handleSort('pricePerSqm')}
+                          className="p-1 hover:bg-gray-100 rounded-md transition-colors"
+                          title="Toggle Sort Order"
+                        >
+                          {sortConfig?.key === 'pricePerSqm' && sortConfig.direction === 'asc'
+                            ? <ArrowUp className="w-4 h-4 text-gray-700" />
+                            : <ArrowDown className="w-4 h-4 text-gray-700" />
+                          }
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-2 mb-3 px-1">
+                        <div
+                          onClick={() => setUseExactPricePerSqm(!useExactPricePerSqm)}
+                          className={`w-4 h-4 rounded-full border border-gray-400 cursor-pointer flex items-center justify-center ${useExactPricePerSqm ? 'bg-blue-600 border-blue-600' : 'bg-white'}`}
+                        >
+                        </div>
+                        <span className="text-xs font-medium text-gray-700 cursor-pointer select-none" onClick={() => setUseExactPricePerSqm(!useExactPricePerSqm)}>Exact Value Match</span>
+                      </div>
+
+                      {useExactPricePerSqm ? (
+                        <div className="mb-2 px-1">
+                          <input
+                            type="number"
+                            value={manualPricePerSqm}
+                            onChange={(e) => setManualPricePerSqm(e.target.value)}
+                            placeholder="Enter exact price per sqm..."
+                            className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            autoFocus
+                          />
+                        </div>
+                      ) : (
+                        <DualRangeSlider
+                          useLogScale={true}
+                          min={minGlobPerSqm}
+                          max={maxGlobPerSqm}
+                          step={sliderStepPerSqm}
+                          value={pricePerSqmRange || [minGlobPerSqm, maxGlobPerSqm]}
+                          onChange={(val) => setPricePerSqmRange(val)}
+                          formatMinValue={(val) => {
+                            if (val >= 1000000) {
+                              const millions = val / 1000000;
+                              const rounded = Math.floor(millions / 10) * 10;
+                              return `${rounded.toLocaleString()}M`;
+                            } else if (val >= 1000) {
+                              const thousands = val / 1000;
+                              const rounded = Math.floor(thousands / 10) * 10;
+                              return `${rounded.toLocaleString()}K`;
+                            } else {
+                              return `${Math.floor(val / 10) * 10}`;
+                            }
+                          }}
+                          formatMaxValue={(val) => {
+                            if (val >= 1000000) {
+                              const millions = val / 1000000;
+                              const rounded = Math.ceil(millions / 10) * 10;
+                              return `${rounded.toLocaleString()}M`;
+                            } else if (val >= 1000) {
+                              const thousands = val / 1000;
+                              const rounded = Math.ceil(thousands / 10) * 10;
+                              return `${rounded.toLocaleString()}K`;
+                            } else {
+                              return `${Math.ceil(val / 10) * 10}`;
+                            }
+                          }}
+                        />
+                      )}
+                    </div>,
+                    document.body
+                  )}
                 </div>
 
-                {/* Sort Buttons */}
-                {/* Sort Buttons */}
-                <div ref={sortButtonsContainerRef} className="flex w-full bg-gray-100 p-0.5 rounded-lg shadow-inner relative z-0 flex-wrap sm:flex-nowrap justify-between">
-                  <div className="relative flex-1">
-                    <button
-                      ref={priceButtonRef}
-                      onClick={() => {
-                        if (sortConfig && sortConfig.key !== 'price') {
-                          setSortConfig(null);
-                        }
-                        setIsPriceFilterOpen(!isPriceFilterOpen);
-                      }}
-                      className={`relative w-full px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1
-                            ${sortConfig?.key === 'price'
-                          ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
-                          : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
-                        }
-                        `}
-                    >
-                      Price
-                      {sortConfig?.key === 'price' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-                    </button>
-
-                    {isPriceFilterOpen && createPortal(
-                      <div
-                        ref={pricePopoverRef}
-                        className="fixed w-72 bg-blue-50 rounded-xl shadow-2xl p-3 border border-blue-200 z-[9999] animate-fade-in-up"
-                        style={{ top: `${popoverPosition.top}px`, left: `${popoverPosition.left}px` }}
-                      >
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm font-bold text-gray-900">Price Range (PHP)</span>
-                          <button
-                            onClick={() => handleSort('price')}
-                            className="p-1 hover:bg-gray-100 rounded-md transition-colors"
-                            title="Toggle Sort Order"
-                          >
-                            {sortConfig?.key === 'price' && sortConfig.direction === 'asc'
-                              ? <ArrowUp className="w-4 h-4 text-gray-700" />
-                              : <ArrowDown className="w-4 h-4 text-gray-700" />
-                            }
-                          </button>
-                        </div>
-
-                        <div className="flex items-center gap-2 mb-3 px-1">
-                          <div
-                            onClick={() => setUseExactPrice(!useExactPrice)}
-                            className={`w-4 h-4 rounded-full border border-gray-400 cursor-pointer flex items-center justify-center ${useExactPrice ? 'bg-blue-600 border-blue-600' : 'bg-white'}`}
-                          >
-                          </div>
-                          <span className="text-xs font-medium text-gray-700 cursor-pointer select-none" onClick={() => setUseExactPrice(!useExactPrice)}>Exact Value Match</span>
-                        </div>
-
-                        {useExactPrice ? (
-                          <div className="mb-2 px-1">
-                            <input
-                              type="number"
-                              value={manualPrice}
-                              onChange={(e) => setManualPrice(e.target.value)}
-                              placeholder="Enter exact price..."
-                              className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                              autoFocus
-                            />
-                          </div>
-                        ) : (
-                          <DualRangeSlider
-                            useLogScale={true}
-                            min={minGlob}
-                            max={maxGlob}
-                            step={sliderStep}
-                            value={priceRange || [minGlob, maxGlob]}
-                            onChange={(val) => setPriceRange(val)}
-                            formatMinValue={(val) => {
-                              if (val >= 1000000) {
-                                const millions = val / 1000000;
-                                const rounded = Math.floor(millions / 10) * 10;
-                                return `${rounded.toLocaleString()}M`;
-                              } else if (val >= 1000) {
-                                const thousands = val / 1000;
-                                const rounded = Math.floor(thousands / 10) * 10;
-                                return `${rounded.toLocaleString()}K`;
-                              } else {
-                                return `${Math.floor(val / 10) * 10}`;
-                              }
-                            }}
-                            formatMaxValue={(val) => {
-                              if (val >= 1000000) {
-                                const millions = val / 1000000;
-                                const rounded = Math.floor(millions / 10) * 10;
-                                return `${rounded.toLocaleString()}M`;
-                              } else if (val >= 1000) {
-                                const thousands = val / 1000;
-                                const rounded = Math.floor(thousands / 10) * 10;
-                                return `${rounded.toLocaleString()}K`;
-                              } else {
-                                return `${Math.floor(val / 10) * 10}`;
-                              }
-                            }}
-                          />
-                        )}
-                      </div>,
-                      document.body
-                    )}
-                  </div>
-
-                  {/* Price/Sqm Button */}
-                  <div className="relative flex-1">
-                    <button
-                      ref={pricePerSqmButtonRef}
-                      onClick={() => {
-                        if (sortConfig && sortConfig.key !== 'pricePerSqm') {
-                          setSortConfig(null);
-                        }
-                        setIsPricePerSqmFilterOpen(!isPricePerSqmFilterOpen);
-                      }}
-                      className={`relative w-full px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1
-                        ${sortConfig?.key === 'pricePerSqm'
-                          ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
-                          : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
-                        }
-                    `}
-                    >
-                      Price/Sqm
-                      {sortConfig?.key === 'pricePerSqm' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-                    </button>
-
-                    {isPricePerSqmFilterOpen && createPortal(
-                      <div
-                        ref={pricePerSqmPopoverRef}
-                        className="fixed w-72 bg-blue-50 rounded-xl shadow-2xl p-3 border border-blue-200 z-[9999] animate-fade-in-up"
-                        style={{ top: `${popoverPositionPerSqm.top}px`, left: `${popoverPositionPerSqm.left}px` }}
-                      >
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm font-bold text-gray-900">Price/Sqm Range</span>
-                          <button
-                            onClick={() => handleSort('pricePerSqm')}
-                            className="p-1 hover:bg-gray-100 rounded-md transition-colors"
-                            title="Toggle Sort Order"
-                          >
-                            {sortConfig?.key === 'pricePerSqm' && sortConfig.direction === 'asc'
-                              ? <ArrowUp className="w-4 h-4 text-gray-700" />
-                              : <ArrowDown className="w-4 h-4 text-gray-700" />
-                            }
-                          </button>
-                        </div>
-
-                        <div className="flex items-center gap-2 mb-3 px-1">
-                          <div
-                            onClick={() => setUseExactPricePerSqm(!useExactPricePerSqm)}
-                            className={`w-4 h-4 rounded-full border border-gray-400 cursor-pointer flex items-center justify-center ${useExactPricePerSqm ? 'bg-blue-600 border-blue-600' : 'bg-white'}`}
-                          >
-                          </div>
-                          <span className="text-xs font-medium text-gray-700 cursor-pointer select-none" onClick={() => setUseExactPricePerSqm(!useExactPricePerSqm)}>Exact Value Match</span>
-                        </div>
-
-                        {useExactPricePerSqm ? (
-                          <div className="mb-2 px-1">
-                            <input
-                              type="number"
-                              value={manualPricePerSqm}
-                              onChange={(e) => setManualPricePerSqm(e.target.value)}
-                              placeholder="Enter exact price per sqm..."
-                              className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                              autoFocus
-                            />
-                          </div>
-                        ) : (
-                          <DualRangeSlider
-                            useLogScale={true}
-                            min={minGlobPerSqm}
-                            max={maxGlobPerSqm}
-                            step={sliderStepPerSqm}
-                            value={pricePerSqmRange || [minGlobPerSqm, maxGlobPerSqm]}
-                            onChange={(val) => setPricePerSqmRange(val)}
-                            formatMinValue={(val) => {
-                              if (val >= 1000000) {
-                                const millions = val / 1000000;
-                                const rounded = Math.floor(millions / 10) * 10;
-                                return `${rounded.toLocaleString()}M`;
-                              } else if (val >= 1000) {
-                                const thousands = val / 1000;
-                                const rounded = Math.floor(thousands / 10) * 10;
-                                return `${rounded.toLocaleString()}K`;
-                              } else {
-                                return `${Math.floor(val / 10) * 10}`;
-                              }
-                            }}
-                            formatMaxValue={(val) => {
-                              if (val >= 1000000) {
-                                const millions = val / 1000000;
-                                const rounded = Math.ceil(millions / 10) * 10;
-                                return `${rounded.toLocaleString()}M`;
-                              } else if (val >= 1000) {
-                                const thousands = val / 1000;
-                                const rounded = Math.ceil(thousands / 10) * 10;
-                                return `${rounded.toLocaleString()}K`;
-                              } else {
-                                return `${Math.ceil(val / 10) * 10}`;
-                              }
-                            }}
-                          />
-                        )}
-                      </div>,
-                      document.body
-                    )}
-                  </div>
-
-                  {/* Lot Area Button */}
-                  <div className="relative flex-1">
-                    <button
-                      ref={lotAreaButtonRef}
-                      onClick={() => {
-                        if (sortConfig && sortConfig.key !== 'lotArea') {
-                          setSortConfig(null);
-                        }
-                        setIsLotAreaFilterOpen(!isLotAreaFilterOpen);
-                      }}
-                      className={`relative w-full px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1
+                {/* Lot Area Button */}
+                <div className="relative flex-1">
+                  <button
+                    ref={lotAreaButtonRef}
+                    onClick={() => {
+                      if (sortConfig && sortConfig.key !== 'lotArea') {
+                        setSortConfig(null);
+                      }
+                      setIsLotAreaFilterOpen(!isLotAreaFilterOpen);
+                    }}
+                    className={`relative w-full px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1
                         ${sortConfig?.key === 'lotArea'
-                          ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
-                          : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
-                        }
+                        ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
+                        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
+                      }
                     `}
+                  >
+                    Lot Area
+                    {sortConfig?.key === 'lotArea' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+                  </button>
+
+                  {isLotAreaFilterOpen && createPortal(
+                    <div
+                      ref={lotAreaPopoverRef}
+                      className="fixed w-72 bg-blue-50 rounded-xl shadow-2xl p-3 border border-blue-200 z-[9999] animate-fade-in-up"
+                      style={{ top: `${popoverPositionLot.top}px`, left: `${popoverPositionLot.left}px` }}
                     >
-                      Lot Area
-                      {sortConfig?.key === 'lotArea' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-                    </button>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-bold text-gray-900">Lot Area (SQM)</span>
+                        <button
+                          onClick={() => handleSort('lotArea')}
+                          className="p-1 hover:bg-gray-100 rounded-md transition-colors"
+                          title="Toggle Sort Order"
+                        >
+                          {sortConfig?.key === 'lotArea' && sortConfig.direction === 'asc'
+                            ? <ArrowUp className="w-4 h-4 text-gray-700" />
+                            : <ArrowDown className="w-4 h-4 text-gray-700" />
+                          }
+                        </button>
+                      </div>
 
-                    {isLotAreaFilterOpen && createPortal(
-                      <div
-                        ref={lotAreaPopoverRef}
-                        className="fixed w-72 bg-blue-50 rounded-xl shadow-2xl p-3 border border-blue-200 z-[9999] animate-fade-in-up"
-                        style={{ top: `${popoverPositionLot.top}px`, left: `${popoverPositionLot.left}px` }}
-                      >
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm font-bold text-gray-900">Lot Area (SQM)</span>
-                          <button
-                            onClick={() => handleSort('lotArea')}
-                            className="p-1 hover:bg-gray-100 rounded-md transition-colors"
-                            title="Toggle Sort Order"
-                          >
-                            {sortConfig?.key === 'lotArea' && sortConfig.direction === 'asc'
-                              ? <ArrowUp className="w-4 h-4 text-gray-700" />
-                              : <ArrowDown className="w-4 h-4 text-gray-700" />
-                            }
-                          </button>
+                      <div className="flex items-center gap-2 mb-3 px-1">
+                        <div
+                          onClick={() => setUseExactLotArea(!useExactLotArea)}
+                          className={`w-4 h-4 rounded-full border border-gray-400 cursor-pointer flex items-center justify-center ${useExactLotArea ? 'bg-blue-600 border-blue-600' : 'bg-white'}`}
+                        >
                         </div>
+                        <span className="text-xs font-medium text-gray-700 cursor-pointer select-none" onClick={() => setUseExactLotArea(!useExactLotArea)}>Exact Value Match</span>
+                      </div>
 
-                        <div className="flex items-center gap-2 mb-3 px-1">
-                          <div
-                            onClick={() => setUseExactLotArea(!useExactLotArea)}
-                            className={`w-4 h-4 rounded-full border border-gray-400 cursor-pointer flex items-center justify-center ${useExactLotArea ? 'bg-blue-600 border-blue-600' : 'bg-white'}`}
-                          >
-                          </div>
-                          <span className="text-xs font-medium text-gray-700 cursor-pointer select-none" onClick={() => setUseExactLotArea(!useExactLotArea)}>Exact Value Match</span>
-                        </div>
-
-                        {useExactLotArea ? (
-                          <div className="mb-2 px-1">
-                            <input
-                              type="number"
-                              value={manualLotArea}
-                              onChange={(e) => setManualLotArea(e.target.value)}
-                              placeholder="Enter exact lot area..."
-                              className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                              autoFocus
-                            />
-                          </div>
-                        ) : (
-                          <DualRangeSlider
-                            useLogScale={true}
-                            min={minGlobLot}
-                            max={maxGlobLot}
-                            step={sliderStepLot}
-                            value={lotAreaRange || [minGlobLot, maxGlobLot]}
-                            onChange={(val) => setLotAreaRange(val)}
-                            formatMinValue={(val) => {
-                              if (val >= 10000) {
-                                const thousands = val / 1000;
-                                const rounded = Math.floor(thousands / 10) * 10;
-                                return `${rounded.toLocaleString()}K SQM`;
-                              } else {
-                                return `${Math.floor(val / 10) * 10} SQM`;
-                              }
-                            }}
-                            formatMaxValue={(val) => {
-                              if (val >= 10000) {
-                                const thousands = val / 1000;
-                                const rounded = Math.ceil(thousands / 10) * 10;
-                                return `${rounded.toLocaleString()}K SQM`;
-                              } else {
-                                return `${Math.ceil(val / 10) * 10} SQM`;
-                              }
-                            }}
+                      {useExactLotArea ? (
+                        <div className="mb-2 px-1">
+                          <input
+                            type="number"
+                            value={manualLotArea}
+                            onChange={(e) => setManualLotArea(e.target.value)}
+                            placeholder="Enter exact lot area..."
+                            className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            autoFocus
                           />
-                        )}
-                      </div>,
-                      document.body
-                    )}
-                  </div>
+                        </div>
+                      ) : (
+                        <DualRangeSlider
+                          useLogScale={true}
+                          min={minGlobLot}
+                          max={maxGlobLot}
+                          step={sliderStepLot}
+                          value={lotAreaRange || [minGlobLot, maxGlobLot]}
+                          onChange={(val) => setLotAreaRange(val)}
+                          formatMinValue={(val) => {
+                            if (val >= 10000) {
+                              const thousands = val / 1000;
+                              const rounded = Math.floor(thousands / 10) * 10;
+                              return `${rounded.toLocaleString()}K SQM`;
+                            } else {
+                              return `${Math.floor(val / 10) * 10} SQM`;
+                            }
+                          }}
+                          formatMaxValue={(val) => {
+                            if (val >= 10000) {
+                              const thousands = val / 1000;
+                              const rounded = Math.ceil(thousands / 10) * 10;
+                              return `${rounded.toLocaleString()}K SQM`;
+                            } else {
+                              return `${Math.ceil(val / 10) * 10} SQM`;
+                            }
+                          }}
+                        />
+                      )}
+                    </div>,
+                    document.body
+                  )}
+                </div>
 
-                  {/* Floor Area Button */}
-                  <div className="relative flex-1">
-                    <button
-                      ref={floorAreaButtonRef}
-                      onClick={() => {
-                        if (sortConfig && sortConfig.key !== 'floorArea') {
-                          setSortConfig(null);
-                        }
-                        setIsFloorAreaFilterOpen(!isFloorAreaFilterOpen);
-                      }}
-                      className={`relative w-full px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1
+                {/* Floor Area Button */}
+                <div className="relative flex-1">
+                  <button
+                    ref={floorAreaButtonRef}
+                    onClick={() => {
+                      if (sortConfig && sortConfig.key !== 'floorArea') {
+                        setSortConfig(null);
+                      }
+                      setIsFloorAreaFilterOpen(!isFloorAreaFilterOpen);
+                    }}
+                    className={`relative w-full px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1
                         ${sortConfig?.key === 'floorArea'
-                          ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
-                          : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
-                        }
+                        ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
+                        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
+                      }
                     `}
+                  >
+                    Floor Area
+                    {sortConfig?.key === 'floorArea' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+                  </button>
+
+                  {isFloorAreaFilterOpen && createPortal(
+                    <div
+                      ref={floorAreaPopoverRef}
+                      className="fixed w-72 bg-blue-50 rounded-xl shadow-2xl p-3 border border-blue-200 z-[9999] animate-fade-in-up"
+                      style={{ top: `${popoverPositionFloor.top}px`, left: `${popoverPositionFloor.left}px` }}
                     >
-                      Floor Area
-                      {sortConfig?.key === 'floorArea' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-                    </button>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-bold text-gray-900">Floor Area (SQM)</span>
+                        <button
+                          onClick={() => handleSort('floorArea')}
+                          className="p-1 hover:bg-gray-100 rounded-md transition-colors"
+                          title="Toggle Sort Order"
+                        >
+                          {sortConfig?.key === 'floorArea' && sortConfig.direction === 'asc'
+                            ? <ArrowUp className="w-4 h-4 text-gray-700" />
+                            : <ArrowDown className="w-4 h-4 text-gray-700" />
+                          }
+                        </button>
+                      </div>
 
-                    {isFloorAreaFilterOpen && createPortal(
-                      <div
-                        ref={floorAreaPopoverRef}
-                        className="fixed w-72 bg-blue-50 rounded-xl shadow-2xl p-3 border border-blue-200 z-[9999] animate-fade-in-up"
-                        style={{ top: `${popoverPositionFloor.top}px`, left: `${popoverPositionFloor.left}px` }}
-                      >
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm font-bold text-gray-900">Floor Area (SQM)</span>
-                          <button
-                            onClick={() => handleSort('floorArea')}
-                            className="p-1 hover:bg-gray-100 rounded-md transition-colors"
-                            title="Toggle Sort Order"
-                          >
-                            {sortConfig?.key === 'floorArea' && sortConfig.direction === 'asc'
-                              ? <ArrowUp className="w-4 h-4 text-gray-700" />
-                              : <ArrowDown className="w-4 h-4 text-gray-700" />
-                            }
-                          </button>
+                      <div className="flex items-center gap-2 mb-3 px-1">
+                        <div
+                          onClick={() => setUseExactFloorArea(!useExactFloorArea)}
+                          className={`w-4 h-4 rounded-full border border-gray-400 cursor-pointer flex items-center justify-center ${useExactFloorArea ? 'bg-blue-600 border-blue-600' : 'bg-white'}`}
+                        >
                         </div>
+                        <span className="text-xs font-medium text-gray-700 cursor-pointer select-none" onClick={() => setUseExactFloorArea(!useExactFloorArea)}>Exact Value Match</span>
+                      </div>
 
-                        <div className="flex items-center gap-2 mb-3 px-1">
-                          <div
-                            onClick={() => setUseExactFloorArea(!useExactFloorArea)}
-                            className={`w-4 h-4 rounded-full border border-gray-400 cursor-pointer flex items-center justify-center ${useExactFloorArea ? 'bg-blue-600 border-blue-600' : 'bg-white'}`}
-                          >
-                          </div>
-                          <span className="text-xs font-medium text-gray-700 cursor-pointer select-none" onClick={() => setUseExactFloorArea(!useExactFloorArea)}>Exact Value Match</span>
-                        </div>
-
-                        {useExactFloorArea ? (
-                          <div className="mb-2 px-1">
-                            <input
-                              type="number"
-                              value={manualFloorArea}
-                              onChange={(e) => setManualFloorArea(e.target.value)}
-                              placeholder="Enter exact floor area..."
-                              className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                              autoFocus
-                            />
-                          </div>
-                        ) : (
-                          <DualRangeSlider
-                            useLogScale={true}
-                            min={minGlobFloor}
-                            max={maxGlobFloor}
-                            step={sliderStepFloor}
-                            value={floorAreaRange || [minGlobFloor, maxGlobFloor]}
-                            onChange={(val) => setFloorAreaRange(val)}
-                            formatMinValue={(val) => {
-                              if (val >= 10000) {
-                                const thousands = val / 1000;
-                                const rounded = Math.floor(thousands / 10) * 10;
-                                return `${rounded.toLocaleString()}K SQM`;
-                              } else {
-                                return `${Math.floor(val / 10) * 10} SQM`;
-                              }
-                            }}
-                            formatMaxValue={(val) => {
-                              if (val >= 10000) {
-                                const thousands = val / 1000;
-                                const rounded = Math.ceil(thousands / 10) * 10;
-                                return `${rounded.toLocaleString()}K SQM`;
-                              } else {
-                                return `${Math.ceil(val / 10) * 10} SQM`;
-                              }
-                            }}
+                      {useExactFloorArea ? (
+                        <div className="mb-2 px-1">
+                          <input
+                            type="number"
+                            value={manualFloorArea}
+                            onChange={(e) => setManualFloorArea(e.target.value)}
+                            placeholder="Enter exact floor area..."
+                            className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            autoFocus
                           />
-                        )}
-                      </div>,
-                      document.body
-                    )}
-                  </div>
+                        </div>
+                      ) : (
+                        <DualRangeSlider
+                          useLogScale={true}
+                          min={minGlobFloor}
+                          max={maxGlobFloor}
+                          step={sliderStepFloor}
+                          value={floorAreaRange || [minGlobFloor, maxGlobFloor]}
+                          onChange={(val) => setFloorAreaRange(val)}
+                          formatMinValue={(val) => {
+                            if (val >= 10000) {
+                              const thousands = val / 1000;
+                              const rounded = Math.floor(thousands / 10) * 10;
+                              return `${rounded.toLocaleString()}K SQM`;
+                            } else {
+                              return `${Math.floor(val / 10) * 10} SQM`;
+                            }
+                          }}
+                          formatMaxValue={(val) => {
+                            if (val >= 10000) {
+                              const thousands = val / 1000;
+                              const rounded = Math.ceil(thousands / 10) * 10;
+                              return `${rounded.toLocaleString()}K SQM`;
+                            } else {
+                              return `${Math.ceil(val / 10) * 10} SQM`;
+                            }
+                          }}
+                        />
+                      )}
+                    </div>,
+                    document.body
+                  )}
+                </div>
 
-                  {/* Property Type Button */}
-                  <div className="relative flex-1">
-                    <button
-                      ref={typeButtonRef}
-                      onClick={() => setIsTypeFilterOpen(!isTypeFilterOpen)}
-                      className={`relative w-full px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1
+                {/* Property Type Button */}
+                <div className="relative flex-1">
+                  <button
+                    ref={typeButtonRef}
+                    onClick={() => setIsTypeFilterOpen(!isTypeFilterOpen)}
+                    className={`relative w-full px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1
                             ${selectedPropertyTypes.length > 0
-                          ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
-                          : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
-                        }
+                        ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
+                        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
+                      }
                         `}
+                  >
+                    Property Type
+                  </button>
+
+                  {isTypeFilterOpen && createPortal(
+                    <div
+                      ref={typePopoverRef}
+                      className="fixed w-[520px] bg-blue-50 rounded-xl shadow-2xl p-3 border border-blue-200 z-[9999] animate-fade-in-up"
+                      style={{ top: `${popoverPositionType.top}px`, left: `${popoverPositionType.left}px` }}
                     >
-                      Property Type
-                    </button>
+                      <div className="mb-2">
+                        <span className="text-sm font-bold text-gray-900">Property Type</span>
+                      </div>
 
-                    {isTypeFilterOpen && createPortal(
-                      <div
-                        ref={typePopoverRef}
-                        className="fixed w-[520px] bg-blue-50 rounded-xl shadow-2xl p-3 border border-blue-200 z-[9999] animate-fade-in-up"
-                        style={{ top: `${popoverPositionType.top}px`, left: `${popoverPositionType.left}px` }}
-                      >
-                        <div className="mb-2">
-                          <span className="text-sm font-bold text-gray-900">Property Type</span>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2">
-                          {['HOUSE AND LOT', 'TOWNHOUSE', 'CONDO', 'VACANT LOT', 'WAREHOUSE', 'BUILDING', 'OFFICE/COMMERCIAL', 'CLUB SHARE'].map(option => {
-                            const isSelected = selectedPropertyTypes.includes(option);
-                            return (
-                              <button
-                                key={option}
-                                onClick={() => {
-                                  let next = selectedPropertyTypes.filter(o => o !== 'ALL');
-                                  if (isSelected) {
-                                    next = next.filter(o => o !== option);
-                                  } else {
-                                    next = [...next, option];
-                                  }
-                                  setSelectedPropertyTypes(next.length === 0 ? [] : next);
-                                }}
-                                className={`py-2 px-3 text-xs font-bold rounded-lg transition-all border text-center
+                      <div className="grid grid-cols-2 gap-2">
+                        {['HOUSE AND LOT', 'TOWNHOUSE', 'CONDO', 'VACANT LOT', 'WAREHOUSE', 'BUILDING', 'OFFICE/COMMERCIAL', 'CLUB SHARE'].map(option => {
+                          const isSelected = selectedPropertyTypes.includes(option);
+                          return (
+                            <button
+                              key={option}
+                              onClick={() => {
+                                let next = selectedPropertyTypes.filter(o => o !== 'ALL');
+                                if (isSelected) {
+                                  next = next.filter(o => o !== option);
+                                } else {
+                                  next = [...next, option];
+                                }
+                                setSelectedPropertyTypes(next.length === 0 ? [] : next);
+                              }}
+                              className={`py-2 px-3 text-xs font-bold rounded-lg transition-all border text-center
                                   ${isSelected
-                                    ? 'bg-blue-600 text-white border-blue-600 shadow-md'
-                                    : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                                  }`}
-                              >
-                                {option}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>,
-                      document.body
-                    )}
-                  </div>
+                                  ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                                  : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                                }`}
+                            >
+                              {option}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>,
+                    document.body
+                  )}
+                </div>
 
-                  {/* Bedrooms Button */}
-                  <div className="relative flex-1">
-                    <button
-                      ref={bedroomsButtonRef}
-                      onClick={() => {
-                        if (sortConfig && sortConfig.key !== 'bedrooms') {
-                          setSortConfig(null);
-                        }
-                        setIsBedroomsFilterOpen(!isBedroomsFilterOpen);
-                      }}
-                      className={`relative w-full px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1
+                {/* Bedrooms Button */}
+                <div className="relative flex-1">
+                  <button
+                    ref={bedroomsButtonRef}
+                    onClick={() => {
+                      if (sortConfig && sortConfig.key !== 'bedrooms') {
+                        setSortConfig(null);
+                      }
+                      setIsBedroomsFilterOpen(!isBedroomsFilterOpen);
+                    }}
+                    className={`relative w-full px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1
                             ${sortConfig?.key === 'bedrooms' || selectedBedrooms.length > 0
-                          ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
-                          : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
-                        }
+                        ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
+                        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
+                      }
                         `}
+                  >
+                    Bedrooms
+                    {sortConfig?.key === 'bedrooms' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+                  </button>
+
+                  {isBedroomsFilterOpen && createPortal(
+                    <div
+                      ref={bedroomsPopoverRef}
+                      className="fixed w-72 bg-blue-50 rounded-xl shadow-2xl p-3 border border-blue-200 z-[9999] animate-fade-in-up"
+                      style={{ top: `${popoverPositionBedrooms.top}px`, left: `${popoverPositionBedrooms.left}px` }}
                     >
-                      Bedrooms
-                      {sortConfig?.key === 'bedrooms' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-                    </button>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-bold text-gray-900">Bedrooms</span>
+                        <button
+                          onClick={() => handleSort('bedrooms')}
+                          className="p-1 hover:bg-gray-100 rounded-md transition-colors"
+                          title="Toggle Sort Order"
+                        >
+                          {sortConfig?.key === 'bedrooms' && sortConfig.direction === 'asc'
+                            ? <ArrowUp className="w-4 h-4 text-gray-700" />
+                            : <ArrowDown className="w-4 h-4 text-gray-700" />
+                          }
+                        </button>
+                      </div>
 
-                    {isBedroomsFilterOpen && createPortal(
-                      <div
-                        ref={bedroomsPopoverRef}
-                        className="fixed w-72 bg-blue-50 rounded-xl shadow-2xl p-3 border border-blue-200 z-[9999] animate-fade-in-up"
-                        style={{ top: `${popoverPositionBedrooms.top}px`, left: `${popoverPositionBedrooms.left}px` }}
-                      >
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm font-bold text-gray-900">Bedrooms</span>
-                          <button
-                            onClick={() => handleSort('bedrooms')}
-                            className="p-1 hover:bg-gray-100 rounded-md transition-colors"
-                            title="Toggle Sort Order"
-                          >
-                            {sortConfig?.key === 'bedrooms' && sortConfig.direction === 'asc'
-                              ? <ArrowUp className="w-4 h-4 text-gray-700" />
-                              : <ArrowDown className="w-4 h-4 text-gray-700" />
-                            }
-                          </button>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-2">
-                          {['STUDIO', '1', '2', '3', '4', '5+'].map(option => {
-                            const isSelected = selectedBedrooms.includes(option);
-                            return (
-                              <button
-                                key={option}
-                                onClick={() => {
-                                  let next = [...selectedBedrooms];
-                                  if (isSelected) {
-                                    next = next.filter(o => o !== option);
-                                  } else {
-                                    next = [...next, option];
-                                  }
-                                  setSelectedBedrooms(next);
-                                }}
-                                className={`py-2 text-xs font-bold rounded-lg transition-all border
+                      <div className="grid grid-cols-3 gap-2">
+                        {['STUDIO', '1', '2', '3', '4', '5+'].map(option => {
+                          const isSelected = selectedBedrooms.includes(option);
+                          return (
+                            <button
+                              key={option}
+                              onClick={() => {
+                                let next = [...selectedBedrooms];
+                                if (isSelected) {
+                                  next = next.filter(o => o !== option);
+                                } else {
+                                  next = [...next, option];
+                                }
+                                setSelectedBedrooms(next);
+                              }}
+                              className={`py-2 text-xs font-bold rounded-lg transition-all border
                                   ${isSelected
-                                    ? 'bg-blue-600 text-white border-blue-600 shadow-md translate-y-[-1px]'
-                                    : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                                  }`}
-                              >
-                                {option}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>,
-                      document.body
-                    )}
-                  </div>
+                                  ? 'bg-blue-600 text-white border-blue-600 shadow-md translate-y-[-1px]'
+                                  : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                                }`}
+                            >
+                              {option}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>,
+                    document.body
+                  )}
+                </div>
 
-                  {/* Parking Button */}
-                  <div className="relative flex-1">
-                    <button
-                      ref={parkingButtonRef}
-                      onClick={() => {
-                        if (sortConfig && sortConfig.key !== 'parking') {
-                          setSortConfig(null);
-                        }
-                        setIsParkingFilterOpen(!isParkingFilterOpen);
-                      }}
-                      className={`relative w-full px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1
+                {/* Parking Button */}
+                <div className="relative flex-1">
+                  <button
+                    ref={parkingButtonRef}
+                    onClick={() => {
+                      if (sortConfig && sortConfig.key !== 'parking') {
+                        setSortConfig(null);
+                      }
+                      setIsParkingFilterOpen(!isParkingFilterOpen);
+                    }}
+                    className={`relative w-full px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1
                             ${sortConfig?.key === 'parking' || selectedParking.length > 0
-                          ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
-                          : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
-                        }
+                        ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
+                        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
+                      }
                         `}
+                  >
+                    Parking
+                    {sortConfig?.key === 'parking' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+                  </button>
+
+                  {isParkingFilterOpen && createPortal(
+                    <div
+                      ref={parkingPopoverRef}
+                      className="fixed w-72 bg-blue-50 rounded-xl shadow-2xl p-3 border border-blue-200 z-[9999] animate-fade-in-up"
+                      style={{ top: `${popoverPositionParking.top}px`, left: `${popoverPositionParking.left}px` }}
                     >
-                      Parking
-                      {sortConfig?.key === 'parking' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-                    </button>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-bold text-gray-900">Parking Slots</span>
+                        <button
+                          onClick={() => handleSort('parking')}
+                          className="p-1 hover:bg-gray-100 rounded-md transition-colors"
+                          title="Toggle Sort Order"
+                        >
+                          {sortConfig?.key === 'parking' && sortConfig.direction === 'asc'
+                            ? <ArrowUp className="w-4 h-4 text-gray-700" />
+                            : <ArrowDown className="w-4 h-4 text-gray-700" />
+                          }
+                        </button>
+                      </div>
 
-                    {isParkingFilterOpen && createPortal(
-                      <div
-                        ref={parkingPopoverRef}
-                        className="fixed w-72 bg-blue-50 rounded-xl shadow-2xl p-3 border border-blue-200 z-[9999] animate-fade-in-up"
-                        style={{ top: `${popoverPositionParking.top}px`, left: `${popoverPositionParking.left}px` }}
-                      >
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm font-bold text-gray-900">Parking Slots</span>
-                          <button
-                            onClick={() => handleSort('parking')}
-                            className="p-1 hover:bg-gray-100 rounded-md transition-colors"
-                            title="Toggle Sort Order"
-                          >
-                            {sortConfig?.key === 'parking' && sortConfig.direction === 'asc'
-                              ? <ArrowUp className="w-4 h-4 text-gray-700" />
-                              : <ArrowDown className="w-4 h-4 text-gray-700" />
-                            }
-                          </button>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-2">
-                          {['0', '1', '2', '3', '4', '5+'].map(option => {
-                            const isSelected = selectedParking.includes(option);
-                            return (
-                              <button
-                                key={option}
-                                onClick={() => {
-                                  let next = [...selectedParking];
-                                  if (isSelected) {
-                                    next = next.filter(o => o !== option);
-                                  } else {
-                                    next = [...next, option];
-                                  }
-                                  setSelectedParking(next);
-                                }}
-                                className={`py-2 text-xs font-bold rounded-lg transition-all border
+                      <div className="grid grid-cols-3 gap-2">
+                        {['0', '1', '2', '3', '4', '5+'].map(option => {
+                          const isSelected = selectedParking.includes(option);
+                          return (
+                            <button
+                              key={option}
+                              onClick={() => {
+                                let next = [...selectedParking];
+                                if (isSelected) {
+                                  next = next.filter(o => o !== option);
+                                } else {
+                                  next = [...next, option];
+                                }
+                                setSelectedParking(next);
+                              }}
+                              className={`py-2 text-xs font-bold rounded-lg transition-all border
                                   ${isSelected
-                                    ? 'bg-blue-600 text-white border-blue-600 shadow-md translate-y-[-1px]'
-                                    : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                                  }`}
-                              >
-                                {option}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>,
-                      document.body
-                    )}
-                  </div>
+                                  ? 'bg-blue-600 text-white border-blue-600 shadow-md translate-y-[-1px]'
+                                  : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                                }`}
+                            >
+                              {option}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>,
+                    document.body
+                  )}
                 </div>
               </div>
 
