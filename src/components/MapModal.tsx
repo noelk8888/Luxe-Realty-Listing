@@ -141,7 +141,7 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
     };
 
     // Find neighbors within selected radius
-    const nearbyRadius = 2; // Fixed 2km for nearby (gray pins)
+    const nearbyRadius = 1; // Fixed 1km for nearby (gray pins)
     const neighbors = allListings.filter(l => {
         if (l.id === centerListing.id || !l.lat || !l.lng) return false;
         const dist = calculateDistance(centerListing.lat, centerListing.lng, l.lat, l.lng);
@@ -153,7 +153,7 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
             return true;
         }
 
-        // Nearby listings (gray) - within 2km but NOT similar
+        // Nearby listings (gray) - within 1km but NOT similar
         if (!isSimilar && showNearby && dist <= nearbyRadius) {
             return true;
         }
@@ -251,7 +251,7 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
                             </span>
                         </h3>
                         <p className="text-xs text-gray-500">
-                            {neighbors.length} neighbors found within 2km
+                            {neighbors.length} neighbors found within 1km
                         </p>
                     </div>
                     <button
@@ -387,13 +387,13 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
                                     onClick={() => setSimilarRadius(2)}
                                     className={`px-1.5 py-0.5 rounded text-[8px] font-bold transition-all ${similarRadius === 2 ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-gray-600'}`}
                                 >
-                                    2km
+                                    1km
                                 </button>
                                 <button
                                     onClick={() => setSimilarRadius(5)}
                                     className={`px-1.5 py-0.5 rounded text-[8px] font-bold transition-all ${similarRadius === 5 ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-gray-600'}`}
                                 >
-                                    5km
+                                    3km
                                 </button>
                             </div>
 
@@ -406,7 +406,7 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
                                 className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full transition-all ${showNearby ? 'bg-blue-600' : 'opacity-40'}`}
                             >
                                 <div className={`w-[7px] h-[7px] rounded-full ${showNearby ? 'bg-white' : 'bg-[#9ca3af]'} border border-black/20`}></div>
-                                <span className={`text-[9px] font-bold ${showNearby ? 'text-white' : 'text-gray-700'}`}>Nearby 2km</span>
+                                <span className={`text-[9px] font-bold ${showNearby ? 'text-white' : 'text-gray-700'}`}>Nearby 1km</span>
                             </button>
                         </div>
                     </div>

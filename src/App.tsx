@@ -399,10 +399,10 @@ function App() {
   const baseFilteredResults = results.filter(item => {
     // 0. Base Filter (Show All)
     // console.log(`Filtering item: ${item.id}, status: ${item.statusAQ}, showAll: ${showAllListings}`);
-    // If showAllListings is false, hide SOLD/LEASED OUT items
+    // If showAllListings is false, only show AVAILABLE items
     if (!showAllListings) {
       const status = (item.statusAQ || '').toUpperCase().trim();
-      if (status === 'SOLD' || status === 'LEASED OUT') {
+      if (status !== 'AVAILABLE') {
         return false;
       }
     }
