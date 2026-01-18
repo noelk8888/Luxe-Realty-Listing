@@ -238,11 +238,9 @@ function App() {
         }
       };
 
-      window.addEventListener('scroll', handleScroll, true);
       window.addEventListener('mousemove', handleMouseMove);
 
       return () => {
-        window.removeEventListener('scroll', handleScroll, true);
         window.removeEventListener('mousemove', handleMouseMove);
         if (dismissTimeout) clearTimeout(dismissTimeout);
       };
@@ -1441,14 +1439,14 @@ function App() {
                   {isTypeFilterOpen && createPortal(
                     <div
                       ref={typePopoverRef}
-                      className="fixed w-[520px] bg-blue-50 rounded-xl shadow-2xl p-3 border border-blue-200 z-[9999] animate-fade-in-up"
+                      className="fixed w-[calc(100vw-32px)] sm:w-[520px] bg-blue-50 rounded-xl shadow-2xl p-3 border border-blue-200 z-[9999] animate-fade-in-up"
                       style={{ top: `${popoverPositionType.top}px`, left: `${popoverPositionType.left}px` }}
                     >
                       <div className="mb-2">
                         <span className="text-sm font-bold text-gray-900">Property Type</span>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {['HOUSE AND LOT', 'TOWNHOUSE', 'CONDO', 'VACANT LOT', 'WAREHOUSE', 'BUILDING', 'OFFICE/COMMERCIAL', 'CLUB SHARE'].map(option => {
                           const isSelected = selectedPropertyTypes.includes(option);
                           return (
