@@ -1005,9 +1005,9 @@ function App() {
                   </div>
                 </form>
 
-                {/* Show All Toggle (Radio Button Style) */}
+                {/* Show All Toggle (Radio Button Style - Desktop Only) */}
                 <div
-                  className="flex items-center gap-2 bg-white px-4 py-3 rounded-2xl border border-gray-100 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer h-[calc(100%-4px)]"
+                  className="hidden sm:flex items-center gap-2 bg-white px-4 py-3 rounded-2xl border border-gray-100 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer h-[calc(100%-4px)]"
                   onClick={() => setShowAllListings(!showAllListings)}
                 >
                   <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors duration-200 ${showAllListings ? 'border-blue-600 bg-white' : 'border-gray-300 bg-gray-50'}`}>
@@ -1015,6 +1015,18 @@ function App() {
                   </div>
                   <span className={`text-xs sm:text-sm font-bold uppercase tracking-wide whitespace-nowrap select-none ${showAllListings ? 'text-blue-600' : 'text-gray-400'}`}>SHOW ALL</span>
                 </div>
+              </div>
+
+              {/* Mobile Only: Slider Toggle */}
+              <div className="flex sm:hidden items-center justify-center gap-3 mt-3 w-full pb-2">
+                <span className={`text-xs font-bold ${!showAllListings ? 'text-blue-600' : 'text-gray-400'}`}>AVAILABLE</span>
+                <div
+                  className="w-12 h-4 bg-gray-200 rounded-full relative cursor-pointer"
+                  onClick={() => setShowAllListings(!showAllListings)}
+                >
+                  <div className={`absolute top-1/2 -translate-y-1/2 w-6 h-6 rounded-full shadow-md transition-all duration-300 ${!showAllListings ? 'left-0 bg-blue-600' : 'left-[calc(100%-1.5rem)] bg-gray-400'}`} />
+                </div>
+                <span className={`text-xs font-bold ${showAllListings ? 'text-blue-600' : 'text-gray-400'}`}>SHOW ALL</span>
               </div>
 
               {/* Sort Buttons */}
