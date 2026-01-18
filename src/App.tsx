@@ -1439,7 +1439,7 @@ function App() {
                   {isTypeFilterOpen && createPortal(
                     <div
                       ref={typePopoverRef}
-                      className="fixed w-[calc(100vw-32px)] sm:w-[520px] bg-blue-50 rounded-xl shadow-2xl p-3 border border-blue-200 z-[9999] animate-fade-in-up"
+                      className="fixed w-[calc(100vw-32px)] sm:w-[520px] bg-blue-50 rounded-xl shadow-2xl p-3 border border-blue-200 z-[9999] animate-fade-in-up max-sm:!top-1/2 max-sm:!left-1/2 max-sm:!-translate-x-1/2 max-sm:!-translate-y-1/2"
                       style={{ top: `${popoverPositionType.top}px`, left: `${popoverPositionType.left}px` }}
                     >
                       <div className="mb-2">
