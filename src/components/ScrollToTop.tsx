@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import kiuLogo from '../assets/kiu_logo_scrolled.png';
+
 
 export const ScrollToTop = () => {
     const [isVisible, setIsVisible] = useState(false);
@@ -38,9 +38,9 @@ export const ScrollToTop = () => {
                 >
                     <div className="w-16 h-16 rounded-full overflow-hidden relative bg-white flex items-center justify-center shadow-xl border border-gray-100 group-hover:shadow-2xl transition-shadow duration-300">
                         <img
-                            src={kiuLogo}
-                            alt="Kiu Realty"
-                            className="w-full h-full object-contain p-1"
+                            src="/scroll-to-top.png"
+                            alt="Back to top"
+                            className="w-full h-full object-contain"
                         />
                     </div>
                     <span className="mt-2 text-[10px] font-black uppercase tracking-widest text-gray-800 bg-white/95 px-2.5 py-1 rounded-lg shadow-md backdrop-blur-sm border border-gray-100 opacity-0 group-hover:opacity-100 transition-opacity duration-300">

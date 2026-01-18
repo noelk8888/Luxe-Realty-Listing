@@ -20,8 +20,7 @@ export const fetchListings = async (): Promise<Listing[]> => {
                     const dataRows = rawRows.slice(1);
 
                     const cleanedData = dataRows
-                        .map(normalizeListing)
-                        .filter(l => l.price > 0 || l.leasePrice > 0); // Display if has Price OR Lease Price
+                        .map(normalizeListing);
                     resolve(cleanedData);
                 },
                 error: (error: Error) => {
@@ -205,6 +204,9 @@ const normalizeListing = (row: string[]): Listing => {
         columnAZ: row[51] || '', // Col AZ
         statusAQ: statusAQ, // Use detected status
         isSponsored: isSponsored,
-        sponsoredUntil: sponsoredUntilDate
+        sponsoredUntil: sponsoredUntilDate,
+        bedrooms: parseNumber(row[61]),
+        parking: parseNumber(row[63]),
+        typeDescription: row[43] || ''
     };
 };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Listing } from '../types';
-import { MapPin, Building, Maximize, Facebook, ChevronDown, ChevronUp } from 'lucide-react';
+import { MapPin, Building, Maximize, Facebook, ChevronDown, ChevronUp, Bed, Car } from 'lucide-react';
 
 interface ListingCardProps {
     listing: Listing;
@@ -106,8 +106,8 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         >
             {isNotAvailable && (
                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-[50]">
-                    <div className="bg-red-600 px-6 py-1.5 rounded-2xl shadow-md flex items-center justify-center min-w-[160px]">
-                        <span className="text-[12px] font-black uppercase tracking-[0.25em] text-white">
+                    <div className="bg-white border-2 border-red-600 px-6 py-1.5 rounded-2xl shadow-md flex items-center justify-center min-w-[160px]">
+                        <span className="text-[12px] font-black uppercase tracking-[0.25em] text-red-600">
                             {listing.statusAQ}
                         </span>
                     </div>
@@ -140,6 +140,11 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                                 DIRECT
                             </span>
                         )}
+                        {listing.typeDescription && (
+                            <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-green-50 text-green-600">
+                                {listing.typeDescription.toUpperCase()}
+                            </span>
+                        )}
                     </div>
 
 
@@ -151,7 +156,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-900 text-white hover:bg-[#1877F2] transition-colors"
+                            className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-300 text-gray-600 hover:bg-[#1877F2] hover:text-white transition-colors"
                             title="View on Facebook"
                         >
                             <Facebook size={18} fill="currentColor" strokeWidth={0} />
@@ -167,14 +172,14 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                                     onMapClick(listing);
                                 }
                             }}
-                            className={`text-2xl font-black text-black font-sans cursor-pointer hover:text-blue-600 hover:underline transition-colors tracking-tighter ${isPopupView ? 'underline' : ''}`}
+                            className={`text-2xl font-bold text-black font-sans cursor-pointer hover:text-blue-600 hover:underline transition-colors tracking-tighter ${isPopupView ? 'underline' : ''}`}
                             title={isPopupView ? "Back" : "View on Map"}
                         >
                             {listing.id}
                         </span>
                         {/* Column BC: Reverted to Below Listing ID (Gray) */}
                         {listing.columnBC && !isPopupView && (
-                            <div className="mt-1 text-xs font-bold text-gray-400 text-right">
+                            <div className="mt-1 text-xs text-gray-400 text-right">
                                 {listing.columnBC}
                             </div>
                         )}
@@ -202,7 +207,11 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         </div>
                     )}
 
-                    {activeFilter === 'Lease' ? (
+                    {listing.price === 0 && listing.leasePrice === 0 ? (
+                        <div className="flex items-baseline gap-1 text-gray-900 justify-center">
+                            <span className="text-xl font-bold uppercase tracking-tight">Price on Request</span>
+                        </div>
+                    ) : activeFilter === 'Lease' ? (
                         <>
                             {listing.leasePrice > 0 && (
                                 <div className="flex items-baseline gap-1 text-gray-900 justify-center">
@@ -286,6 +295,18 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                     <div className="flex items-center gap-2">
                         <Building className="w-4 h-4" />
                         <span className="truncate">{listing.building || listing.area || listing.barangay}</span>
+                    </div>
+                )}
+                {listing.bedrooms > 0 && (
+                    <div className="flex items-center gap-2">
+                        <Bed className="w-4 h-4" />
+                        <span>{listing.bedrooms} Bedroom{listing.bedrooms > 1 ? 's' : ''}</span>
+                    </div>
+                )}
+                {listing.parking > 0 && (
+                    <div className="flex items-center gap-2">
+                        <Car className="w-4 h-4" />
+                        <span>{listing.parking} Parking Slot{listing.parking > 1 ? 's' : ''}</span>
                     </div>
                 )}
                 <div className="flex items-center gap-2">

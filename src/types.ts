@@ -45,6 +45,9 @@ export interface Listing {
     statusAQ: string; // Col AQ
     isSponsored?: boolean;
     sponsoredUntil?: Date | null;
+    bedrooms: number;
+    parking: number;
+    typeDescription: string;
 }
 
 export interface RawListing {

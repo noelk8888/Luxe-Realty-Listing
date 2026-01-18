@@ -29,21 +29,32 @@ function App() {
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [selectedBarangay, setSelectedBarangay] = useState<string | null>(null);
+  const [selectedBedrooms, setSelectedBedrooms] = useState<string[]>([]);
+  const [selectedParking, setSelectedParking] = useState<string[]>([]);
+  const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<string[]>([]);
 
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
 
   // Price Range State
   const [isPriceFilterOpen, setIsPriceFilterOpen] = useState(false);
   const [priceRange, setPriceRange] = useState<[number, number] | null>(null);
+  const [useExactPrice, setUseExactPrice] = useState<boolean>(false);
+  const [manualPrice, setManualPrice] = useState<string>('');
 
   const [isPricePerSqmFilterOpen, setIsPricePerSqmFilterOpen] = useState(false);
   const [pricePerSqmRange, setPricePerSqmRange] = useState<[number, number] | null>(null);
+  const [useExactPricePerSqm, setUseExactPricePerSqm] = useState<boolean>(false);
+  const [manualPricePerSqm, setManualPricePerSqm] = useState<string>('');
 
   const [isLotAreaFilterOpen, setIsLotAreaFilterOpen] = useState(false);
   const [lotAreaRange, setLotAreaRange] = useState<[number, number] | null>(null);
+  const [useExactLotArea, setUseExactLotArea] = useState<boolean>(false);
+  const [manualLotArea, setManualLotArea] = useState<string>('');
 
   const [isFloorAreaFilterOpen, setIsFloorAreaFilterOpen] = useState(false);
   const [floorAreaRange, setFloorAreaRange] = useState<[number, number] | null>(null);
+  const [useExactFloorArea, setUseExactFloorArea] = useState<boolean>(false);
+  const [manualFloorArea, setManualFloorArea] = useState<string>('');
 
   useEffect(() => {
     // Reset selections on search
@@ -57,7 +68,18 @@ function App() {
       setLotAreaRange(null);
       setIsFloorAreaFilterOpen(false);
       setFloorAreaRange(null);
+      setUseExactPrice(false);
+      setManualPrice('');
+      setUseExactPricePerSqm(false);
+      setManualPricePerSqm('');
+      setUseExactLotArea(false);
+      setManualLotArea('');
+      setUseExactFloorArea(false);
+      setManualFloorArea('');
       setSelectedDirect(false);
+      setSelectedBedrooms(['ALL']);
+      setSelectedParking(['ALL OPTIONS']);
+      setSelectedPropertyTypes(['ALL']);
     }
   }, [query]);
 
@@ -68,7 +90,7 @@ function App() {
   // Reset page when any filter/search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [query, selectedType, selectedCategory, selectedDirect, selectedRegion, selectedProvince, selectedCity, selectedBarangay, priceRange, pricePerSqmRange, lotAreaRange, floorAreaRange, sortConfig]);
+  }, [query, selectedType, selectedCategory, selectedDirect, selectedRegion, selectedProvince, selectedCity, selectedBarangay, priceRange, pricePerSqmRange, lotAreaRange, floorAreaRange, sortConfig, selectedBedrooms, selectedParking, selectedPropertyTypes]);
 
   // Click-outside handler for Price Popover
   const pricePopoverRef = useRef<HTMLDivElement>(null);
@@ -89,6 +111,22 @@ function App() {
   const floorAreaPopoverRef = useRef<HTMLDivElement>(null);
   const floorAreaButtonRef = useRef<HTMLButtonElement>(null);
   const [popoverPositionFloor, setPopoverPositionFloor] = useState({ top: 0, left: 0 });
+
+  const bedroomsPopoverRef = useRef<HTMLDivElement>(null);
+  const bedroomsButtonRef = useRef<HTMLButtonElement>(null);
+  const [popoverPositionBedrooms, setPopoverPositionBedrooms] = useState({ top: 0, left: 0 });
+
+  const parkingPopoverRef = useRef<HTMLDivElement>(null);
+  const parkingButtonRef = useRef<HTMLButtonElement>(null);
+  const [popoverPositionParking, setPopoverPositionParking] = useState({ top: 0, left: 0 });
+
+  const typePopoverRef = useRef<HTMLDivElement>(null);
+  const typeButtonRef = useRef<HTMLButtonElement>(null);
+  const [popoverPositionType, setPopoverPositionType] = useState({ top: 0, left: 0 });
+
+  const [isBedroomsFilterOpen, setIsBedroomsFilterOpen] = useState(false);
+  const [isParkingFilterOpen, setIsParkingFilterOpen] = useState(false);
+  const [isTypeFilterOpen, setIsTypeFilterOpen] = useState(false);
 
   const sortButtonsContainerRef = useRef<HTMLDivElement>(null);
 
@@ -127,9 +165,27 @@ function App() {
           left: calculateCenteredLeft(containerRect)
         });
       }
+      if (isBedroomsFilterOpen && bedroomsButtonRef.current) {
+        setPopoverPositionBedrooms({
+          top: bedroomsButtonRef.current.getBoundingClientRect().bottom + 8,
+          left: calculateCenteredLeft(containerRect)
+        });
+      }
+      if (isParkingFilterOpen && parkingButtonRef.current) {
+        setPopoverPositionParking({
+          top: parkingButtonRef.current.getBoundingClientRect().bottom + 8,
+          left: calculateCenteredLeft(containerRect)
+        });
+      }
+      if (isTypeFilterOpen && typeButtonRef.current) {
+        setPopoverPositionType({
+          top: typeButtonRef.current.getBoundingClientRect().bottom + 8,
+          left: calculateCenteredLeft(containerRect)
+        });
+      }
     };
 
-    if (isPriceFilterOpen || isPricePerSqmFilterOpen || isLotAreaFilterOpen || isFloorAreaFilterOpen) {
+    if (isPriceFilterOpen || isPricePerSqmFilterOpen || isLotAreaFilterOpen || isFloorAreaFilterOpen || isBedroomsFilterOpen || isParkingFilterOpen || isTypeFilterOpen) {
       updateAllPositions();
 
       // DISMISS ON SCROLL: The user wants it to disappear when the "screen is moved"
@@ -138,6 +194,9 @@ function App() {
         setIsPricePerSqmFilterOpen(false);
         setIsLotAreaFilterOpen(false);
         setIsFloorAreaFilterOpen(false);
+        setIsBedroomsFilterOpen(false);
+        setIsParkingFilterOpen(false);
+        setIsTypeFilterOpen(false);
       };
 
       // DISMISS ON MOUSE LEAVE (with delay to allow slider dragging)
@@ -150,10 +209,17 @@ function App() {
           return;
         }
 
+        // Don't auto-close if any input is currently focused (user is editing a value)
+        const activeElement = document.activeElement;
+        if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+          if (dismissTimeout) clearTimeout(dismissTimeout);
+          return;
+        }
+
         const target = e.target as HTMLElement;
-        const isHoveringTrigger = [priceButtonRef, pricePerSqmButtonRef, lotAreaButtonRef, floorAreaButtonRef]
+        const isHoveringTrigger = [priceButtonRef, pricePerSqmButtonRef, lotAreaButtonRef, floorAreaButtonRef, bedroomsButtonRef, parkingButtonRef, typeButtonRef]
           .some(ref => ref.current?.contains(target));
-        const isHoveringPopover = [pricePopoverRef, pricePerSqmPopoverRef, lotAreaPopoverRef, floorAreaPopoverRef]
+        const isHoveringPopover = [pricePopoverRef, pricePerSqmPopoverRef, lotAreaPopoverRef, floorAreaPopoverRef, bedroomsPopoverRef, parkingPopoverRef, typePopoverRef]
           .some(ref => ref.current?.contains(target));
 
         // If mouse is over the interaction area, cancel any pending dismiss
@@ -180,7 +246,7 @@ function App() {
         if (dismissTimeout) clearTimeout(dismissTimeout);
       };
     }
-  }, [isPriceFilterOpen, isPricePerSqmFilterOpen, isLotAreaFilterOpen, isFloorAreaFilterOpen, sortConfig]);
+  }, [isPriceFilterOpen, isPricePerSqmFilterOpen, isLotAreaFilterOpen, isFloorAreaFilterOpen, isBedroomsFilterOpen, isParkingFilterOpen, isTypeFilterOpen, sortConfig]);
 
   // Fallback Click-outside handler
   useEffect(() => {
@@ -207,15 +273,30 @@ function App() {
         floorAreaButtonRef.current && !floorAreaButtonRef.current.contains(target)) {
         setIsFloorAreaFilterOpen(false);
       }
+      // Close Bedrooms Popover
+      if (bedroomsPopoverRef.current && !bedroomsPopoverRef.current.contains(target) &&
+        bedroomsButtonRef.current && !bedroomsButtonRef.current.contains(target)) {
+        setIsBedroomsFilterOpen(false);
+      }
+      // Close Parking Popover
+      if (parkingPopoverRef.current && !parkingPopoverRef.current.contains(target) &&
+        parkingButtonRef.current && !parkingButtonRef.current.contains(target)) {
+        setIsParkingFilterOpen(false);
+      }
+      // Close Type Popover
+      if (typePopoverRef.current && !typePopoverRef.current.contains(target) &&
+        typeButtonRef.current && !typeButtonRef.current.contains(target)) {
+        setIsTypeFilterOpen(false);
+      }
     };
 
-    if (isPriceFilterOpen || isPricePerSqmFilterOpen || isLotAreaFilterOpen || isFloorAreaFilterOpen) {
+    if (isPriceFilterOpen || isPricePerSqmFilterOpen || isLotAreaFilterOpen || isFloorAreaFilterOpen || isBedroomsFilterOpen || isParkingFilterOpen || isTypeFilterOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isPriceFilterOpen, isPricePerSqmFilterOpen, isLotAreaFilterOpen, isFloorAreaFilterOpen]);
+  }, [isPriceFilterOpen, isPricePerSqmFilterOpen, isLotAreaFilterOpen, isFloorAreaFilterOpen, isBedroomsFilterOpen, isParkingFilterOpen, isTypeFilterOpen]);
   // Availability Toggle: Show only available listings or show all
   const [showOnlyAvailable, setShowOnlyAvailable] = useState<boolean>(true); // Default to AVAILABLE only
   const [selectedListings, setSelectedListings] = useState<string[]>([]);
@@ -464,67 +545,11 @@ function App() {
   // Wait, 'results' is output of searchListings. 'baseFilteredResults' applies Type/Cat/Area.
   // So we need an intermediate set that has ONLY Type/Cat applied.
 
-  const typeCatFiltered = results.filter(item => {
-    // 1. Type Match
-    let typeMatch = true;
-    if (selectedType) {
-      if (selectedType === 'Sale') typeMatch = item.price > 0;
-      else if (selectedType === 'Lease') typeMatch = item.leasePrice > 0;
-      else if (selectedType === 'Sale/Lease') typeMatch = item.price > 0 && item.leasePrice > 0;
-    }
-    // 2. Category Match
-    let categoryMatch = true;
-    if (selectedCategory) {
-      const itemCat = (item.category || '').trim().toLowerCase();
-      const itemAE = (item.columnAE || '').trim().toLowerCase();
 
-      if (selectedCategory === 'Residential') {
-        categoryMatch = (itemCat + ' ' + itemAE).includes('residential');
-      } else if (selectedCategory === 'Commercial') {
-        categoryMatch = (itemCat + ' ' + itemAE).includes('commercial');
-      } else if (selectedCategory === 'Industrial') {
-        categoryMatch = (itemCat + ' ' + itemAE).includes('industrial');
-      } else if (selectedCategory === 'Agricultural') {
-        categoryMatch = (itemCat + ' ' + itemAE).includes('agri');
-      }
-    }
-    return typeMatch && categoryMatch;
-  });
 
-  // 1. Available Regions (Sorted by count)
-  const regionCounts = typeCatFiltered.reduce((acc, item) => {
-    const reg = (item.region || '').trim();
-    if (reg) acc[reg] = (acc[reg] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
 
-  const availableRegions = Object.keys(regionCounts).sort((a, b) => {
-    const countA = regionCounts[a];
-    const countB = regionCounts[b];
-    if (countB !== countA) return countB - countA;
-    return a.localeCompare(b); // Tie-breaker: Alphabetical
-  });
 
-  const availableProvinces = Array.from(new Set(typeCatFiltered
-    .filter(i => !selectedRegion || (i.region || '').trim() === selectedRegion)
-    .map(i => (i.province || '').trim())
-    .filter(Boolean)
-  )).sort();
 
-  const availableCities = Array.from(new Set(typeCatFiltered
-    .filter(i => !selectedRegion || (i.region || '').trim() === selectedRegion)
-    .filter(i => !selectedProvince || (i.province || '').trim() === selectedProvince)
-    .map(i => (i.city || '').trim())
-    .filter(Boolean)
-  )).sort();
-
-  const availableBarangays = Array.from(new Set(typeCatFiltered
-    .filter(i => !selectedRegion || (i.region || '').trim() === selectedRegion)
-    .filter(i => !selectedProvince || (i.province || '').trim() === selectedProvince)
-    .filter(i => !selectedCity || (i.city || '').trim() === selectedCity)
-    .map(i => (i.barangay || '').trim())
-    .filter(Boolean)
-  )).sort();
 
 
 
@@ -532,22 +557,79 @@ function App() {
   // Final Results (Apply Price and Price/Sqm Range)
   const displayedResults = baseFilteredResults.filter(item => {
     // Filter by Price Range
-    if (priceRange) {
-      const priceToCompare = selectedType === 'Lease' ? item.leasePrice : item.price;
+    if (useExactPrice && manualPrice) {
+      const getPrice = (l: Listing) => {
+        if (selectedType === 'FOR LEASE') return l.leasePrice;
+        if (selectedType === 'FOR SALE') return l.price;
+        return l.price > 0 ? l.price : l.leasePrice;
+      };
+      if (getPrice(item) !== parseFloat(manualPrice)) return false;
+    } else if (priceRange) {
+      const priceToCompare = (selectedType === 'Lease' || selectedType === 'FOR LEASE') ? item.leasePrice : item.price;
       if (priceToCompare < priceRange[0] || priceToCompare > priceRange[1]) return false;
     }
+
+
     // Filter by Price/Sqm Range
-    if (pricePerSqmRange) {
-      const sqmToCompare = selectedType === 'Lease' ? item.leasePricePerSqm : item.pricePerSqm;
+    if (useExactPricePerSqm && manualPricePerSqm) {
+      const getPps = (l: Listing) => (selectedType === 'Lease' || selectedType === 'FOR LEASE') ? l.leasePricePerSqm : l.pricePerSqm;
+      if (getPps(item) !== parseFloat(manualPricePerSqm)) return false;
+    } else if (pricePerSqmRange) {
+      const sqmToCompare = (selectedType === 'Lease' || selectedType === 'FOR LEASE') ? item.leasePricePerSqm : item.pricePerSqm;
       if (sqmToCompare < pricePerSqmRange[0] || sqmToCompare > pricePerSqmRange[1]) return false;
     }
+
     // Filter by Lot Area Range
-    if (lotAreaRange) {
+    if (useExactLotArea && manualLotArea) {
+      if (item.lotArea !== parseFloat(manualLotArea)) return false;
+    } else if (lotAreaRange) {
       if (item.lotArea < lotAreaRange[0] || item.lotArea > lotAreaRange[1]) return false;
     }
+
     // Filter by Floor Area Range
-    if (floorAreaRange) {
+    if (useExactFloorArea && manualFloorArea) {
+      if (item.floorArea !== parseFloat(manualFloorArea)) return false;
+    } else if (floorAreaRange) {
       if (item.floorArea < floorAreaRange[0] || item.floorArea > floorAreaRange[1]) return false;
+    }
+    // Filter by Bedrooms (Multi-select)
+    if (selectedBedrooms.length > 0) {
+      // Check for specific matches
+      const isStudio = selectedBedrooms.includes('STUDIO') && item.bedrooms === 0;
+      const isOne = selectedBedrooms.includes('1') && item.bedrooms === 1;
+      const isTwo = selectedBedrooms.includes('2') && item.bedrooms === 2;
+      const isThree = selectedBedrooms.includes('3') && item.bedrooms === 3;
+      const isFour = selectedBedrooms.includes('4') && item.bedrooms === 4;
+      const isFivePlus = selectedBedrooms.includes('5+') && item.bedrooms >= 5;
+
+      if (!isStudio && !isOne && !isTwo && !isThree && !isFour && !isFivePlus) return false;
+    }
+    // Filter by Parking (Multi-select)
+    if (selectedParking.length > 0) {
+      const isZero = selectedParking.includes('0') && (item.parking === 0 || !item.parking);
+      const isOne = selectedParking.includes('1') && item.parking === 1;
+      const isTwo = selectedParking.includes('2') && item.parking === 2;
+      const isThree = selectedParking.includes('3') && item.parking === 3;
+      const isFour = selectedParking.includes('4') && item.parking === 4;
+      const isFivePlus = selectedParking.includes('5+') && item.parking >= 5;
+
+      if (!isZero && !isOne && !isTwo && !isThree && !isFour && !isFivePlus) return false;
+    }
+    // Filter by Property Type (Multi-select)
+    if (selectedPropertyTypes.length > 0) {
+      const itemType = (item.typeDescription || '').trim().toUpperCase();
+      const matchesType = selectedPropertyTypes.some(type => {
+        if (type === 'TOWNHOUSE') return itemType.includes('TOWNHOUSE') || itemType.includes('TOWN HOUSE');
+        if (type === 'WAREHOUSE') return itemType.includes('WAREHOUSE');
+        if (type === 'VACANT LOT') return itemType.includes('VACANT LOT') || itemType.includes('LOT');
+        if (type === 'HOUSE AND LOT') return itemType.includes('HOUSE AND LOT') || itemType.includes('HOUSE & LOT');
+        if (type === 'CONDO') return itemType.includes('CONDO');
+        if (type === 'OFFICE/COMMERCIAL') return itemType.includes('OFFICE') || itemType.includes('COMMERCIAL');
+        if (type === 'BUILDING') return itemType.includes('BUILDING');
+        if (type === 'CLUB SHARE') return itemType.includes('CLUB SHARES') || itemType.includes('CLUB SHARE');
+        return false;
+      });
+      if (!matchesType) return false;
     }
     return true;
   }).sort((a, b) => {
@@ -609,7 +691,7 @@ function App() {
   const finalResults = paginatedResults;
 
   // Relevance sort = null sortConfig (uses original array order from searchEngine)
-  const handleSort = (key: 'price' | 'pricePerSqm' | 'relevance' | 'lotArea' | 'floorArea') => {
+  const handleSort = (key: 'price' | 'pricePerSqm' | 'relevance' | 'lotArea' | 'floorArea' | 'bedrooms' | 'parking') => {
     if (key === 'relevance') {
       setSortConfig(null);
       setIsPriceFilterOpen(false); // Close price popover
@@ -629,6 +711,12 @@ function App() {
     }
     if (key !== 'floorArea') {
       setIsFloorAreaFilterOpen(false);
+    }
+    if (key !== 'bedrooms') {
+      setIsBedroomsFilterOpen(false);
+    }
+    if (key !== 'parking') {
+      setIsParkingFilterOpen(false);
     }
 
     setSortConfig(current => {
@@ -730,13 +818,13 @@ function App() {
       </header>
 
       {/* Hero / Search Section */}
-      <div className={`flex flex-col items-center justify-center transition-all duration-500 ease-out px-4 pt-20 ${(hasSearched || selectedType || selectedCategory) ? 'py-12 min-h-[30vh]' : 'min-h-[100vh]'
+      < div className={`flex flex-col items-center justify-center transition-all duration-500 ease-out px-4 pt-20 ${(hasSearched || selectedType || selectedCategory || (selectedBedrooms.length > 0) || (selectedParking.length > 0) || (selectedPropertyTypes.length > 0)) ? 'py-12 min-h-[30vh]' : 'min-h-[100vh]'
         }`}>
-        <div className={`w-full max-w-2xl text-center space-y-6 transition-all duration-500 ${(hasSearched || selectedType || selectedCategory) ? 'translate-y-0' : '-translate-y-8'
+        <div className={`w-full max-w-2xl text-center space-y-6 transition-all duration-500 ${(hasSearched || selectedType || selectedCategory || (selectedBedrooms.length > 0) || (selectedParking.length > 0) || (selectedPropertyTypes.length > 0)) ? 'translate-y-0' : '-translate-y-8'
           }`}>
 
-          <p className={`font-bold text-gray-900 tracking-tight transition-all duration-500 ${(hasSearched || selectedType || selectedCategory) ? 'text-2xl mb-4' : 'text-4xl sm:text-5xl mb-8'}`}>
-            {(selectedType || selectedCategory || hasSearched)
+          <p className={`font-bold text-gray-900 tracking-tight transition-all duration-500 ${(hasSearched || selectedType || selectedCategory || (selectedBedrooms.length > 0) || (selectedParking.length > 0) || (selectedPropertyTypes.length > 0)) ? 'text-2xl mb-4' : 'text-4xl sm:text-5xl mb-8'}`}>
+            {(selectedType || selectedCategory || hasSearched || (selectedBedrooms.length > 0) || (selectedParking.length > 0) || (selectedPropertyTypes.length > 0))
               ? `Found ${displayedResults.length.toLocaleString()} of ${allListings.length.toLocaleString()} Available Listings`
               : allListings.length > 0 ? `${allListings.length.toLocaleString()} Available Listings` : 'Loading properties...'
             }
@@ -749,11 +837,10 @@ function App() {
 
             {/* Group 1: Property Type */}
             <div className="inline-flex bg-gray-100 p-0.5 rounded-lg shadow-inner relative z-0">
-              {['Sale', 'Lease', 'Sale/Lease'].map((filter) => {
+              {['Sale', 'Lease'].map((filter) => {
                 let label = filter.toUpperCase();
-                if (filter === 'Sale') label = 'SALE'; // Shortened
-                if (filter === 'Lease') label = 'LEASE'; // Shortened
-                if (filter === 'Sale/Lease') label = 'SALE/LEASE';
+                if (filter === 'Sale') label = 'FOR SALE';
+                if (filter === 'Lease') label = 'FOR LEASE';
 
                 const isActive = selectedType === filter;
 
@@ -892,6 +979,9 @@ function App() {
                           setPricePerSqmRange(null);
                           setLotAreaRange(null);
                           setFloorAreaRange(null);
+                          setSelectedBedrooms([]);
+                          setSelectedParking([]);
+                          setSelectedPropertyTypes([]);
                           setSortConfig(null);
                           setShowOnlyAvailable(true);
                           window.history.replaceState({}, '', window.location.pathname);
@@ -975,39 +1065,62 @@ function App() {
                           </button>
                         </div>
 
-                        <DualRangeSlider
-                          min={minGlob}
-                          max={maxGlob}
-                          step={sliderStep}
-                          value={priceRange || [minGlob, maxGlob]}
-                          onChange={(val) => setPriceRange(val)}
-                          formatMinValue={(val) => {
-                            if (val >= 1000000) {
-                              const millions = val / 1000000;
-                              const rounded = Math.floor(millions / 10) * 10;
-                              return `${rounded.toLocaleString()}M`;
-                            } else if (val >= 1000) {
-                              const thousands = val / 1000;
-                              const rounded = Math.floor(thousands / 10) * 10;
-                              return `${rounded.toLocaleString()}K`;
-                            } else {
-                              return `${Math.floor(val / 10) * 10}`;
-                            }
-                          }}
-                          formatMaxValue={(val) => {
-                            if (val >= 1000000) {
-                              const millions = val / 1000000;
-                              const rounded = Math.ceil(millions / 10) * 10;
-                              return `${rounded.toLocaleString()}M`;
-                            } else if (val >= 1000) {
-                              const thousands = val / 1000;
-                              const rounded = Math.ceil(thousands / 10) * 10;
-                              return `${rounded.toLocaleString()}K`;
-                            } else {
-                              return `${Math.ceil(val / 10) * 10}`;
-                            }
-                          }}
-                        />
+                        <div className="flex items-center gap-2 mb-3 px-1">
+                          <div
+                            onClick={() => setUseExactPrice(!useExactPrice)}
+                            className={`w-4 h-4 rounded-full border border-gray-400 cursor-pointer flex items-center justify-center ${useExactPrice ? 'bg-blue-600 border-blue-600' : 'bg-white'}`}
+                          >
+                          </div>
+                          <span className="text-xs font-medium text-gray-700 cursor-pointer select-none" onClick={() => setUseExactPrice(!useExactPrice)}>Exact Value Match</span>
+                        </div>
+
+                        {useExactPrice ? (
+                          <div className="mb-2 px-1">
+                            <input
+                              type="number"
+                              value={manualPrice}
+                              onChange={(e) => setManualPrice(e.target.value)}
+                              placeholder="Enter exact price..."
+                              className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                              autoFocus
+                            />
+                          </div>
+                        ) : (
+                          <DualRangeSlider
+                            useLogScale={true}
+                            min={minGlob}
+                            max={maxGlob}
+                            step={sliderStep}
+                            value={priceRange || [minGlob, maxGlob]}
+                            onChange={(val) => setPriceRange(val)}
+                            formatMinValue={(val) => {
+                              if (val >= 1000000) {
+                                const millions = val / 1000000;
+                                const rounded = Math.floor(millions / 10) * 10;
+                                return `${rounded.toLocaleString()}M`;
+                              } else if (val >= 1000) {
+                                const thousands = val / 1000;
+                                const rounded = Math.floor(thousands / 10) * 10;
+                                return `${rounded.toLocaleString()}K`;
+                              } else {
+                                return `${Math.floor(val / 10) * 10}`;
+                              }
+                            }}
+                            formatMaxValue={(val) => {
+                              if (val >= 1000000) {
+                                const millions = val / 1000000;
+                                const rounded = Math.floor(millions / 10) * 10;
+                                return `${rounded.toLocaleString()}M`;
+                              } else if (val >= 1000) {
+                                const thousands = val / 1000;
+                                const rounded = Math.floor(thousands / 10) * 10;
+                                return `${rounded.toLocaleString()}K`;
+                              } else {
+                                return `${Math.floor(val / 10) * 10}`;
+                              }
+                            }}
+                          />
+                        )}
                       </div>,
                       document.body
                     )}
@@ -1054,39 +1167,62 @@ function App() {
                           </button>
                         </div>
 
-                        <DualRangeSlider
-                          min={minGlobPerSqm}
-                          max={maxGlobPerSqm}
-                          step={sliderStepPerSqm}
-                          value={pricePerSqmRange || [minGlobPerSqm, maxGlobPerSqm]}
-                          onChange={(val) => setPricePerSqmRange(val)}
-                          formatMinValue={(val) => {
-                            if (val >= 1000000) {
-                              const millions = val / 1000000;
-                              const rounded = Math.floor(millions / 10) * 10;
-                              return `${rounded.toLocaleString()}M`;
-                            } else if (val >= 1000) {
-                              const thousands = val / 1000;
-                              const rounded = Math.floor(thousands / 10) * 10;
-                              return `${rounded.toLocaleString()}K`;
-                            } else {
-                              return `${Math.floor(val / 10) * 10}`;
-                            }
-                          }}
-                          formatMaxValue={(val) => {
-                            if (val >= 1000000) {
-                              const millions = val / 1000000;
-                              const rounded = Math.ceil(millions / 10) * 10;
-                              return `${rounded.toLocaleString()}M`;
-                            } else if (val >= 1000) {
-                              const thousands = val / 1000;
-                              const rounded = Math.ceil(thousands / 10) * 10;
-                              return `${rounded.toLocaleString()}K`;
-                            } else {
-                              return `${Math.ceil(val / 10) * 10}`;
-                            }
-                          }}
-                        />
+                        <div className="flex items-center gap-2 mb-3 px-1">
+                          <div
+                            onClick={() => setUseExactPricePerSqm(!useExactPricePerSqm)}
+                            className={`w-4 h-4 rounded-full border border-gray-400 cursor-pointer flex items-center justify-center ${useExactPricePerSqm ? 'bg-blue-600 border-blue-600' : 'bg-white'}`}
+                          >
+                          </div>
+                          <span className="text-xs font-medium text-gray-700 cursor-pointer select-none" onClick={() => setUseExactPricePerSqm(!useExactPricePerSqm)}>Exact Value Match</span>
+                        </div>
+
+                        {useExactPricePerSqm ? (
+                          <div className="mb-2 px-1">
+                            <input
+                              type="number"
+                              value={manualPricePerSqm}
+                              onChange={(e) => setManualPricePerSqm(e.target.value)}
+                              placeholder="Enter exact price per sqm..."
+                              className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                              autoFocus
+                            />
+                          </div>
+                        ) : (
+                          <DualRangeSlider
+                            useLogScale={true}
+                            min={minGlobPerSqm}
+                            max={maxGlobPerSqm}
+                            step={sliderStepPerSqm}
+                            value={pricePerSqmRange || [minGlobPerSqm, maxGlobPerSqm]}
+                            onChange={(val) => setPricePerSqmRange(val)}
+                            formatMinValue={(val) => {
+                              if (val >= 1000000) {
+                                const millions = val / 1000000;
+                                const rounded = Math.floor(millions / 10) * 10;
+                                return `${rounded.toLocaleString()}M`;
+                              } else if (val >= 1000) {
+                                const thousands = val / 1000;
+                                const rounded = Math.floor(thousands / 10) * 10;
+                                return `${rounded.toLocaleString()}K`;
+                              } else {
+                                return `${Math.floor(val / 10) * 10}`;
+                              }
+                            }}
+                            formatMaxValue={(val) => {
+                              if (val >= 1000000) {
+                                const millions = val / 1000000;
+                                const rounded = Math.ceil(millions / 10) * 10;
+                                return `${rounded.toLocaleString()}M`;
+                              } else if (val >= 1000) {
+                                const thousands = val / 1000;
+                                const rounded = Math.ceil(thousands / 10) * 10;
+                                return `${rounded.toLocaleString()}K`;
+                              } else {
+                                return `${Math.ceil(val / 10) * 10}`;
+                              }
+                            }}
+                          />
+                        )}
                       </div>,
                       document.body
                     )}
@@ -1133,31 +1269,54 @@ function App() {
                           </button>
                         </div>
 
-                        <DualRangeSlider
-                          min={minGlobLot}
-                          max={maxGlobLot}
-                          step={sliderStepLot}
-                          value={lotAreaRange || [minGlobLot, maxGlobLot]}
-                          onChange={(val) => setLotAreaRange(val)}
-                          formatMinValue={(val) => {
-                            if (val >= 10000) {
-                              const thousands = val / 1000;
-                              const rounded = Math.floor(thousands / 10) * 10;
-                              return `${rounded.toLocaleString()}K SQM`;
-                            } else {
-                              return `${Math.floor(val / 10) * 10} SQM`;
-                            }
-                          }}
-                          formatMaxValue={(val) => {
-                            if (val >= 10000) {
-                              const thousands = val / 1000;
-                              const rounded = Math.ceil(thousands / 10) * 10;
-                              return `${rounded.toLocaleString()}K SQM`;
-                            } else {
-                              return `${Math.ceil(val / 10) * 10} SQM`;
-                            }
-                          }}
-                        />
+                        <div className="flex items-center gap-2 mb-3 px-1">
+                          <div
+                            onClick={() => setUseExactLotArea(!useExactLotArea)}
+                            className={`w-4 h-4 rounded-full border border-gray-400 cursor-pointer flex items-center justify-center ${useExactLotArea ? 'bg-blue-600 border-blue-600' : 'bg-white'}`}
+                          >
+                          </div>
+                          <span className="text-xs font-medium text-gray-700 cursor-pointer select-none" onClick={() => setUseExactLotArea(!useExactLotArea)}>Exact Value Match</span>
+                        </div>
+
+                        {useExactLotArea ? (
+                          <div className="mb-2 px-1">
+                            <input
+                              type="number"
+                              value={manualLotArea}
+                              onChange={(e) => setManualLotArea(e.target.value)}
+                              placeholder="Enter exact lot area..."
+                              className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                              autoFocus
+                            />
+                          </div>
+                        ) : (
+                          <DualRangeSlider
+                            useLogScale={true}
+                            min={minGlobLot}
+                            max={maxGlobLot}
+                            step={sliderStepLot}
+                            value={lotAreaRange || [minGlobLot, maxGlobLot]}
+                            onChange={(val) => setLotAreaRange(val)}
+                            formatMinValue={(val) => {
+                              if (val >= 10000) {
+                                const thousands = val / 1000;
+                                const rounded = Math.floor(thousands / 10) * 10;
+                                return `${rounded.toLocaleString()}K SQM`;
+                              } else {
+                                return `${Math.floor(val / 10) * 10} SQM`;
+                              }
+                            }}
+                            formatMaxValue={(val) => {
+                              if (val >= 10000) {
+                                const thousands = val / 1000;
+                                const rounded = Math.ceil(thousands / 10) * 10;
+                                return `${rounded.toLocaleString()}K SQM`;
+                              } else {
+                                return `${Math.ceil(val / 10) * 10} SQM`;
+                              }
+                            }}
+                          />
+                        )}
                       </div>,
                       document.body
                     )}
@@ -1204,84 +1363,304 @@ function App() {
                           </button>
                         </div>
 
-                        <DualRangeSlider
-                          min={minGlobFloor}
-                          max={maxGlobFloor}
-                          step={sliderStepFloor}
-                          value={floorAreaRange || [minGlobFloor, maxGlobFloor]}
-                          onChange={(val) => setFloorAreaRange(val)}
-                          formatMinValue={(val) => {
-                            if (val >= 10000) {
-                              const thousands = val / 1000;
-                              const rounded = Math.floor(thousands / 10) * 10;
-                              return `${rounded.toLocaleString()}K SQM`;
-                            } else {
-                              return `${Math.floor(val / 10) * 10} SQM`;
+                        <div className="flex items-center gap-2 mb-3 px-1">
+                          <div
+                            onClick={() => setUseExactFloorArea(!useExactFloorArea)}
+                            className={`w-4 h-4 rounded-full border border-gray-400 cursor-pointer flex items-center justify-center ${useExactFloorArea ? 'bg-blue-600 border-blue-600' : 'bg-white'}`}
+                          >
+                          </div>
+                          <span className="text-xs font-medium text-gray-700 cursor-pointer select-none" onClick={() => setUseExactFloorArea(!useExactFloorArea)}>Exact Value Match</span>
+                        </div>
+
+                        {useExactFloorArea ? (
+                          <div className="mb-2 px-1">
+                            <input
+                              type="number"
+                              value={manualFloorArea}
+                              onChange={(e) => setManualFloorArea(e.target.value)}
+                              placeholder="Enter exact floor area..."
+                              className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                              autoFocus
+                            />
+                          </div>
+                        ) : (
+                          <DualRangeSlider
+                            useLogScale={true}
+                            min={minGlobFloor}
+                            max={maxGlobFloor}
+                            step={sliderStepFloor}
+                            value={floorAreaRange || [minGlobFloor, maxGlobFloor]}
+                            onChange={(val) => setFloorAreaRange(val)}
+                            formatMinValue={(val) => {
+                              if (val >= 10000) {
+                                const thousands = val / 1000;
+                                const rounded = Math.floor(thousands / 10) * 10;
+                                return `${rounded.toLocaleString()}K SQM`;
+                              } else {
+                                return `${Math.floor(val / 10) * 10} SQM`;
+                              }
+                            }}
+                            formatMaxValue={(val) => {
+                              if (val >= 10000) {
+                                const thousands = val / 1000;
+                                const rounded = Math.ceil(thousands / 10) * 10;
+                                return `${rounded.toLocaleString()}K SQM`;
+                              } else {
+                                return `${Math.ceil(val / 10) * 10} SQM`;
+                              }
+                            }}
+                          />
+                        )}
+                      </div>,
+                      document.body
+                    )}
+                  </div>
+
+                  {/* Property Type Button */}
+                  <div className="relative flex-1">
+                    <button
+                      ref={typeButtonRef}
+                      onClick={() => setIsTypeFilterOpen(!isTypeFilterOpen)}
+                      className={`relative w-full px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1
+                            ${selectedPropertyTypes.length > 0
+                          ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
+                          : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
+                        }
+                        `}
+                    >
+                      Property Type
+                    </button>
+
+                    {isTypeFilterOpen && createPortal(
+                      <div
+                        ref={typePopoverRef}
+                        className="fixed w-[520px] bg-blue-50 rounded-xl shadow-2xl p-3 border border-blue-200 z-[9999] animate-fade-in-up"
+                        style={{ top: `${popoverPositionType.top}px`, left: `${popoverPositionType.left}px` }}
+                      >
+                        <div className="mb-2">
+                          <span className="text-sm font-bold text-gray-900">Property Type</span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          {['HOUSE AND LOT', 'TOWNHOUSE', 'CONDO', 'VACANT LOT', 'WAREHOUSE', 'BUILDING', 'OFFICE/COMMERCIAL', 'CLUB SHARE'].map(option => {
+                            const isSelected = selectedPropertyTypes.includes(option);
+                            return (
+                              <button
+                                key={option}
+                                onClick={() => {
+                                  let next = selectedPropertyTypes.filter(o => o !== 'ALL');
+                                  if (isSelected) {
+                                    next = next.filter(o => o !== option);
+                                  } else {
+                                    next = [...next, option];
+                                  }
+                                  setSelectedPropertyTypes(next.length === 0 ? [] : next);
+                                }}
+                                className={`py-2 px-3 text-xs font-bold rounded-lg transition-all border text-center
+                                  ${isSelected
+                                    ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                                    : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                                  }`}
+                              >
+                                {option}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>,
+                      document.body
+                    )}
+                  </div>
+
+                  {/* Bedrooms Button */}
+                  <div className="relative flex-1">
+                    <button
+                      ref={bedroomsButtonRef}
+                      onClick={() => {
+                        if (sortConfig && sortConfig.key !== 'bedrooms') {
+                          setSortConfig(null);
+                        }
+                        setIsBedroomsFilterOpen(!isBedroomsFilterOpen);
+                      }}
+                      className={`relative w-full px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1
+                            ${sortConfig?.key === 'bedrooms' || selectedBedrooms.length > 0
+                          ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
+                          : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
+                        }
+                        `}
+                    >
+                      Bedrooms
+                      {sortConfig?.key === 'bedrooms' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+                    </button>
+
+                    {isBedroomsFilterOpen && createPortal(
+                      <div
+                        ref={bedroomsPopoverRef}
+                        className="fixed w-72 bg-blue-50 rounded-xl shadow-2xl p-3 border border-blue-200 z-[9999] animate-fade-in-up"
+                        style={{ top: `${popoverPositionBedrooms.top}px`, left: `${popoverPositionBedrooms.left}px` }}
+                      >
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm font-bold text-gray-900">Bedrooms</span>
+                          <button
+                            onClick={() => handleSort('bedrooms')}
+                            className="p-1 hover:bg-gray-100 rounded-md transition-colors"
+                            title="Toggle Sort Order"
+                          >
+                            {sortConfig?.key === 'bedrooms' && sortConfig.direction === 'asc'
+                              ? <ArrowUp className="w-4 h-4 text-gray-700" />
+                              : <ArrowDown className="w-4 h-4 text-gray-700" />
                             }
-                          }}
-                          formatMaxValue={(val) => {
-                            if (val >= 10000) {
-                              const thousands = val / 1000;
-                              const rounded = Math.ceil(thousands / 10) * 10;
-                              return `${rounded.toLocaleString()}K SQM`;
-                            } else {
-                              return `${Math.ceil(val / 10) * 10} SQM`;
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2">
+                          {['STUDIO', '1', '2', '3', '4', '5+'].map(option => {
+                            const isSelected = selectedBedrooms.includes(option);
+                            return (
+                              <button
+                                key={option}
+                                onClick={() => {
+                                  let next = [...selectedBedrooms];
+                                  if (isSelected) {
+                                    next = next.filter(o => o !== option);
+                                  } else {
+                                    next = [...next, option];
+                                  }
+                                  setSelectedBedrooms(next);
+                                }}
+                                className={`py-2 text-xs font-bold rounded-lg transition-all border
+                                  ${isSelected
+                                    ? 'bg-blue-600 text-white border-blue-600 shadow-md translate-y-[-1px]'
+                                    : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                                  }`}
+                              >
+                                {option}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>,
+                      document.body
+                    )}
+                  </div>
+
+                  {/* Parking Button */}
+                  <div className="relative flex-1">
+                    <button
+                      ref={parkingButtonRef}
+                      onClick={() => {
+                        if (sortConfig && sortConfig.key !== 'parking') {
+                          setSortConfig(null);
+                        }
+                        setIsParkingFilterOpen(!isParkingFilterOpen);
+                      }}
+                      className={`relative w-full px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1
+                            ${sortConfig?.key === 'parking' || selectedParking.length > 0
+                          ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
+                          : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
+                        }
+                        `}
+                    >
+                      Parking
+                      {sortConfig?.key === 'parking' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+                    </button>
+
+                    {isParkingFilterOpen && createPortal(
+                      <div
+                        ref={parkingPopoverRef}
+                        className="fixed w-72 bg-blue-50 rounded-xl shadow-2xl p-3 border border-blue-200 z-[9999] animate-fade-in-up"
+                        style={{ top: `${popoverPositionParking.top}px`, left: `${popoverPositionParking.left}px` }}
+                      >
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm font-bold text-gray-900">Parking Slots</span>
+                          <button
+                            onClick={() => handleSort('parking')}
+                            className="p-1 hover:bg-gray-100 rounded-md transition-colors"
+                            title="Toggle Sort Order"
+                          >
+                            {sortConfig?.key === 'parking' && sortConfig.direction === 'asc'
+                              ? <ArrowUp className="w-4 h-4 text-gray-700" />
+                              : <ArrowDown className="w-4 h-4 text-gray-700" />
                             }
-                          }}
-                        />
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2">
+                          {['0', '1', '2', '3', '4', '5+'].map(option => {
+                            const isSelected = selectedParking.includes(option);
+                            return (
+                              <button
+                                key={option}
+                                onClick={() => {
+                                  let next = [...selectedParking];
+                                  if (isSelected) {
+                                    next = next.filter(o => o !== option);
+                                  } else {
+                                    next = [...next, option];
+                                  }
+                                  setSelectedParking(next);
+                                }}
+                                className={`py-2 text-xs font-bold rounded-lg transition-all border
+                                  ${isSelected
+                                    ? 'bg-blue-600 text-white border-blue-600 shadow-md translate-y-[-1px]'
+                                    : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                                  }`}
+                              >
+                                {option}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>,
                       document.body
                     )}
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Right Column: Area Filters Sidebar (Adjusted Width) */}
-            <div className="w-full xl:w-[37.5%] flex flex-col pt-1">
-              <div className="bg-blue-50/80 rounded-3xl p-4 flex flex-col gap-1 border border-blue-100/50">
-                {[
-                  { label: 'Region', value: selectedRegion, setValue: setSelectedRegion, options: availableRegions },
-                  { label: 'Province', value: selectedProvince, setValue: setSelectedProvince, options: availableProvinces },
-                  { label: 'City', value: selectedCity, setValue: setSelectedCity, options: availableCities },
-                  { label: 'Barangay', value: selectedBarangay, setValue: setSelectedBarangay, options: availableBarangays },
-                ].map(({ label, value, setValue, options }) => {
-                  const selectId = `filter-${label.toLowerCase()}`;
-                  return (
-                    <div key={label} className="relative flex items-center justify-between w-full group py-1.5 rounded-lg transition-colors hover:bg-white/50">
-                      {/* Visual Layer - Pointer events none so clicks pass through to the select */}
-                      <div className="flex items-center justify-between w-full px-2 pointer-events-none z-0">
-                        <span className="text-sm font-bold text-gray-500 group-hover:text-gray-800 transition-colors">
-                          {label}
-                        </span>
-                        <span className={`text-sm font-bold transition-colors ${value ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'}`}>
-                          {value || 'All'}
-                        </span>
+              {/* Right Column: Area Filters Sidebar (Adjusted Width) - HIDDEN */}
+              {/* <div className="w-full xl:w-[37.5%] flex flex-col pt-1">
+                <div className="bg-blue-50/80 rounded-3xl p-4 flex flex-col gap-1 border border-blue-100/50">
+                  {[
+                    { label: 'Province', value: selectedProvince, setValue: setSelectedProvince, options: availableProvinces },
+                    { label: 'City', value: selectedCity, setValue: setSelectedCity, options: availableCities },
+                    { label: 'Barangay', value: selectedBarangay, setValue: setSelectedBarangay, options: availableBarangays },
+                  ].map(({ label, value, setValue, options }) => {
+                    const selectId = `filter-${label.toLowerCase()}`;
+                    return (
+                      <div key={label} className="relative flex items-center justify-between w-full group py-1.5 rounded-lg transition-colors hover:bg-white/50">
+                        <div className="flex items-center justify-between w-full px-2 pointer-events-none z-0">
+                          <span className="text-sm font-bold text-gray-500 group-hover:text-gray-800 transition-colors">
+                            {label}
+                          </span>
+                          <span className={`text-sm font-bold transition-colors ${value ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'}`}>
+                            {value || 'All'}
+                          </span>
+                        </div>
+
+                        <select
+                          id={selectId}
+                          value={value || ''}
+                          onChange={e => setValue(e.target.value || null)}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 appearance-none"
+                          title={`Select ${label}`}
+                        >
+                          <option value="">All</option>
+                          {options.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
                       </div>
-
-                      {/* Interactive Layer - Invisible Select covers everything */}
-                      <select
-                        id={selectId}
-                        value={value || ''}
-                        onChange={e => setValue(e.target.value || null)}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 appearance-none"
-                        title={`Select ${label}`}
-                      >
-                        <option value="">All</option>
-                        {options.map(o => <option key={o} value={o}>{o}</option>)}
-                      </select>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              </div> */}
             </div>
           </div>
         </div>
-      </div>
+      </div >
 
       {/* Results Section */}
       {
-        (hasSearched || selectedType || selectedCategory) && (
+        (hasSearched || selectedType || selectedCategory || (selectedBedrooms.length > 0) || (selectedParking.length > 0) || (selectedPropertyTypes.length > 0)) && (
           <div className="max-w-7xl mx-auto px-4 pb-20 animate-fade-in-up">
             {paginatedResults.length === 0 ? (
               <div className="text-center py-20 text-gray-500 bg-white rounded-2xl border border-gray-100">

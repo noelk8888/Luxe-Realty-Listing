@@ -8,6 +8,7 @@ interface DualRangeSliderProps {
     onChange: (value: [number, number]) => void;
     formatMinValue?: (val: number) => string;
     formatMaxValue?: (val: number) => string;
+    useLogScale?: boolean;
 }
 
 interface EditableLabelProps {
@@ -39,7 +40,8 @@ const EditableLabel: React.FC<EditableLabelProps> = ({ value, format, onCommit }
         return (
             <input
                 autoFocus
-                type="number"
+                type="text"
+                inputMode="decimal"
                 value={tempVal}
                 onFocus={(e) => e.target.select()}
                 onChange={(e) => setTempVal(e.target.value)}
@@ -67,15 +69,54 @@ const EditableLabel: React.FC<EditableLabelProps> = ({ value, format, onCommit }
     );
 };
 
-export const DualRangeSlider: React.FC<DualRangeSliderProps> = ({ min, max, step = 1, value, onChange, formatMinValue, formatMaxValue }) => {
+export const DualRangeSlider: React.FC<DualRangeSliderProps> = ({
+    min,
+    max,
+    step = 1,
+    value,
+    onChange,
+    formatMinValue,
+    formatMaxValue,
+    useLogScale = false
+}) => {
     const [minVal, setMinVal] = useState(value[0]);
     const [maxVal, setMaxVal] = useState(value[1]);
     const minValRef = useRef(value[0]);
     const maxValRef = useRef(value[1]);
     const range = useRef<HTMLDivElement>(null);
 
-    // Convert to percentage
-    const getPercent = (value: number) => Math.round(((value - min) / (max - min)) * 100);
+    // Constant for log scale "steepness"
+    const K = 8;
+
+    // Convert value to percentage [0-100]
+    const getPercent = (val: number) => {
+        if (useLogScale) {
+            // Reverse mapping for log scale
+            const normalized = (val - min) / (max - min);
+            const p = (Math.log(1 + normalized * (Math.exp(K) - 1)) / K) * 100;
+            return Math.min(100, Math.max(0, p));
+        }
+        return ((val - min) / (max - min)) * 100;
+    };
+
+    // Convert percentage [0-100] back to value
+    const toValue = (percent: number) => {
+        if (useLogScale) {
+            const normalized = (Math.exp((percent / 100) * K) - 1) / (Math.exp(K) - 1);
+            const val = normalized * (max - min) + min;
+            // Round to step
+            return Math.round(val / (step || 1)) * (step || 1);
+        }
+        return (percent / 100) * (max - min) + min;
+    };
+
+    // Values for range inputs
+    const rangeInputMin = useLogScale ? 0 : min;
+    const rangeInputMax = useLogScale ? 100 : max;
+    const rangeInputStep = useLogScale ? 0.01 : step;
+
+    const currentMinInputVal = useLogScale ? getPercent(minVal) : minVal;
+    const currentMaxInputVal = useLogScale ? getPercent(maxVal) : maxVal;
 
     // Sync state with props
     useEffect(() => {
@@ -83,7 +124,31 @@ export const DualRangeSlider: React.FC<DualRangeSliderProps> = ({ min, max, step
         setMaxVal(value[1]);
         minValRef.current = value[0];
         maxValRef.current = value[1];
-    }, [value, min, max]);
+    }, [value, min, max]); // Removed extra deps to match original simpler behavior initially, but useLogScale might need careful ref updates?
+    // Actually, following the reference:
+    /*
+    useEffect(() => {
+        if (value[0] !== minValRef.current || value[1] !== maxValRef.current) {
+            setMinVal(value[0]);
+            setMaxVal(value[1]);
+            minValRef.current = value[0];
+            maxValRef.current = value[1];
+        }
+    }, [value]);
+    */
+    // I will stick to the reference implementation logic for syncing:
+
+    useEffect(() => {
+        // Sync internal state if props change significantly
+        // Note: checking refs avoids loop if parent updates on every change
+        if (value[0] !== minValRef.current || value[1] !== maxValRef.current) {
+            setMinVal(value[0]);
+            setMaxVal(value[1]);
+            minValRef.current = value[0];
+            maxValRef.current = value[1];
+        }
+    }, [value]);
+
 
     // Update range track visual
     useEffect(() => {
@@ -94,7 +159,7 @@ export const DualRangeSlider: React.FC<DualRangeSliderProps> = ({ min, max, step
             range.current.style.left = `${minPercent}%`;
             range.current.style.width = `${maxPercent - minPercent}%`;
         }
-    }, [minVal, min, max]);
+    }, [minVal, min, max, useLogScale]);
 
     useEffect(() => {
         const minPercent = getPercent(minValRef.current);
@@ -103,16 +168,17 @@ export const DualRangeSlider: React.FC<DualRangeSliderProps> = ({ min, max, step
         if (range.current) {
             range.current.style.width = `${maxPercent - minPercent}%`;
         }
-    }, [maxVal, min, max]);
+    }, [maxVal, min, max, useLogScale]);
 
     const updateMin = (newVal: number) => {
         let val = newVal;
         // Constraints
-        val = Math.max(val, min); // limitMin (global min)
-        val = Math.min(val, max); // limitMax (global max) - though logically for min handle, max is value[1]
+        val = Math.max(val, min); // limitMin
+        val = Math.min(val, max); // limitMax
 
-        // Cross-check: min handle must be < max handle
-        // We use maxValRef.current to be safe, but state maxVal is also fine
+        // Cross-check
+        // We generally want min <= max - step
+        // Or at least min <= maxVal
         val = Math.min(val, maxVal - (step || 1));
 
         setMinVal(val);
@@ -126,7 +192,7 @@ export const DualRangeSlider: React.FC<DualRangeSliderProps> = ({ min, max, step
         val = Math.max(val, min);
         val = Math.min(val, max);
 
-        // Cross-check: max handle must be > min handle
+        // Cross-check
         val = Math.max(val, minVal + (step || 1));
 
         setMaxVal(val);
@@ -150,34 +216,40 @@ export const DualRangeSlider: React.FC<DualRangeSliderProps> = ({ min, max, step
             </div>
 
             <div className="relative w-full h-6 flex items-center select-none pt-2">
-                {/* Track Background */}
+                {/* Track Background - using two range inputs for thumb controls */}
                 <input
                     type="range"
-                    min={min}
-                    max={max}
-                    step={step}
-                    value={minVal}
+                    min={rangeInputMin}
+                    max={rangeInputMax}
+                    step={rangeInputStep}
+                    value={currentMinInputVal}
                     onChange={(event) => {
-                        const value = Math.max(Number(event.target.value), min);
+                        const rawVal = Number(event.target.value);
+                        const val = useLogScale ? toValue(rawVal) : Math.max(rawVal, min);
+
                         // Prevent crossing
-                        const newVal = Math.min(value, maxVal - 1);
+                        const newVal = Math.min(val, maxVal - (step || 1));
+
                         setMinVal(newVal);
                         minValRef.current = newVal;
                         onChange([newVal, maxVal]);
                     }}
                     className="thumb thumb--left w-full absolute z-30 h-0 outline-none pointer-events-none appearance-none"
-                    style={{ zIndex: minVal > max - 100 ? 5 : 3 }}
+                    style={{ zIndex: (minVal - min) / (max - min) > 0.9 ? 5 : 3 }}
                 />
                 <input
                     type="range"
-                    min={min}
-                    max={max}
-                    step={step}
-                    value={maxVal}
+                    min={rangeInputMin}
+                    max={rangeInputMax}
+                    step={rangeInputStep}
+                    value={currentMaxInputVal}
                     onChange={(event) => {
-                        const value = Math.min(Number(event.target.value), max);
+                        const rawVal = Number(event.target.value);
+                        const val = useLogScale ? toValue(rawVal) : Math.min(rawVal, max);
+
                         // Prevent crossing
-                        const newVal = Math.max(value, minVal + 1);
+                        const newVal = Math.max(val, minVal + (step || 1));
+
                         setMaxVal(newVal);
                         maxValRef.current = newVal;
                         onChange([minVal, newVal]);
