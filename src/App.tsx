@@ -652,7 +652,7 @@ function App() {
         if (type === 'CONDO') return itemType.includes('CONDO');
         if (type === 'OFFICE/COMMERCIAL') return itemType.includes('OFFICE') || itemType.includes('COMMERCIAL');
         if (type === 'BUILDING') return itemType.includes('BUILDING');
-        if (type === 'CLUB SHARE') return itemType.includes('CLUB SHARES') || itemType.includes('CLUB SHARE');
+        if (type === 'CLUB SHARE / BUSINESS') return itemType.includes('CLUB SHARES') || itemType.includes('CLUB SHARE') || itemType.includes('BUSINESS');
         return false;
       });
       if (!matchesType) return false;
@@ -1549,7 +1549,7 @@ function App() {
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {['HOUSE AND LOT', 'TOWNHOUSE', 'CONDO', 'VACANT LOT', 'WAREHOUSE', 'BUILDING', 'OFFICE/COMMERCIAL', 'CLUB SHARE'].map(option => {
+                        {['HOUSE AND LOT', 'TOWNHOUSE', 'CONDO', 'VACANT LOT', 'WAREHOUSE', 'BUILDING', 'OFFICE/COMMERCIAL', 'CLUB SHARE / BUSINESS'].map(option => {
                           const isSelected = selectedPropertyTypes.includes(option);
                           return (
                             <button

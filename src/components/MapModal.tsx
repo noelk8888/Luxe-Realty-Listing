@@ -102,14 +102,14 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
         const dist = calculateDistance(centerListing.lat, centerListing.lng, item.lat, item.lng);
         if (dist > similarRadius) return false;
 
-        // 2. Price check (within ±20% of featured listing's price)
+        // 2. Price check (within ±10% of featured listing's price)
         // Use the primary price (sale price if available, otherwise lease price)
         const featuredPrice = centerListing.price > 0 ? centerListing.price : centerListing.leasePrice;
         const itemPrice = item.price > 0 ? item.price : item.leasePrice;
 
         if (featuredPrice > 0 && itemPrice > 0) {
-            const minPrice = featuredPrice * 0.8;
-            const maxPrice = featuredPrice * 1.2;
+            const minPrice = featuredPrice * 0.9;
+            const maxPrice = featuredPrice * 1.1;
             if (itemPrice < minPrice || itemPrice > maxPrice) return false;
         } else {
             // If either has no price, not similar
