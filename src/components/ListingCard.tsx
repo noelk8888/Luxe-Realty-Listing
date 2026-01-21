@@ -140,7 +140,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                                 DIRECT
                             </span>
                         )}
-                        {listing.typeDescription && (
+                        {listing.typeDescription && (listing.typeDescription.toUpperCase() !== (listing.columnAE || '').toUpperCase()) && (
                             <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-green-50 text-green-600">
                                 {listing.typeDescription.toUpperCase()}
                             </span>
