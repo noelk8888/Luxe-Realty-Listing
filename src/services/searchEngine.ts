@@ -269,7 +269,7 @@ const parseQuery = (query: string): ParsedQuery => {
     };
 
     // Detect proximity keywords
-    const proximityKeywords = ['near', 'close to', 'around', 'near to', 'close by', 'nearby'];
+    const proximityKeywords = ['near', 'close to', 'around', 'near to', 'close by', 'nearby', 'within'];
     result.isProximitySearch = proximityKeywords.some(keyword => lowercaseQuery.includes(keyword));
 
     // Detect landmarks
