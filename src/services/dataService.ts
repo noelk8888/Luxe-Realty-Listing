@@ -179,7 +179,7 @@ const normalizeListing = (row: string[]): Listing => {
 
         // Mapped to match existing UI usage where possible or generic fields
         columnJ: '',
-        columnK: row[10] || '', // Col K (Owner/Broker)
+        columnK: row[51] || '', // Col AZ
         columnM: '',
         columnN: '',
         columnP: '',
