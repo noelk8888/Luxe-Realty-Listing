@@ -183,8 +183,9 @@ export const searchListings = (listings: Listing[], query: string, minScore: num
 
         const listingText = primaryText + ' . ' + secondaryText + ' . ' + (listing.statusAQ || '');
 
-        // For proximity searches or multi-keyword searches, use flexible matching
-        if (criteria.isProximitySearch || criteria.keywords.length > 1) {
+        // For proximity searches, multi-keyword searches, or type+location searches, use flexible matching
+        const hasTypeAndLocation = criteria.types.length > 0 && criteria.keywords.length > 0;
+        if (criteria.isProximitySearch || criteria.keywords.length > 1 || hasTypeAndLocation) {
             // A. Flexible Keyword Matching
             // Each relevant keyword found adds to the score
             const relevantKeywords = queryTokens.filter(token => {
