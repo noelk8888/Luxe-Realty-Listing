@@ -351,9 +351,13 @@ function App() {
   // Initial Data Load
   useEffect(() => {
     fetchListings().then(data => {
+      console.log('Fetched listings:', data.length);
       setAllListings(data);
       // Initialize results with all data so "Show All" works immediately
       setResults(data);
+      setLoading(false);
+    }).catch(error => {
+      console.error('Failed to fetch listings:', error);
       setLoading(false);
     });
   }, []);

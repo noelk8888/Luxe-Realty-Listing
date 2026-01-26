@@ -1,52 +1,100 @@
-
-import Papa from 'papaparse';
+import { supabase } from '../lib/supabase';
 import { PropertyType } from '../types';
 import type { Listing } from '../types';
 
-const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1OYk_LGiLYb_ayGoVJ-tistDias2VdETdR60SP5ALBlo/export?format=csv&gid=589312453';
+// Database row type from Supabase - matches "KIU Properties" table
+interface DbListing {
+    'GEO ID': string | null;
+    'FB LINK': string | null;
+    'MAIN': string | null;
+    'PHOTO': string | null;
+    'MAP LINK': string | null;
+    'REGION': string | null;
+    'PROVINCE': string | null;
+    'CITY': string | null;
+    'BARANGAY': string | null;
+    'AREA': string | null;
+    'BUILDING': string | null;
+    'RESIDENTIAL': string | null;
+    'COMMERCIAL': string | null;
+    'INDUSTRIAL': string | null;
+    'AGRICULTURAL': string | null;
+    'LOT AREA': number | null;
+    'FLOOR AREA': number | null;
+    'STATUS': string | null;
+    'TYPE': string | null;
+    'Extracted Sale Price': number | null;
+    'Sale Price/Sqm': number | null;
+    'Extracted Lease Price': number | null;
+    'Lease Price/Sqm': number | null;
+    'COMMENTS': string | null;
+    'WITH INCOME': string | null;
+    'DIRECT OR BROKER': string | null;
+    'NAME': string | null;
+    'AWAY': string | null;
+    'DATE RECV': string | null;
+    'DATE UPDATED': string | null;
+    'LISTING OWNERSHIP': string | null;
+    'LAT LONG': string | null;
+    'LAT': string | null;
+    'LONG': string | null;
+    'SPONSOR START': string | null;
+    'SPONSOR END': string | null;
+    'bedrooms': number | null;
+    'toilet': string | null;
+    'garage': string | null;
+    'amenities': string | null;
+    'corner': string | null;
+    'compound': string | null;
+}
 
 export const fetchListings = async (): Promise<Listing[]> => {
     try {
-        const response = await fetch(SHEET_URL);
-        const csvText = await response.text();
+        console.log('Starting to fetch listings from Supabase...');
 
-        return new Promise((resolve, reject) => {
-            Papa.parse(csvText, {
-                header: false, // Use array mode to rely on column indices
-                skipEmptyLines: true,
-                complete: (results) => {
-                    const rawRows = results.data as string[][];
-                    // Skip header row (index 0)
-                    const dataRows = rawRows.slice(1);
+        // Fetch all listings in batches (Supabase default limit is 1000)
+        const allData: DbListing[] = [];
+        const batchSize = 1000;
+        let offset = 0;
+        let hasMore = true;
 
-                    const cleanedData = dataRows
-                        .map(normalizeListing);
-                    resolve(cleanedData);
-                },
-                error: (error: Error) => {
-                    reject(error);
+        while (hasMore) {
+            const { data, error } = await supabase
+                .from('KIU Properties')
+                .select('*')
+                .range(offset, offset + batchSize - 1);
+
+            if (error) {
+                console.error('Error fetching from Supabase:', error);
+                console.error('Error details:', JSON.stringify(error, null, 2));
+                return [];
+            }
+
+            if (!data || data.length === 0) {
+                hasMore = false;
+            } else {
+                allData.push(...data);
+                offset += batchSize;
+                console.log(`Fetched batch: ${data.length} listings (total: ${allData.length})`);
+
+                // If we got less than batchSize, we've reached the end
+                if (data.length < batchSize) {
+                    hasMore = false;
                 }
-            });
-        });
+            }
+        }
+
+        console.log(`Successfully fetched ${allData.length} total listings from Supabase`);
+        return allData.map(normalizeDbListing);
     } catch (error) {
         console.error('Error fetching data:', error);
         return [];
     }
 };
 
-const normalizeListing = (row: string[]): Listing => {
-    // Helper to clean price strings "P 4,200,000" -> 4200000
-    const parseNumber = (val: string) => {
-        if (!val) return 0;
-        return parseFloat(val.replace(/[P,php\s]/gi, '').replace(/,/g, '')) || 0;
-    };
-
-    // Column Indices (0-based) from Sheet4:
-    // A=0, Z=25, AB=27, AC=28, AD=29, AE=30, AF=31, AG=32, AH=33, AI=34, AJ=35
-    // AK=36, AL=37, AM=38, AN=39, AO=40, AP=41, AQ=42, AR=43, AS=44, AT=45, AU=46, AV=47, AW=48, AY=50, BE=56
-
-    const price = parseNumber(row[44]); // Col AS
-    const leasePrice = parseNumber(row[46]); // Col AU
+const normalizeDbListing = (row: DbListing): Listing => {
+    const price = row['Extracted Sale Price'] || 0;
+    const leasePrice = row['Extracted Lease Price'] || 0;
 
     // Determine Sale Type Logic
     let saleType = '';
@@ -58,16 +106,16 @@ const normalizeListing = (row: string[]): Listing => {
         saleType = 'FOR LEASE';
     }
 
-    // Category Logic (Cols AK, AL, AM, AN -> 36, 37, 38, 39)
+    // Category Logic
     const categories: string[] = [];
-    if (row[36] && row[36].trim()) categories.push('RESIDENTIAL');
-    if (row[37] && row[37].trim()) categories.push('COMMERCIAL');
-    if (row[38] && row[38].trim()) categories.push('INDUSTRIAL');
-    if (row[39] && row[39].trim()) categories.push('AGRICULTURAL');
+    if (row['RESIDENTIAL'] && row['RESIDENTIAL'].trim()) categories.push('RESIDENTIAL');
+    if (row['COMMERCIAL'] && row['COMMERCIAL'].trim()) categories.push('COMMERCIAL');
+    if (row['INDUSTRIAL'] && row['INDUSTRIAL'].trim()) categories.push('INDUSTRIAL');
+    if (row['AGRICULTURAL'] && row['AGRICULTURAL'].trim()) categories.push('AGRICULTURAL');
     const category = categories.join(', ');
 
-    // Summary Logic (Col AA -> 26)
-    const rawSummary = (row[26] || '').trim();
+    // Summary Logic
+    const rawSummary = (row['MAIN'] || '').trim();
     const allLines = rawSummary.split(/\r?\n/).map(l => l.trim());
     const fullSummary = rawSummary;
 
@@ -79,24 +127,20 @@ const normalizeListing = (row: string[]): Listing => {
 
     let displaySummary = '';
     if (nonEmptyIndices.length >= 2) {
-        // Always skip the first non-empty line (Listing ID)
         const firstIdx = nonEmptyIndices[0];
         const lastIdx = nonEmptyIndices[nonEmptyIndices.length - 1];
 
         if (nonEmptyIndices.length === 2) {
-            // Case [ID, Description] -> Show Description
             displaySummary = allLines[nonEmptyIndices[1]];
         } else {
-            // Case [ID, Description..., PhotoLink/Other] -> Show middle part
             displaySummary = allLines.slice(firstIdx + 1, lastIdx).join('\n').trim();
         }
     } else {
-        // Less than 2 lines, nothing to show after skipping ID
         displaySummary = '';
     }
 
-    const lotArea = parseNumber(row[40]); // Col AO
-    const floorArea = parseNumber(row[41]); // Col AP
+    const lotArea = row['LOT AREA'] || 0;
+    const floorArea = row['FLOOR AREA'] || 0;
 
     // Type Inference Logic
     let type: PropertyType = PropertyType.Unknown;
@@ -106,24 +150,27 @@ const normalizeListing = (row: string[]): Listing => {
         type = PropertyType.Lot;
     }
 
-    // Parse Coordinates from Column BE (Index 56)
-    const rawCoords = row[56] || '';
+    // Parse Coordinates - try LAT LONG first, then individual LAT/LONG columns
     let lat = 0;
     let lng = 0;
+    const rawCoords = row['LAT LONG'] || '';
     if (rawCoords.includes(',')) {
         const [latStr, lngStr] = rawCoords.split(',');
         lat = parseFloat(latStr.trim()) || 0;
         lng = parseFloat(lngStr.trim()) || 0;
+    } else {
+        lat = parseFloat(row['LAT'] || '') || 0;
+        lng = parseFloat(row['LONG'] || '') || 0;
     }
 
-    const columnV = row[48] || ''; // Col AW (Comments)
+    const columnV = row['COMMENTS'] || '';
     const summaryWithV = columnV ? `${fullSummary}\n\n${columnV}` : fullSummary;
 
-    // Detect status from summary if statusAQ is empty or "available"
-    let statusAQ = (row[42] || '').trim();
+    // Detect status from summary if status is empty or "available"
+    let statusAQ = (row['STATUS'] || '').trim();
     if (!statusAQ || statusAQ.toLowerCase() === 'available') {
-        const upperFull = (row[26] || '').toUpperCase(); // Col AA (Summary)
-        const upperComments = (row[48] || '').toUpperCase(); // Col AW (Comments)
+        const upperFull = (row['MAIN'] || '').toUpperCase();
+        const upperComments = (row['COMMENTS'] || '').toUpperCase();
         const combinedText = `${upperFull} ${upperComments}`;
 
         if (combinedText.includes('SOLD')) {
@@ -135,9 +182,9 @@ const normalizeListing = (row: string[]): Listing => {
         }
     }
 
-    // Parse Sponsored Date Range from Column BH (Start - Index 59) and Column BI (End - Index 60)
-    const rawSponsoredStart = row[59] || '';
-    const rawSponsoredEnd = row[60] || '';
+    // Parse Sponsored Date Range
+    const rawSponsoredStart = row['SPONSOR START'] || '';
+    const rawSponsoredEnd = row['SPONSOR END'] || '';
     let isSponsored = false;
     let sponsoredUntilDate: Date | null = null;
 
@@ -150,47 +197,47 @@ const normalizeListing = (row: string[]): Listing => {
 
         if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
             sponsoredUntilDate = endDate;
-            // Active if today is between start and end (inclusive)
             if (today >= startDate && today <= endDate) {
                 isSponsored = true;
             }
         }
     }
 
-    return {
-        id: row[28] || '', // Col AC
-        summary: summaryWithV, // Full text for copy including monthly dues
-        displaySummary: displaySummary, // Text without first line for UI
-        price: price, // Col AS
-        status: 'Available', // Default to Available since we don't have a status col mapped explicitly in request? 
-        // Wait, user request didn't map Status (O in old). 
-        // Request says "category - if any 1 or 4 of the COL AK to AN is not empty"
-        // Use 'Available' as default or map if needed. 
-        // Logic for Status was previously O. New mapping doesn't mention it.
-        // I will default to 'Available' for now to ensure display.
-        saleType: saleType, // Derived
-        pricePerSqm: parseNumber(row[45]), // Col AT
-        region: row[30] || '', // Col AE
-        province: row[31] || '', // Col AF
-        city: row[32] || '', // Col AG
-        barangay: row[33] || '', // Col AH
-        area: row[34] || '', // Col AI
-        building: row[35] || '', // Col AJ
+    // Check isDirect from DIRECT OR BROKER column or summary
+    const directOrBroker = (row['DIRECT OR BROKER'] || '').toUpperCase();
+    const isDirect = directOrBroker.includes('DIRECT') || rawSummary.toUpperCase().includes('DIRECT');
 
-        // Mapped to match existing UI usage where possible or generic fields
+    // Parse parking from garage column
+    const parking = parseInt(row['garage'] || '0') || 0;
+
+    return {
+        id: row['GEO ID'] || '',
+        summary: summaryWithV,
+        displaySummary: displaySummary,
+        price: price,
+        status: 'Available',
+        saleType: saleType,
+        pricePerSqm: row['Sale Price/Sqm'] || 0,
+        region: row['REGION'] || '',
+        province: row['PROVINCE'] || '',
+        city: row['CITY'] || '',
+        barangay: row['BARANGAY'] || '',
+        area: row['AREA'] || '',
+        building: row['BUILDING'] || '',
+
         columnJ: '',
-        columnK: row[51] || '', // Col AZ
+        columnK: row['NAME'] || '', // Using NAME column (was column AZ)
         columnM: '',
         columnN: '',
         columnP: '',
-        columnAE: row[43] || '', // Col AR
+        columnAE: row['TYPE'] || '',
 
         category: category,
-        facebookLink: row[25] || '', // Col Z
-        photoLink: row[27] || '', // Col AB
-        mapLink: row[29] || '', // Col AD
-        columnV: row[48] || '', // Col AW (Comments)
-        isDirect: (row[50]?.toUpperCase().includes('DIRECT')) || (rawSummary.toUpperCase().includes('DIRECT')), // Col AY or Summary fallback
+        facebookLink: row['FB LINK'] || '',
+        photoLink: row['PHOTO'] || '',
+        mapLink: row['MAP LINK'] || '',
+        columnV: row['COMMENTS'] || '',
+        isDirect: isDirect,
 
         lat,
         lng,
@@ -198,15 +245,15 @@ const normalizeListing = (row: string[]): Listing => {
         floorArea,
         type,
         leasePrice: leasePrice,
-        leasePricePerSqm: parseNumber(row[47]), // Col AV
-        columnBC: row[54] || '', // Col BC
-        columnBD: row[55] || '', // Col BD
-        columnAZ: row[51] || '', // Col AZ
-        statusAQ: statusAQ, // Use detected status
+        leasePricePerSqm: row['Lease Price/Sqm'] || 0,
+        columnBC: row['AWAY'] || '',
+        columnBD: row['LISTING OWNERSHIP'] || '',
+        columnAZ: row['NAME'] || '',
+        statusAQ: statusAQ,
         isSponsored: isSponsored,
         sponsoredUntil: sponsoredUntilDate,
-        bedrooms: parseNumber(row[61]),
-        parking: parseNumber(row[63]),
-        typeDescription: row[43] || ''
+        bedrooms: row['bedrooms'] || 0,
+        parking: parking,
+        typeDescription: row['TYPE'] || ''
     };
 };
