@@ -357,7 +357,7 @@ const parseQuery = (query: string): ParsedQuery => {
     // --- Location Extraction (Naive implementation) ---
     // In a real app, strict Named Entity Recognition (NER) is better.
     // Here, we'll strip out common stop words and treat remaining tokens as potential locations.
-    const stopWords = ['in', 'at', 'near', 'around', 'with', 'a', 'an', 'the', 'for', 'sale', 'lease', 'price', 'seeking', 'looking', 'find', 'me', 'condo', 'lot', 'unit', 'under', 'over', 'below', 'above', 'to', 'of', 'by', 'within', 'km', 'st', 'rd', 'ave', 'blvd'];
+    const stopWords = ['in', 'at', 'near', 'around', 'with', 'a', 'an', 'the', 'for', 'sale', 'lease', 'price', 'seeking', 'looking', 'find', 'me', 'condo', 'lot', 'unit', 'under', 'over', 'below', 'above', 'to', 'of', 'by', 'within', 'km'];
 
     // Extract landmark names that were matched to avoid duplicate processing
     const matchedLandmarkWords: string[] = [];
