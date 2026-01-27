@@ -183,10 +183,12 @@ export const searchListings = (listings: Listing[], query: string, minScore: num
 
         const listingText = primaryText + ' . ' + secondaryText + ' . ' + (listing.statusAQ || '');
 
-        // For proximity searches, multi-keyword searches, or type+location searches, use flexible matching
+        // Determine matching strategy based on query type
         const hasTypeAndLocation = criteria.types.length > 0 && criteria.keywords.length > 0;
-        if (criteria.isProximitySearch || criteria.keywords.length > 1 || hasTypeAndLocation) {
-            // A. Flexible Keyword Matching
+        const isPureMultiKeywordSearch = criteria.keywords.length > 1 && criteria.types.length === 0 && !criteria.isProximitySearch;
+
+        if (criteria.isProximitySearch || hasTypeAndLocation) {
+            // A. Flexible Keyword Matching for type+location or proximity searches
             // Each relevant keyword found adds to the score
             const relevantKeywords = queryTokens.filter(token => {
                 // Exclude landmark names (already handled by proximity)
@@ -208,9 +210,29 @@ export const searchListings = (listings: Listing[], query: string, minScore: num
             if (listingText.includes(cleanQuery)) {
                 score += 50;
             }
+        } else if (isPureMultiKeywordSearch && criteria.keywords.length <= 3) {
+            // B. Multi-word phrase matching for location-only searches (e.g., "st jude", "la salle")
+            // Require all keywords to be present, preferably as exact phrase
+            const allKeywordsPresent = criteria.keywords.every(keyword =>
+                listingText.includes(keyword)
+            );
+
+            if (allKeywordsPresent) {
+                // All keywords found - check if they're close together as a phrase
+                if (primaryText.includes(cleanQuery)) {
+                    score += 100; // Exact phrase in primary location fields
+                } else if (listingText.includes(cleanQuery)) {
+                    score += 60; // Exact phrase in secondary fields
+                } else {
+                    // All keywords present but not as exact phrase - lower score
+                    score += 20;
+                }
+            } else {
+                // Missing one or more keywords - filter out
+                return { listing, score: -1 };
+            }
         } else {
-            // Traditional exact phrase matching for specific searches
-            // A. Exact Phrase Match (The "Holy Grail")
+            // C. Traditional exact phrase matching for single-keyword searches
             // Checks if the full user query appears inside the text
             if (primaryText.includes(cleanQuery)) {
                 score += 100;
@@ -335,7 +357,7 @@ const parseQuery = (query: string): ParsedQuery => {
     // --- Location Extraction (Naive implementation) ---
     // In a real app, strict Named Entity Recognition (NER) is better.
     // Here, we'll strip out common stop words and treat remaining tokens as potential locations.
-    const stopWords = ['in', 'at', 'near', 'around', 'with', 'a', 'an', 'the', 'for', 'sale', 'lease', 'price', 'seeking', 'looking', 'find', 'me', 'condo', 'lot', 'unit', 'under', 'over', 'below', 'above', 'to', 'of', 'by', 'within', 'km'];
+    const stopWords = ['in', 'at', 'near', 'around', 'with', 'a', 'an', 'the', 'for', 'sale', 'lease', 'price', 'seeking', 'looking', 'find', 'me', 'condo', 'lot', 'unit', 'under', 'over', 'below', 'above', 'to', 'of', 'by', 'within', 'km', 'st', 'rd', 'ave', 'blvd'];
 
     // Extract landmark names that were matched to avoid duplicate processing
     const matchedLandmarkWords: string[] = [];
