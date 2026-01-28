@@ -1,9 +1,14 @@
 import { supabase } from '../lib/supabase';
 import { PropertyType } from '../types';
 import type { Listing } from '../types';
+import {
+    getCachedListings,
+    saveListingsToCache,
+    clearCache
+} from './listingsCache';
 
 // Database row type from Supabase - matches "KIU Properties" table
-interface DbListing {
+export interface DbListing {
     'GEO ID': string | null;
     'FB LINK': string | null;
     'MAIN': string | null;
@@ -40,7 +45,7 @@ interface DbListing {
     'LONG': string | null;
     'SPONSOR START': string | null;
     'SPONSOR END': string | null;
-    'bedrooms': number | null;
+    'bedrooms': string | number | null; // Database stores as TEXT, but may be parsed as number
     'toilet': string | null;
     'garage': string | null;
     'amenities': string | null;
@@ -48,51 +53,161 @@ interface DbListing {
     'compound': string | null;
 }
 
+/**
+ * Fetch listings with IndexedDB caching + progressive loading
+ *
+ * Strategy:
+ * 1. Check IndexedDB cache first (instant if cached)
+ * 2. If cache valid: return cached data immediately
+ * 3. If cache invalid: fetch from Supabase and cache
+ */
 export const fetchListings = async (): Promise<Listing[]> => {
+    try {
+        // Try to get cached data first
+        const cached = await getCachedListings();
+        if (cached) {
+            console.log('✅ Using cached listings from IndexedDB');
+            return cached;
+        }
+
+        // Cache miss or invalid - fetch from Supabase
+        console.log('📡 Cache miss - fetching from Supabase...');
+        const listings = await fetchFromSupabase();
+
+        // Save to cache in background (don't await - don't block return)
+        saveListingsToCache(listings).catch(err => {
+            console.error('Failed to cache listings:', err);
+        });
+
+        return listings;
+    } catch (error) {
+        console.error('Error in fetchListings:', error);
+        return [];
+    }
+};
+
+/**
+ * Manually refresh listings (clears cache and fetches fresh data)
+ */
+export const refreshListings = async (): Promise<Listing[]> => {
+    console.log('🔄 Manual refresh requested - clearing cache');
+    await clearCache();
+    return await fetchFromSupabase();
+};
+
+/**
+ * Fetch listings directly from Supabase (bypasses cache)
+ * Implements retry logic with fallback to Available-only on timeout
+ */
+export const fetchFromSupabase = async (): Promise<Listing[]> => {
     try {
         console.log('Starting to fetch listings from Supabase...');
 
-        // Fetch all listings in batches (Supabase default limit is 1000)
-        const allData: DbListing[] = [];
-        const batchSize = 1000;
-        let offset = 0;
-        let hasMore = true;
-
-        while (hasMore) {
-            const { data, error } = await supabase
-                .from('KIU Properties')
-                .select('*')
-                .range(offset, offset + batchSize - 1);
-
-            if (error) {
-                console.error('Error fetching from Supabase:', error);
-                console.error('Error details:', JSON.stringify(error, null, 2));
-                return [];
-            }
-
-            if (!data || data.length === 0) {
-                hasMore = false;
-            } else {
-                allData.push(...data);
-                offset += batchSize;
-                console.log(`Fetched batch: ${data.length} listings (total: ${allData.length})`);
-
-                // If we got less than batchSize, we've reached the end
-                if (data.length < batchSize) {
-                    hasMore = false;
-                }
-            }
+        // Try fetching all listings first (with retry)
+        const allListings = await fetchWithRetry(false);
+        if (allListings.length > 0) {
+            console.log(`✅ Successfully fetched ${allListings.length} total listings (ALL STATUS)`);
+            return allListings;
         }
 
-        console.log(`Successfully fetched ${allData.length} total listings from Supabase`);
-        return allData.map(normalizeDbListing);
+        // If all listings fetch fails, fall back to Available only
+        console.warn('⚠️ Fetching all listings failed, falling back to Available only...');
+        const availableListings = await fetchWithRetry(true);
+        console.log(`✅ Successfully fetched ${availableListings.length} listings (AVAILABLE only)`);
+        return availableListings;
+
     } catch (error) {
         console.error('Error fetching data:', error);
         return [];
     }
 };
 
-const normalizeDbListing = (row: DbListing): Listing => {
+/**
+ * Fetch listings with retry logic
+ * @param availableOnly - If true, only fetch Available listings
+ * @param maxRetries - Maximum number of retry attempts
+ */
+const fetchWithRetry = async (
+    availableOnly: boolean,
+    maxRetries: number = 2
+): Promise<Listing[]> => {
+    const batchSize = 500; // Smaller batches to reduce load
+    let attempt = 0;
+
+    while (attempt <= maxRetries) {
+        try {
+            const allData: DbListing[] = [];
+            let offset = 0;
+            let hasMore = true;
+
+            console.log(`Attempt ${attempt + 1}/${maxRetries + 1}: Fetching ${availableOnly ? 'AVAILABLE' : 'ALL'} listings...`);
+
+            while (hasMore) {
+                let query = supabase
+                    .from('KIU Properties')
+                    .select('*');
+
+                // Apply status filter if needed
+                if (availableOnly) {
+                    query = query.eq('STATUS', 'Available');
+                }
+
+                query = query.range(offset, offset + batchSize - 1);
+
+                const { data, error } = await query;
+
+                if (error) {
+                    // Check if it's a timeout error
+                    if (error.code === '57014' || error.message.includes('timeout')) {
+                        throw new Error('TIMEOUT');
+                    }
+                    console.error('Error fetching from Supabase:', error);
+                    throw error;
+                }
+
+                if (!data || data.length === 0) {
+                    hasMore = false;
+                } else {
+                    allData.push(...data);
+                    offset += batchSize;
+                    console.log(`  Batch: ${data.length} listings (total: ${allData.length})`);
+
+                    // Small delay between batches to reduce database load
+                    await new Promise(resolve => setTimeout(resolve, 50));
+
+                    if (data.length < batchSize) {
+                        hasMore = false;
+                    }
+                }
+            }
+
+            return allData.map(normalizeDbListing);
+
+        } catch (error: any) {
+            attempt++;
+
+            if (error.message === 'TIMEOUT') {
+                console.warn(`⏱️ Timeout on attempt ${attempt}/${maxRetries + 1}`);
+
+                if (attempt <= maxRetries) {
+                    const delay = Math.pow(2, attempt) * 1000; // Exponential backoff: 2s, 4s, 8s
+                    console.log(`   Retrying in ${delay / 1000}s...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                } else {
+                    console.error('❌ Max retries reached');
+                    throw error;
+                }
+            } else {
+                console.error('❌ Non-timeout error:', error);
+                throw error;
+            }
+        }
+    }
+
+    return [];
+};
+
+export const normalizeDbListing = (row: DbListing): Listing => {
     const price = row['Extracted Sale Price'] || 0;
     const leasePrice = row['Extracted Lease Price'] || 0;
 
@@ -210,12 +325,18 @@ const normalizeDbListing = (row: DbListing): Listing => {
     // Parse parking from garage column
     const parking = parseInt(row['garage'] || '0') || 0;
 
+    // Parse bedrooms - database stores as TEXT, need to convert to number
+    const bedroomsValue = row['bedrooms'];
+    const bedrooms = typeof bedroomsValue === 'string'
+        ? (parseInt(bedroomsValue) || 0)
+        : (bedroomsValue || 0);
+
     return {
         id: row['GEO ID'] || '',
         summary: summaryWithV,
         displaySummary: displaySummary,
         price: price,
-        status: 'Available',
+        status: statusAQ || 'Available', // Use detected status, fallback to Available
         saleType: saleType,
         pricePerSqm: row['Sale Price/Sqm'] || 0,
         region: row['REGION'] || '',
@@ -246,13 +367,13 @@ const normalizeDbListing = (row: DbListing): Listing => {
         type,
         leasePrice: leasePrice,
         leasePricePerSqm: row['Lease Price/Sqm'] || 0,
-        columnBC: row['AWAY'] || '',
+        columnBC: row['DATE UPDATED'] || '',
         columnBD: row['LISTING OWNERSHIP'] || '',
         columnAZ: row['NAME'] || '',
         statusAQ: statusAQ,
         isSponsored: isSponsored,
         sponsoredUntil: sponsoredUntilDate,
-        bedrooms: row['bedrooms'] || 0,
+        bedrooms: bedrooms,
         parking: parking,
         typeDescription: row['TYPE'] || ''
     };

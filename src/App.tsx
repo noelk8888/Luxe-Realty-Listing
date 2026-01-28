@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, ArrowUp, ArrowDown, Facebook, Instagram, Youtube } from 'lucide-react';
 import { DualRangeSlider } from './components/DualRangeSlider';
-import { fetchListings } from './services/dataService';
+import { fetchListings, refreshListings } from './services/dataService';
 import { searchListings } from './services/searchEngine';
+// import { hybridSearch, isSemanticSearchAvailable } from './services/semanticSearch'; // DISABLED: Semantic search turned off
 import type { Listing } from './types';
 import { ListingCard } from './components/ListingCard';
 import { ContactFormModal } from './components/ContactFormModal';
@@ -18,6 +19,7 @@ function App() {
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [allListings, setAllListings] = useState<Listing[]>([]);
   const [results, setResults] = useState<Listing[]>([]);
   const [selectedType, setSelectedType] = useState<string | null>(null); // Default null (No filter)
@@ -362,6 +364,42 @@ function App() {
     });
   }, []);
 
+  // Manual Refresh Handler
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      const data = await refreshListings();
+      console.log('Refreshed listings:', data.length);
+      setAllListings(data);
+      setResults(data);
+      // Reset search and filters
+      setQuery('');
+      setDebouncedQuery('');
+      setSelectedListings([]);
+      setHasSearched(false);
+      setSelectedType(null);
+      setSelectedCategory(null);
+      setSelectedDirect(false);
+      setSelectedRegion(null);
+      setSelectedProvince(null);
+      setSelectedCity(null);
+      setSelectedBarangay(null);
+      setPriceRange(null);
+      setPricePerSqmRange(null);
+      setLotAreaRange(null);
+      setFloorAreaRange(null);
+      setSelectedBedrooms([]);
+      setSelectedParking([]);
+      setSelectedPropertyTypes([]);
+      setSortConfig(null);
+      setShowAllListings(false);
+    } catch (error) {
+      console.error('Failed to refresh listings:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   // Post-load search if URL had query
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -369,8 +407,16 @@ function App() {
     if (!loading && q && !hasSearched) {
       setHasSearched(true);
       setQuery(q);
-      let filtered = searchListings(allListings, q, 0); // Always use broad match
-      setResults(filtered);
+
+      // Keyword search only (semantic search disabled)
+      const performSearch = async () => {
+        let keywordResults = searchListings(allListings, q, 0); // Always use broad match
+
+        console.log('🔍 Using keyword search only');
+        setResults(keywordResults);
+      };
+
+      performSearch();
     }
   }, [loading, allListings, hasSearched]);
 
@@ -388,8 +434,16 @@ function App() {
     if (debouncedQuery.trim() || hasSearched) {
       setHasSearched(true);
       updateUrlParams(debouncedQuery);
-      let filtered = searchListings(allListings, debouncedQuery, 0); // Always use broad match (0)
-      setResults(filtered);
+
+      // Keyword search only (semantic search disabled)
+      const performSearch = async () => {
+        let keywordResults = searchListings(allListings, debouncedQuery, 0); // Always use broad match (0)
+
+        console.log('🔍 Using keyword search only');
+        setResults(keywordResults);
+      };
+
+      performSearch();
     }
   }, [debouncedQuery, allListings]);
 
@@ -624,13 +678,14 @@ function App() {
     }
     // Filter by Bedrooms (Multi-select)
     if (selectedBedrooms.length > 0) {
-      // Check for specific matches
-      const isStudio = selectedBedrooms.includes('STUDIO') && item.bedrooms === 0;
-      const isOne = selectedBedrooms.includes('1') && item.bedrooms === 1;
-      const isTwo = selectedBedrooms.includes('2') && item.bedrooms === 2;
-      const isThree = selectedBedrooms.includes('3') && item.bedrooms === 3;
-      const isFour = selectedBedrooms.includes('4') && item.bedrooms === 4;
-      const isFivePlus = selectedBedrooms.includes('5+') && item.bedrooms >= 5;
+      // Check for specific matches (handle both number and potential null/undefined)
+      const bedroomCount = item.bedrooms || 0;
+      const isStudio = selectedBedrooms.includes('STUDIO') && bedroomCount === 0;
+      const isOne = selectedBedrooms.includes('1') && bedroomCount === 1;
+      const isTwo = selectedBedrooms.includes('2') && bedroomCount === 2;
+      const isThree = selectedBedrooms.includes('3') && bedroomCount === 3;
+      const isFour = selectedBedrooms.includes('4') && bedroomCount === 4;
+      const isFivePlus = selectedBedrooms.includes('5+') && bedroomCount >= 5;
 
       if (!isStudio && !isOne && !isTwo && !isThree && !isFour && !isFivePlus) return false;
     }
@@ -1037,9 +1092,29 @@ function App() {
                   </div>
                   <span className={`text-xs sm:text-sm font-bold uppercase tracking-wide whitespace-nowrap select-none ${showAllListings ? 'text-blue-600' : 'text-gray-400'}`}>SHOW ALL</span>
                 </div>
+
+                {/* Refresh Button (Desktop Only) */}
+                <button
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                  className="hidden sm:flex items-center gap-2 bg-white px-4 py-3 rounded-2xl border border-gray-100 shadow-xl hover:shadow-2xl transition-all duration-300 h-[calc(100%-4px)] disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Refresh data from server"
+                >
+                  <svg
+                    className={`w-5 h-5 ${isRefreshing ? 'animate-spin text-blue-600' : 'text-gray-600'}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span className="text-xs sm:text-sm font-bold uppercase tracking-wide whitespace-nowrap select-none text-gray-600">
+                    {isRefreshing ? 'REFRESHING...' : 'REFRESH'}
+                  </span>
+                </button>
               </div>
 
-              {/* Mobile Only: Slider Toggle */}
+              {/* Mobile Only: Slider Toggle & Refresh */}
               <div className="flex sm:hidden items-center justify-center gap-3 mt-3 w-full pb-2">
                 <span className={`text-xs font-bold ${!showAllListings ? 'text-blue-600' : 'text-gray-400'}`}>AVAILABLE</span>
                 <div
@@ -1049,6 +1124,23 @@ function App() {
                   <div className={`absolute top-1/2 -translate-y-1/2 w-6 h-6 rounded-full shadow-md transition-all duration-300 ${!showAllListings ? 'left-0 bg-blue-600' : 'left-[calc(100%-1.5rem)] bg-blue-600'}`} />
                 </div>
                 <span className={`text-xs font-bold ${showAllListings ? 'text-blue-600' : 'text-gray-400'}`}>SHOW ALL</span>
+
+                {/* Mobile Refresh Button */}
+                <button
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                  className="ml-2 p-2 rounded-lg bg-white shadow-md disabled:opacity-50"
+                  title="Refresh data"
+                >
+                  <svg
+                    className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-blue-600' : 'text-gray-600'}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
               </div>
 
               {/* Sort Buttons */}
@@ -1770,7 +1862,28 @@ function App() {
 
       {/* Results Section */}
       {
-        (hasSearched || selectedType || selectedCategory || (selectedBedrooms.length > 0) || (selectedParking.length > 0) || (selectedPropertyTypes.length > 0)) && (
+        // Show results only when search or any filter is active
+        (
+          hasSearched ||
+          selectedType ||
+          selectedCategory ||
+          selectedDirect ||
+          selectedRegion ||
+          selectedProvince ||
+          selectedCity ||
+          selectedBarangay ||
+          (selectedBedrooms.length > 0) ||
+          (selectedParking.length > 0) ||
+          (selectedPropertyTypes.length > 0) ||
+          priceRange !== null ||
+          pricePerSqmRange !== null ||
+          lotAreaRange !== null ||
+          floorAreaRange !== null ||
+          (useExactPrice && manualPrice !== '') ||
+          (useExactPricePerSqm && manualPricePerSqm !== '') ||
+          (useExactLotArea && manualLotArea !== '') ||
+          (useExactFloorArea && manualFloorArea !== '')
+        ) ? (
           <div className="max-w-7xl mx-auto px-4 pb-20 animate-fade-in-up">
             {paginatedResults.length === 0 ? (
               <div className="text-center py-20 text-gray-500 bg-white rounded-2xl border border-gray-100">
@@ -1810,7 +1923,7 @@ function App() {
               </>
             )}
           </div>
-        )
+        ) : null
       }
       <ContactFormModal
         isOpen={showFormModal}
