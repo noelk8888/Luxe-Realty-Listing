@@ -19,6 +19,7 @@ function App() {
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [allListings, setAllListings] = useState<Listing[]>([]);
   const [results, setResults] = useState<Listing[]>([]);
@@ -357,12 +358,28 @@ function App() {
       setAllListings(data);
       // Initialize results with all data so "Show All" works immediately
       setResults(data);
-      setLoading(false);
+      setLoadingProgress(100);
+      setTimeout(() => setLoading(false), 400);
     }).catch(error => {
       console.error('Failed to fetch listings:', error);
-      setLoading(false);
+      setLoadingProgress(100);
+      setTimeout(() => setLoading(false), 400);
     });
   }, []);
+
+  // Simulated loading progress bar
+  useEffect(() => {
+    if (!loading || loadingProgress >= 90) return;
+    const interval = setInterval(() => {
+      setLoadingProgress(prev => {
+        if (prev >= 90) { clearInterval(interval); return prev; }
+        // Slow down as it approaches 90%
+        const increment = Math.max(0.5, (90 - prev) * 0.08);
+        return Math.min(90, prev + increment);
+      });
+    }, 150);
+    return () => clearInterval(interval);
+  }, [loading, loadingProgress]);
 
   // Manual Refresh Handler
   const handleRefresh = async () => {
@@ -912,6 +929,19 @@ function App() {
               : allListings.length > 0 ? `${allListings.length.toLocaleString()} Available Listings` : 'Loading properties...'
             }
           </p>
+
+          {/* Animated Loading Progress Bar */}
+          {loading && (
+            <div className="w-full max-w-md mx-auto">
+              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${loadingProgress}%` }}
+                />
+              </div>
+              <p className="text-sm text-gray-400 mt-2">{Math.round(loadingProgress)}%</p>
+            </div>
+          )}
 
 
 
