@@ -10,6 +10,8 @@ interface ParsedQuery {
     keywords: string[];
     landmarks: LandmarkMatch[];
     isProximitySearch: boolean;
+    isExactPhraseSearch: boolean;
+    exactPhrase?: string;
 }
 
 interface Landmark {
@@ -73,6 +75,68 @@ export const searchListings = (listings: Listing[], query: string, minScore: num
     console.log('Search criteria:', criteria);
     console.log('Min score threshold:', minScore);
     console.log('Total listings:', listings.length);
+
+    // Special handling for exact phrase search
+    if (criteria.isExactPhraseSearch && criteria.exactPhrase) {
+        console.log(`🔍 Exact phrase search for: "${criteria.exactPhrase}"`);
+
+        const exactPhrase = criteria.exactPhrase;
+        const scoredListings = listings.map(listing => {
+            let score = 0;
+
+            // Build searchable text (all fields)
+            const allText = [
+                listing.id,
+                listing.city,
+                listing.province,
+                listing.barangay,
+                listing.area,
+                listing.building,
+                listing.summary,
+                listing.columnJ,
+                listing.columnK,
+                listing.columnP,
+                listing.columnAZ,
+                listing.columnBC,
+                listing.columnBD,
+                listing.statusAQ
+            ].join(' . ').toLowerCase();
+
+            // Check if exact phrase exists
+            if (!allText.includes(exactPhrase)) {
+                return { listing, score: -1 }; // Filter out
+            }
+
+            // Score based on where the match appears
+            if (listing.id.toLowerCase().includes(exactPhrase)) {
+                score += 1000; // Highest priority: ID match
+            }
+
+            const primaryText = [
+                listing.city,
+                listing.province,
+                listing.barangay,
+                listing.area,
+                listing.building
+            ].join(' . ').toLowerCase();
+
+            if (primaryText.includes(exactPhrase)) {
+                score += 500; // High priority: Primary location fields
+            } else {
+                score += 100; // Lower priority: Found in description/other fields
+            }
+
+            return { listing, score };
+        });
+
+        const filtered = scoredListings
+            .filter(item => item.score >= minScore)
+            .sort((a, b) => b.score - a.score)
+            .map(item => item.listing);
+
+        console.log(`✓ Exact phrase search found ${filtered.length} results`);
+        return filtered;
+    }
 
     // 0. Pre-clean query for scoring
     const cleanQuery = query.toLowerCase().trim();
@@ -282,14 +346,24 @@ export const searchListings = (listings: Listing[], query: string, minScore: num
 };
 
 const parseQuery = (query: string): ParsedQuery => {
-    const lowercaseQuery = query.toLowerCase();
     const result: ParsedQuery = {
         locations: [],
         types: [],
         keywords: [],
         landmarks: [],
-        isProximitySearch: false
+        isProximitySearch: false,
+        isExactPhraseSearch: false
     };
+
+    // Detect quoted strings (both "..." and '...')
+    const quotedMatch = query.match(/^["'](.+)["']$/);
+    if (quotedMatch) {
+        result.isExactPhraseSearch = true;
+        result.exactPhrase = quotedMatch[1].toLowerCase().trim();
+        return result; // Skip all other parsing
+    }
+
+    const lowercaseQuery = query.toLowerCase();
 
     // Detect proximity keywords
     const proximityKeywords = ['near', 'close to', 'around', 'near to', 'close by', 'nearby', 'within'];

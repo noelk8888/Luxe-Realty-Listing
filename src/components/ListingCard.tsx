@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Listing } from '../types';
 import { MapPin, Building, Maximize, Facebook, ChevronDown, ChevronUp, Bed, Car } from 'lucide-react';
+import { StatusDropdown } from './StatusDropdown';
 
 interface ListingCardProps {
     listing: Listing;
@@ -15,6 +16,8 @@ interface ListingCardProps {
     isPopupView?: boolean;
     onBack?: () => void;
     backButtonVariant?: 'red' | 'blue' | 'gray';
+    userRole?: 'editor' | 'viewer' | null;
+    onStatusUpdate?: (id: string, status: string) => Promise<void>;
 }
 
 export const ListingCard: React.FC<ListingCardProps> = React.memo(({
@@ -28,7 +31,9 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     activeFilter,
     isPopupView = false,
     onBack,
-    backButtonVariant = 'blue'
+    backButtonVariant = 'blue',
+    userRole,
+    onStatusUpdate,
 }) => {
     const [isCopied, setIsCopied] = useState(false);
     const [isColumnKCopied, setIsColumnKCopied] = useState(false);
@@ -41,6 +46,19 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             maximumFractionDigits: 0
         }).format(price);
         return `P${formatted}`;
+    };
+
+    const formatDate = (dateString: string) => {
+        if (!dateString) return '';
+        try {
+            const date = new Date(dateString);
+            const year = date.getFullYear();
+            const month = date.toLocaleString('en-US', { month: 'short' });
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        } catch {
+            return dateString;
+        }
     };
 
     const handleCopy = (e: React.MouseEvent) => {
@@ -104,14 +122,22 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                 ${isDisabled && !isSelected ? 'opacity-50' : ''}
             `}
         >
-            {isNotAvailable && (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-[50]">
-                    <div className="bg-white border-2 border-red-600 px-6 py-1.5 rounded-2xl shadow-md flex items-center justify-center min-w-[160px]">
-                        <span className="text-[12px] font-black uppercase tracking-[0.25em] text-red-600">
-                            {listing.statusAQ}
-                        </span>
+            {userRole === 'editor' && onStatusUpdate ? (
+                <StatusDropdown
+                    currentStatus={listing.statusAQ || 'Available'}
+                    listingId={listing.id}
+                    onUpdate={onStatusUpdate}
+                />
+            ) : (
+                isNotAvailable && (
+                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-[50]">
+                        <div className="bg-white border-2 border-red-600 px-6 py-1.5 rounded-2xl shadow-md flex items-center justify-center min-w-[160px]">
+                            <span className="text-[12px] font-black uppercase tracking-[0.25em] text-red-600">
+                                {listing.statusAQ}
+                            </span>
+                        </div>
                     </div>
-                </div>
+                )
             )}
             <div className="flex justify-between items-start mb-1">
                 <div className="flex flex-col gap-1.5 flex-1 mr-4">
@@ -177,10 +203,10 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         >
                             {listing.id}
                         </span>
-                        {/* Column BC: Reverted to Below Listing ID (Gray) */}
+                        {/* Column BC: DATE UPDATED - Below Listing ID (Gray) */}
                         {listing.columnBC && !isPopupView && (
                             <div className="mt-1 text-xs text-gray-400 text-right">
-                                {listing.columnBC}
+                                {formatDate(listing.columnBC)}
                             </div>
                         )}
                     </div>

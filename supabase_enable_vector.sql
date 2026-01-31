@@ -138,7 +138,7 @@ BEGIN
     kp.compound,
     1 - (kp.embedding <=> query_embedding) as similarity
   FROM "KIU Properties" kp
-  WHERE kp."STATUS" = 'AVAILABLE'
+  WHERE kp."STATUS" = 'Available'
     AND kp.embedding IS NOT NULL
     AND 1 - (kp.embedding <=> query_embedding) > match_threshold
   ORDER BY kp.embedding <=> query_embedding
@@ -149,6 +149,6 @@ $$;
 -- Step 8: Verify setup
 SELECT
   COUNT(*) as total_listings,
-  COUNT(*) FILTER (WHERE "STATUS" = 'AVAILABLE') as available_listings,
-  COUNT(*) FILTER (WHERE embedding IS NULL AND "STATUS" = 'AVAILABLE') as need_embedding
+  COUNT(*) FILTER (WHERE "STATUS" = 'Available') as available_listings,
+  COUNT(*) FILTER (WHERE embedding IS NULL AND "STATUS" = 'Available') as need_embedding
 FROM "KIU Properties";

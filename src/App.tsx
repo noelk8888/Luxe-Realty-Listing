@@ -12,8 +12,14 @@ import { MapModal } from './components/MapModal';
 import { NoteModal } from './components/NoteModal';
 import Pagination from './components/Pagination';
 import { ScrollToTop } from './components/ScrollToTop';
+import { useAuth } from './contexts/AuthContext';
+import { LoginScreen } from './components/LoginScreen';
+import { AccessDenied } from './components/AccessDenied';
+import { supabase } from './lib/supabase';
+import { clearCache } from './services/listingsCache';
 
 function App() {
+  const { user, role, isLoading: authLoading, signInWithGoogle, signOut } = useAuth();
 
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -879,6 +885,62 @@ function App() {
     });
   };
 
+  const handleStatusUpdate = async (listingId: string, newStatus: string) => {
+    console.log('Updating status:', { listingId, newStatus });
+
+    const { data, error } = await supabase
+      .from('KIU Properties')
+      .update({ STATUS: newStatus })
+      .eq('"GEO ID"', listingId)
+      .select('"GEO ID", STATUS');
+
+    console.log('Update result:', { data, error });
+
+    if (error) {
+      console.error('Failed to update status:', error);
+      alert(`Failed to update status: ${error.message}`);
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      console.warn('No rows updated — check RLS policies or listing ID');
+      alert('Update failed: no matching listing found or permission denied.');
+      return;
+    }
+
+    // Update local state
+    const updateListing = (l: Listing) =>
+      l.id === listingId ? { ...l, status: newStatus, statusAQ: newStatus } : l;
+
+    setAllListings(prev => prev.map(updateListing));
+    setResults(prev => prev.map(updateListing));
+
+    // Invalidate cache so next reload reflects the change
+    await clearCache();
+  };
+
+  // Auth gating
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <img src="/footer-logo.png" alt="Loading" className="h-12 w-auto animate-pulse" />
+          <div className="h-1 w-32 bg-gray-200 rounded-full overflow-hidden">
+            <div className="h-full bg-blue-600 rounded-full animate-pulse w-2/3" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginScreen onSignIn={signInWithGoogle} />;
+  }
+
+  if (!role) {
+    return <AccessDenied email={user.email || ''} onSignOut={signOut} />;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans selection:bg-blue-100">
       <ScrollToTop />
@@ -913,6 +975,27 @@ function App() {
             <a href="https://www.youtube.com/@KiuRealtyPH" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-[#FF0000] transition-colors">
               <Youtube className="w-5 h-5" />
             </a>
+          </div>
+
+          <div className="hidden sm:block w-px h-6 bg-gray-200"></div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500 font-medium truncate max-w-[160px]">
+              {user.email}
+            </span>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+              role === 'editor'
+                ? 'bg-green-50 text-green-600'
+                : 'bg-blue-50 text-blue-600'
+            }`}>
+              {role}
+            </span>
+            <button
+              onClick={signOut}
+              className="text-xs text-gray-400 hover:text-red-500 font-bold transition-colors"
+            >
+              Sign Out
+            </button>
           </div>
         </div>
       </header>
@@ -1939,6 +2022,8 @@ function App() {
                       onMapClick={handleMapClick}
                       index={(currentPage - 1) * ITEMS_PER_PAGE + idx + 1}
                       activeFilter={selectedType}
+                      userRole={role}
+                      onStatusUpdate={handleStatusUpdate}
                     />
                   ))}
                 </div>

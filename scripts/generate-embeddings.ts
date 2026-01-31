@@ -16,16 +16,20 @@ import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 
 // Load environment variables
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL!;
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const openaiKey = process.env.OPENAI_API_KEY!;
 
-if (!supabaseUrl || !supabaseKey) {
+if (!supabaseUrl || !supabaseServiceKey) {
   console.error('Missing Supabase credentials in .env.local');
+  console.error('Need: VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
   process.exit(1);
 }
 
@@ -35,7 +39,7 @@ if (!openaiKey) {
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 const openai = new OpenAI({ apiKey: openaiKey });
 
 // Configuration
@@ -54,13 +58,43 @@ interface Listing {
 
 /**
  * Create text to embed from listing data
+ * Fields are repeated to increase their weight in semantic similarity
  */
-function createEmbeddingText(listing: Listing): string {
+function createEmbeddingText(listing: any): string {
+  const building = listing['BUILDING'] || '';
+  const area = listing['AREA'] || '';
+  const barangay = listing['BARANGAY'] || '';
+  const city = listing['CITY'] || '';
+  const price = listing['Extracted Sale Price'] || 0;
+  const lotArea = listing['LOT AREA'] || 0;
+  const floorArea = listing['FLOOR AREA'] || 0;
+  const type = listing['TYPE'] || '';
+
+  // Weight fields by importance (repetition increases semantic weight)
   const parts = [
-    listing['MAIN'] || '',
-    listing['CITY'] || '',
-    listing['BUILDING'] || '',
-    listing['TYPE'] || ''
+    // 1. Building - Highest priority (5x weight)
+    building, building, building, building, building,
+
+    // 2. Area/Barangay - Very high priority (4x weight)
+    area, area, area, area,
+    barangay, barangay, barangay, barangay,
+
+    // 3. City - High priority (3x weight)
+    city, city, city,
+
+    // 4. Price - Medium-high priority (2x weight)
+    price > 0 ? `price ${price} pesos` : '',
+    price > 0 ? `${price}` : '',
+
+    // 5. Floor/Lot Area - Medium priority (2x weight)
+    lotArea > 0 ? `lot area ${lotArea} sqm` : '',
+    floorArea > 0 ? `floor area ${floorArea} sqm` : '',
+
+    // 6. Property type - Low priority (1x weight)
+    type,
+
+    // 7. Description - Context only
+    listing['MAIN'] || ''
   ].filter(Boolean);
 
   return parts.join(' ').substring(0, 8000); // OpenAI limit
@@ -88,7 +122,7 @@ async function main() {
   const { count, error: countError } = await supabase
     .from('KIU Properties')
     .select('*', { count: 'exact', head: true })
-    .eq('STATUS', 'AVAILABLE')
+    .eq('STATUS', 'Available')
     .is('embedding', null);
 
   if (countError) {
@@ -120,7 +154,7 @@ async function main() {
     const { data: listings, error: fetchError } = await supabase
       .from('KIU Properties')
       .select('*')
-      .eq('STATUS', 'AVAILABLE')
+      .eq('STATUS', 'Available')
       .is('embedding', null)
       .limit(BATCH_SIZE);
 
@@ -141,7 +175,7 @@ async function main() {
         const { error: updateError } = await supabase
           .from('KIU Properties')
           .update({
-            embedding: JSON.stringify(embedding),
+            embedding: embedding, // Pass array directly, not stringified
             embedding_needs_update: false
           })
           .eq('GEO ID', listing['GEO ID']);

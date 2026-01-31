@@ -13,7 +13,10 @@ import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL!;
@@ -60,11 +63,11 @@ async function generateEmbedding(text: string): Promise<number[]> {
 async function main() {
   console.log('🔄 Daily embedding update starting...\n');
 
-  // Find listings that need updates (AVAILABLE only)
+  // Find listings that need updates (Available only)
   const { data: needUpdate, error } = await supabase
     .from('KIU Properties')
     .select('*')
-    .eq('STATUS', 'AVAILABLE')
+    .eq('STATUS', 'Available')
     .or('embedding.is.null,embedding_needs_update.eq.true');
 
   if (error || !needUpdate) {
@@ -95,7 +98,7 @@ async function main() {
       const { error: updateError } = await supabase
         .from('KIU Properties')
         .update({
-          embedding: JSON.stringify(embedding),
+          embedding: embedding, // Pass array directly, not stringified
           embedding_needs_update: false
         })
         .eq('GEO ID', listing['GEO ID']);
