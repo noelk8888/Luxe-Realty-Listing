@@ -290,8 +290,10 @@ export const normalizeDbListing = (row: DbListing): Listing => {
 
         if (combinedText.includes('SOLD')) {
             statusAQ = 'SOLD';
-        } else if (combinedText.includes('RENTED')) {
-            statusAQ = 'RENTED';
+        } else if (combinedText.includes('LEASED') || combinedText.includes('RENTED')) {
+            statusAQ = 'LEASED';
+        } else if (combinedText.includes('TEMP HOLD')) {
+            statusAQ = 'TEMP HOLD';
         } else if (combinedText.includes('NOT AVAILABLE')) {
             statusAQ = 'NOT AVAILABLE';
         }

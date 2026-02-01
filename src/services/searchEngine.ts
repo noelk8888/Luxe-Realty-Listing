@@ -147,7 +147,7 @@ export const searchListings = (listings: Listing[], query: string, minScore: num
         .split(/\s+/)
         .filter(t => t.length >= 2)
         .filter(t => !priceWords.includes(t)) // Remove price qualifiers and proximity words
-        .filter(t => !/^\d+[mk]?$/i.test(t)); // Remove price numbers like "10m", "5k", "100"
+        .filter(t => !/^\d+[mk]$/i.test(t) && !/^\d{4,}$/.test(t)); // Remove price numbers like "10m", "5k", but keep small address numbers like "14"
 
     console.log('Query tokens:', queryTokens);
     console.log('Landmarks found:', criteria.landmarks.map(lm => lm.landmark.name));
@@ -391,7 +391,7 @@ const parseQuery = (query: string): ParsedQuery => {
     // --- Price Extraction ---
     // Matches: 5M, 5.5M, 500k, 10,000,000, 10 million
     // Matches: 5M, 5.5M, 500k, 10,000,000, 10 million (must start with word boundary to avoid matching IDs like G07463)
-    const priceRegex = /\b(\d+(?:[\.,]\d+)?)\s*(m|k|million|thousand)?/gi;
+    const priceRegex = /\b(\d+(?:[\.,]\d+)?)\s*(m|k|million|thousand)\b/gi;
     const items = lowercaseQuery.match(priceRegex);
 
     if (items) {
@@ -447,7 +447,7 @@ const parseQuery = (query: string): ParsedQuery => {
         const cleanWord = word.replace(/[^\w]/g, '');
         if (cleanWord &&
             !stopWords.includes(cleanWord) &&
-            !cleanWord.match(/^\d/) &&
+            !(/^\d+[mk]$/i.test(cleanWord) || (/^\d+$/.test(cleanWord) && cleanWord.length >= 4)) &&
             !matchedLandmarkWords.includes(cleanWord)) {
             // Also ignore simple numbers that aren't part of a price (already handled regex above, but good to be safe)
             result.locations.push(cleanWord);
