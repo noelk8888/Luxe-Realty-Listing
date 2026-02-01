@@ -18,6 +18,7 @@ interface ListingCardProps {
     backButtonVariant?: 'red' | 'blue' | 'gray';
     userRole?: 'editor' | 'viewer' | null;
     onStatusUpdate?: (id: string, status: string) => Promise<void>;
+    onEditClick?: (listing: Listing) => void;
 }
 
 export const ListingCard: React.FC<ListingCardProps> = React.memo(({
@@ -34,6 +35,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     backButtonVariant = 'blue',
     userRole,
     onStatusUpdate,
+    onEditClick,
 }) => {
     const [isCopied, setIsCopied] = useState(false);
     const [isColumnKCopied, setIsColumnKCopied] = useState(false);
@@ -437,6 +439,17 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                 >
                     NOTES
                 </button>
+                {userRole === 'editor' && onEditClick && (
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onEditClick(listing);
+                        }}
+                        className="flex-1 text-center py-2 bg-green-50 text-green-600 rounded-lg text-xs font-bold hover:bg-green-100 transition-colors uppercase tracking-wider"
+                    >
+                        EDIT
+                    </button>
+                )}
             </div>
 
         </div >

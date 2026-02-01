@@ -10,6 +10,7 @@ import { ListingCard } from './components/ListingCard';
 import { ContactFormModal } from './components/ContactFormModal';
 import { MapModal } from './components/MapModal';
 import { NoteModal } from './components/NoteModal';
+import { EditListingModal } from './components/EditListingModal';
 import Pagination from './components/Pagination';
 import { ScrollToTop } from './components/ScrollToTop';
 import { useAuth } from './contexts/AuthContext';
@@ -325,6 +326,8 @@ function App() {
   // const [showOnlyAvailable, setShowOnlyAvailable] = useState<boolean>(true); // REMOVED
   const [selectedListings, setSelectedListings] = useState<string[]>([]);
   const [showFormModal, setShowFormModal] = useState(false);
+  const [editingListing, setEditingListing] = useState<Listing | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // Dynamic Placeholder Text
   const [placeholderText, setPlaceholderText] = useState('"Lot in Caloocan"');
@@ -919,6 +922,71 @@ function App() {
     await clearCache();
   };
 
+  // Handle listing edits (price, notes)
+  const handleEditClick = (listing: Listing) => {
+    setEditingListing(listing);
+    setShowEditModal(true);
+  };
+
+  const handleListingEdit = async (listingId: string, updates: {
+    salePrice: number;
+    leasePrice: number;
+    notes: string;
+  }) => {
+    console.log('Editing listing:', { listingId, updates });
+
+    // Calculate price per sqm
+    const listing = allListings.find(l => l.id === listingId);
+    if (!listing) {
+      throw new Error('Listing not found');
+    }
+
+    const area = listing.floorArea > 0 ? listing.floorArea : listing.lotArea;
+    const salePricePerSqm = area > 0 && updates.salePrice > 0 ? Math.round(updates.salePrice / area) : 0;
+    const leasePricePerSqm = area > 0 && updates.leasePrice > 0 ? Math.round(updates.leasePrice / area) : 0;
+
+    const { data, error } = await supabase
+      .from('KIU Properties')
+      .update({
+        'Extracted Sale Price': updates.salePrice || null,
+        'Sale Price/Sqm': salePricePerSqm || null,
+        'Extracted Lease Price': updates.leasePrice || null,
+        'Lease Price/Sqm': leasePricePerSqm || null,
+        'COMMENTS': updates.notes || null,
+      })
+      .eq('"GEO ID"', listingId)
+      .select('"GEO ID"');
+
+    console.log('Edit result:', { data, error });
+
+    if (error) {
+      console.error('Failed to update listing:', error);
+      throw new Error(`Failed to update: ${error.message}`);
+    }
+
+    if (!data || data.length === 0) {
+      console.warn('No rows updated — check RLS policies or listing ID');
+      throw new Error('Update failed: no matching listing found or permission denied.');
+    }
+
+    // Update local state
+    const updateListing = (l: Listing): Listing =>
+      l.id === listingId ? {
+        ...l,
+        price: updates.salePrice,
+        pricePerSqm: salePricePerSqm,
+        leasePrice: updates.leasePrice,
+        leasePricePerSqm: leasePricePerSqm,
+        columnV: updates.notes,
+      } : l;
+
+    setAllListings(prev => prev.map(updateListing));
+    setResults(prev => prev.map(updateListing));
+
+    // Invalidate cache so next reload reflects the change
+    await clearCache();
+  };
+
   // Auth gating
   if (authLoading) {
     return (
@@ -983,11 +1051,10 @@ function App() {
             <span className="text-xs text-gray-500 font-medium truncate max-w-[160px]">
               {user.email}
             </span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-              role === 'editor'
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${role === 'editor'
                 ? 'bg-green-50 text-green-600'
                 : 'bg-blue-50 text-blue-600'
-            }`}>
+              }`}>
               {role}
             </span>
             <button
@@ -2024,6 +2091,7 @@ function App() {
                       activeFilter={selectedType}
                       userRole={role}
                       onStatusUpdate={handleStatusUpdate}
+                      onEditClick={handleEditClick}
                     />
                   ))}
                 </div>
@@ -2069,6 +2137,16 @@ function App() {
         onClose={() => setNoteModalData(prev => ({ ...prev, isOpen: false }))}
         content={noteModalData.content}
         title={noteModalData.title}
+      />
+
+      <EditListingModal
+        isOpen={showEditModal}
+        listing={editingListing}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditingListing(null);
+        }}
+        onSave={handleListingEdit}
       />
     </div >
   );
