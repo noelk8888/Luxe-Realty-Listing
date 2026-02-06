@@ -690,8 +690,8 @@ function App() {
     // Filter by Lot Area Range
     if (useExactLotArea && manualLotArea) {
       const lotVal = parseFloat(manualLotArea.replace(/,/g, ''));
-      // Use tolerance comparison to handle floating-point precision issues
-      if (Math.abs(item.lotArea - lotVal) > 0.01) return false;
+      // Match based on whole number (integer) part only - input "23" matches 23.00 to 23.99
+      if (Math.floor(item.lotArea) !== Math.floor(lotVal)) return false;
     } else if (lotAreaRange) {
       if (item.lotArea < lotAreaRange[0] || item.lotArea > lotAreaRange[1]) return false;
     }
@@ -699,8 +699,8 @@ function App() {
     // Filter by Floor Area Range
     if (useExactFloorArea && manualFloorArea) {
       const floorVal = parseFloat(manualFloorArea.replace(/,/g, ''));
-      // Use tolerance comparison to handle floating-point precision issues
-      if (Math.abs(item.floorArea - floorVal) > 0.01) return false;
+      // Match based on whole number (integer) part only - input "23" matches 23.00 to 23.99
+      if (Math.floor(item.floorArea) !== Math.floor(floorVal)) return false;
     } else if (floorAreaRange) {
       if (item.floorArea < floorAreaRange[0] || item.floorArea > floorAreaRange[1]) return false;
     }
