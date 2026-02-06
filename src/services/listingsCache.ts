@@ -150,8 +150,14 @@ export async function saveListingsToCache(listings: Listing[]): Promise<void> {
  */
 export async function clearCache(): Promise<void> {
   try {
-    await db.listings.clear();
-    await db.metadata.clear();
+    // Timeout guard: IndexedDB can hang on iOS Safari
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Cache clear timed out')), 3000)
+    );
+    await Promise.race([
+      Promise.all([db.listings.clear(), db.metadata.clear()]),
+      timeout,
+    ]);
     console.log('🗑️ Cache cleared');
   } catch (error) {
     console.error('Error clearing cache:', error);

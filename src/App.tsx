@@ -690,7 +690,8 @@ function App() {
     // Filter by Lot Area Range
     if (useExactLotArea && manualLotArea) {
       const lotVal = parseFloat(manualLotArea.replace(/,/g, ''));
-      if (item.lotArea !== lotVal) return false;
+      // Use tolerance comparison to handle floating-point precision issues
+      if (Math.abs(item.lotArea - lotVal) > 0.01) return false;
     } else if (lotAreaRange) {
       if (item.lotArea < lotAreaRange[0] || item.lotArea > lotAreaRange[1]) return false;
     }
@@ -698,7 +699,8 @@ function App() {
     // Filter by Floor Area Range
     if (useExactFloorArea && manualFloorArea) {
       const floorVal = parseFloat(manualFloorArea.replace(/,/g, ''));
-      if (item.floorArea !== floorVal) return false;
+      // Use tolerance comparison to handle floating-point precision issues
+      if (Math.abs(item.floorArea - floorVal) > 0.01) return false;
     } else if (floorAreaRange) {
       if (item.floorArea < floorAreaRange[0] || item.floorArea > floorAreaRange[1]) return false;
     }
@@ -919,7 +921,8 @@ function App() {
     setResults(prev => prev.map(updateListing));
 
     // Invalidate cache so next reload reflects the change
-    await clearCache();
+    // Don't await — IndexedDB can hang on iOS Safari
+    clearCache().catch(() => { });
   };
 
   // Handle listing edits (price, notes)
@@ -984,7 +987,8 @@ function App() {
     setResults(prev => prev.map(updateListing));
 
     // Invalidate cache so next reload reflects the change
-    await clearCache();
+    // Don't await — IndexedDB can hang on iOS Safari
+    clearCache().catch(() => { });
   };
 
   // Auth gating
@@ -1052,8 +1056,8 @@ function App() {
               {user.email}
             </span>
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${role === 'editor'
-                ? 'bg-green-50 text-green-600'
-                : 'bg-blue-50 text-blue-600'
+              ? 'bg-green-50 text-green-600'
+              : 'bg-blue-50 text-blue-600'
               }`}>
               {role}
             </span>
