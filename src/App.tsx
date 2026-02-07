@@ -752,6 +752,30 @@ function App() {
     if (aAvailable && !bAvailable) return -1;
     if (!aAvailable && bAvailable) return 1;
 
+    // When using exact match for LOT AREA, prioritize exact matches first, then sort by ascending value
+    if (useExactLotArea && manualLotArea) {
+      const lotVal = parseFloat(manualLotArea.replace(/,/g, ''));
+      const aExact = Math.abs(a.lotArea - lotVal) < 0.01;
+      const bExact = Math.abs(b.lotArea - lotVal) < 0.01;
+      // Exact matches come first
+      if (aExact && !bExact) return -1;
+      if (!aExact && bExact) return 1;
+      // Then sort by ascending lot area value
+      return a.lotArea - b.lotArea;
+    }
+
+    // When using exact match for FLOOR AREA, prioritize exact matches first, then sort by ascending value
+    if (useExactFloorArea && manualFloorArea) {
+      const floorVal = parseFloat(manualFloorArea.replace(/,/g, ''));
+      const aExact = Math.abs(a.floorArea - floorVal) < 0.01;
+      const bExact = Math.abs(b.floorArea - floorVal) < 0.01;
+      // Exact matches come first
+      if (aExact && !bExact) return -1;
+      if (!aExact && bExact) return 1;
+      // Then sort by ascending floor area value
+      return a.floorArea - b.floorArea;
+    }
+
     if (!sortConfig) {
       // DEFAULT SORT: Prioritize listings with Facebook links
       if (a.facebookLink && !b.facebookLink) return -1;
