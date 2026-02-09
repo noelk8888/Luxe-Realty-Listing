@@ -10,12 +10,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSignIn }) => {
             <div className="w-full max-w-sm text-center space-y-8">
                 <div className="flex flex-col items-center gap-3">
                     <img
-                        src="/footer-logo.png"
-                        alt="Kiu Realty Logo"
+                        src="/luxe-logo.png"
+                        alt="Luxe Realty Logo"
                         className="h-16 w-auto"
                     />
                     <h1 className="font-bold text-gray-900 text-2xl tracking-tight">
-                        KiuRealtyPH
+                        Luxe Realty Ph
                     </h1>
                     <p className="text-gray-500 text-sm">
                         Sign in to access the property dashboard

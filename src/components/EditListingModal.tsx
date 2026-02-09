@@ -50,9 +50,19 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
         return parseFloat(value.replace(/,/g, '')) || 0;
     };
 
-    // Calculate price per sqm
-    const calculatePricePerSqm = (price: number): number => {
-        // Use floor area if available, otherwise lot area
+    // Calculate sale price per sqm - prioritize LOT AREA (land being sold)
+    const calculateSalePricePerSqm = (price: number): number => {
+        // For SALE: Use lot area if available (land purchase), otherwise floor area
+        const area = listing.lotArea > 0 ? listing.lotArea : listing.floorArea;
+        if (area > 0 && price > 0) {
+            return Math.round(price / area);
+        }
+        return 0;
+    };
+
+    // Calculate lease price per sqm - prioritize FLOOR AREA (space being rented)
+    const calculateLeasePricePerSqm = (price: number): number => {
+        // For LEASE: Use floor area if available (space rental), otherwise lot area
         const area = listing.floorArea > 0 ? listing.floorArea : listing.lotArea;
         if (area > 0 && price > 0) {
             return Math.round(price / area);
@@ -62,8 +72,8 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
 
     const salePriceNum = parseNumber(salePrice);
     const leasePriceNum = parseNumber(leasePrice);
-    const salePricePerSqm = calculatePricePerSqm(salePriceNum);
-    const leasePricePerSqm = calculatePricePerSqm(leasePriceNum);
+    const salePricePerSqm = calculateSalePricePerSqm(salePriceNum);
+    const leasePricePerSqm = calculateLeasePricePerSqm(leasePriceNum);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
