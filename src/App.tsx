@@ -959,6 +959,8 @@ function App() {
     salePrice: number;
     leasePrice: number;
     notes: string;
+    updateDate: boolean;
+    latLong: string;
   }) => {
     console.log('Editing listing:', { listingId, updates });
 
@@ -968,9 +970,28 @@ function App() {
       throw new Error('Listing not found');
     }
 
-    const area = listing.floorArea > 0 ? listing.floorArea : listing.lotArea;
-    const salePricePerSqm = area > 0 && updates.salePrice > 0 ? Math.round(updates.salePrice / area) : 0;
-    const leasePricePerSqm = area > 0 && updates.leasePrice > 0 ? Math.round(updates.leasePrice / area) : 0;
+    const saleArea = listing.lotArea > 0 ? listing.lotArea : listing.floorArea;
+    const leaseArea = listing.floorArea > 0 ? listing.floorArea : listing.lotArea;
+    const salePricePerSqm = saleArea > 0 && updates.salePrice > 0 ? Math.round(updates.salePrice / saleArea) : 0;
+    const leasePricePerSqm = leaseArea > 0 && updates.leasePrice > 0 ? Math.round(updates.leasePrice / leaseArea) : 0;
+
+    const today = new Date();
+    const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    // Parse lat/long from "lat, long" string
+    let parsedLat: number | null = null;
+    let parsedLng: number | null = null;
+    if (updates.latLong) {
+      const parts = updates.latLong.split(',').map(s => s.trim());
+      if (parts.length === 2) {
+        const lat = parseFloat(parts[0]);
+        const lng = parseFloat(parts[1]);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          parsedLat = lat;
+          parsedLng = lng;
+        }
+      }
+    }
 
     const { data, error } = await supabase
       .from('KIU Properties')
@@ -980,6 +1001,10 @@ function App() {
         'Extracted Lease Price': updates.leasePrice || null,
         'Lease Price/Sqm': leasePricePerSqm || null,
         'COMMENTS': updates.notes || null,
+        ...(updates.updateDate && { 'DATE UPDATED': dateStr }),
+        ...(updates.latLong && { 'LAT LONG': updates.latLong }),
+        ...(parsedLat !== null && { 'LAT': parsedLat.toString() }),
+        ...(parsedLng !== null && { 'LONG': parsedLng.toString() }),
       })
       .eq('"GEO ID"', listingId)
       .select('"GEO ID"');
@@ -1005,6 +1030,9 @@ function App() {
         leasePrice: updates.leasePrice,
         leasePricePerSqm: leasePricePerSqm,
         columnV: updates.notes,
+        ...(updates.updateDate && { columnBC: dateStr }),
+        ...(parsedLat !== null && { lat: parsedLat }),
+        ...(parsedLng !== null && { lng: parsedLng }),
       } : l;
 
     setAllListings(prev => prev.map(updateListing));

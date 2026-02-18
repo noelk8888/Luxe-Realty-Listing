@@ -15,6 +15,10 @@ const TABS = [
       notes: "AW",
       lotArea: "AO",
       floorArea: "AP",
+      dateUpdated: "BC",
+      latLong: "BE",
+      lat: "BF",
+      long: "BG",
     },
   },
   {
@@ -28,6 +32,10 @@ const TABS = [
       notes: "X",
       lotArea: "P",
       floorArea: "Q",
+      dateUpdated: "AD",
+      latLong: "AF",
+      lat: "AG",
+      long: "AH",
     },
   },
 ];
@@ -174,6 +182,10 @@ serve(async (req) => {
       { db: "Extracted Lease Price", key: "leasePrice" },
       { db: "Lease Price/Sqm", key: "leasePricePerSqm" },
       { db: "COMMENTS", key: "notes" },
+      { db: "DATE UPDATED", key: "dateUpdated" },
+      { db: "LAT LONG", key: "latLong" },
+      { db: "LAT", key: "lat" },
+      { db: "LONG", key: "long" },
     ];
 
     for (const field of fieldMappings) {
@@ -263,6 +275,34 @@ serve(async (req) => {
         updates.push({
           range: `${tab.name}!${tab.columns.notes}${rowIndex}`,
           values: [[record["COMMENTS"] ?? ""]],
+        });
+      }
+
+      if (changedFields.includes("dateUpdated")) {
+        updates.push({
+          range: `${tab.name}!${tab.columns.dateUpdated}${rowIndex}`,
+          values: [[record["DATE UPDATED"] ?? ""]],
+        });
+      }
+
+      if (changedFields.includes("latLong")) {
+        updates.push({
+          range: `${tab.name}!${tab.columns.latLong}${rowIndex}`,
+          values: [[record["LAT LONG"] ?? ""]],
+        });
+      }
+
+      if (changedFields.includes("lat")) {
+        updates.push({
+          range: `${tab.name}!${tab.columns.lat}${rowIndex}`,
+          values: [[record["LAT"] ?? ""]],
+        });
+      }
+
+      if (changedFields.includes("long")) {
+        updates.push({
+          range: `${tab.name}!${tab.columns.long}${rowIndex}`,
+          values: [[record["LONG"] ?? ""]],
         });
       }
 

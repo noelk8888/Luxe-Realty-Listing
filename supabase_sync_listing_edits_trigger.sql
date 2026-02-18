@@ -18,7 +18,7 @@ CREATE OR REPLACE FUNCTION notify_listing_edit()
 RETURNS TRIGGER AS $$
 DECLARE
     edge_function_url TEXT := 'https://onjatpjbmtjaalnayaqf.supabase.co/functions/v1/sync-listing-edits';
-    service_role_key TEXT := 'YOUR_SERVICE_ROLE_KEY_HERE';
+    service_role_key TEXT := 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9uamF0cGpibXRqYWFsbmF5YXFmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTQyMzAyNSwiZXhwIjoyMDg0OTk5MDI1fQ.zmdC16it-ax-7jz9bBJokK_vwRks8uOhZrn4y3JK55Q';
     payload JSONB;
     has_changes BOOLEAN := FALSE;
 BEGIN
@@ -28,6 +28,10 @@ BEGIN
        OR OLD."Extracted Lease Price" IS DISTINCT FROM NEW."Extracted Lease Price"
        OR OLD."Lease Price/Sqm" IS DISTINCT FROM NEW."Lease Price/Sqm"
        OR OLD."COMMENTS" IS DISTINCT FROM NEW."COMMENTS"
+       OR OLD."DATE UPDATED" IS DISTINCT FROM NEW."DATE UPDATED"
+       OR OLD."LAT LONG" IS DISTINCT FROM NEW."LAT LONG"
+       OR OLD."LAT" IS DISTINCT FROM NEW."LAT"
+       OR OLD."LONG" IS DISTINCT FROM NEW."LONG"
     THEN
         has_changes := TRUE;
     END IF;
@@ -41,7 +45,11 @@ BEGIN
                 'Sale Price/Sqm', NEW."Sale Price/Sqm",
                 'Extracted Lease Price', NEW."Extracted Lease Price",
                 'Lease Price/Sqm', NEW."Lease Price/Sqm",
-                'COMMENTS', NEW."COMMENTS"
+                'COMMENTS', NEW."COMMENTS",
+                'DATE UPDATED', NEW."DATE UPDATED",
+                'LAT LONG', NEW."LAT LONG",
+                'LAT', NEW."LAT",
+                'LONG', NEW."LONG"
             ),
             'old_record', jsonb_build_object(
                 'GEO ID', OLD."GEO ID",
@@ -49,7 +57,11 @@ BEGIN
                 'Sale Price/Sqm', OLD."Sale Price/Sqm",
                 'Extracted Lease Price', OLD."Extracted Lease Price",
                 'Lease Price/Sqm', OLD."Lease Price/Sqm",
-                'COMMENTS', OLD."COMMENTS"
+                'COMMENTS', OLD."COMMENTS",
+                'DATE UPDATED', OLD."DATE UPDATED",
+                'LAT LONG', OLD."LAT LONG",
+                'LAT', OLD."LAT",
+                'LONG', OLD."LONG"
             )
         );
 
