@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, MapPin, Locate } from 'lucide-react';
 
 
 interface ContactFormModalProps {
@@ -36,6 +36,8 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+    const [isGettingLocation, setIsGettingLocation] = useState(false);
+    const [locationError, setLocationError] = useState<string | null>(null);
 
     // Reset form state on close
     useEffect(() => {
@@ -119,6 +121,33 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
         setSubmitStatus('idle');
     };
 
+    const handleGetLocation = () => {
+        if (!navigator.geolocation) {
+            setLocationError('Geolocation not supported by this browser');
+            return;
+        }
+        setIsGettingLocation(true);
+        setLocationError(null);
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                const coords = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+                setFormData(prev => ({
+                    ...prev,
+                    additionalQuestions: prev.additionalQuestions
+                        ? `${prev.additionalQuestions}\nCoordinates: ${coords}`
+                        : `Coordinates: ${coords}`
+                }));
+                setIsGettingLocation(false);
+            },
+            (err) => {
+                setLocationError(`Location error: ${err.message}`);
+                setIsGettingLocation(false);
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    };
+
     const handleClose = () => {
         resetForm();
         onClose();
@@ -192,9 +221,24 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
 
                             {/* Additional Questions */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Suggested Edits
-                                </label>
+                                <div className="flex items-center justify-between mb-1">
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Suggested Edits
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={handleGetLocation}
+                                        disabled={isGettingLocation || isSubmitting}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white rounded-lg font-bold text-xs hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        title="Use my current location"
+                                    >
+                                        {isGettingLocation
+                                            ? <Locate className="w-3 h-3 animate-spin" />
+                                            : <MapPin className="w-3 h-3" />
+                                        }
+                                        HERE
+                                    </button>
+                                </div>
                                 <textarea
                                     value={formData.additionalQuestions}
                                     onChange={(e) => setFormData({ ...formData, additionalQuestions: e.target.value })}
@@ -203,6 +247,9 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
                                     placeholder="Any specific questions about the selected properties..."
                                     disabled={isSubmitting}
                                 />
+                                {locationError && (
+                                    <p className="text-xs text-red-500 mt-1">{locationError}</p>
+                                )}
                             </div>
 
 
