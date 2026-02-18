@@ -236,7 +236,7 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
                                             ? <Locate className="w-3 h-3 animate-spin" />
                                             : <MapPin className="w-3 h-3" />
                                         }
-                                        HERE
+                                        GPS Coordinates
                                     </button>
                                 </div>
                                 <textarea
