@@ -12,6 +12,7 @@ interface EditListingModalProps {
         notes: string;
         updateDate: boolean;
         latLong: string;
+        fbLink: string;
     }) => Promise<void>;
 }
 
@@ -26,6 +27,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
     const [notes, setNotes] = useState('');
     const [updateDate, setUpdateDate] = useState(true);
     const [latLong, setLatLong] = useState('');
+    const [fbLink, setFbLink] = useState('');
     const [isGettingLocation, setIsGettingLocation] = useState(false);
     const [locationError, setLocationError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,6 +41,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
             setNotes(listing.columnV || '');
             setUpdateDate(true);
             setLatLong(listing.lat && listing.lng ? `${listing.lat}, ${listing.lng}` : '');
+            setFbLink(listing.facebookLink || '');
             setLocationError(null);
             setError(null);
         }
@@ -127,6 +130,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                 notes: notes.trim(),
                 updateDate,
                 latLong: latLong.trim(),
+                fbLink: fbLink.trim(),
             });
             onClose();
         } catch (err) {
@@ -242,6 +246,20 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                         {locationError && (
                             <p className="text-xs text-red-500 mt-1">{locationError}</p>
                         )}
+                    </div>
+
+                    {/* FB Link */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                            Facebook Link (Col Z)
+                        </label>
+                        <input
+                            type="url"
+                            value={fbLink}
+                            onChange={(e) => setFbLink(e.target.value)}
+                            placeholder="https://www.facebook.com/..."
+                            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
                     </div>
 
                     {/* Update Date Toggle */}

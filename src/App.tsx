@@ -961,6 +961,7 @@ function App() {
     notes: string;
     updateDate: boolean;
     latLong: string;
+    fbLink: string;
   }) => {
     console.log('Editing listing:', { listingId, updates });
 
@@ -1005,6 +1006,7 @@ function App() {
         ...(updates.latLong && { 'LAT LONG': updates.latLong }),
         ...(parsedLat !== null && { 'LAT': parsedLat.toString() }),
         ...(parsedLng !== null && { 'LONG': parsedLng.toString() }),
+        'FB LINK': updates.fbLink || null,
       })
       .eq('"GEO ID"', listingId)
       .select('"GEO ID"');
@@ -1033,6 +1035,7 @@ function App() {
         ...(updates.updateDate && { columnBC: dateStr }),
         ...(parsedLat !== null && { lat: parsedLat }),
         ...(parsedLng !== null && { lng: parsedLng }),
+        facebookLink: updates.fbLink || l.facebookLink,
       } : l;
 
     setAllListings(prev => prev.map(updateListing));
