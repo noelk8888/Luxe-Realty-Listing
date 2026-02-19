@@ -40,6 +40,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     const [isCopied, setIsCopied] = useState(false);
     const [isColumnKCopied, setIsColumnKCopied] = useState(false);
     const [isColumnBDCopied, setIsColumnBDCopied] = useState(false);
+    const [isPhotoLinkCopied, setIsPhotoLinkCopied] = useState(false);
 
     const [isExpanded, setIsExpanded] = useState(false);
 
@@ -87,6 +88,14 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         }
     };
 
+    const handleCopyPhotoLink = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (listing.photoLink) {
+            navigator.clipboard.writeText(listing.photoLink);
+            setIsPhotoLinkCopied(true);
+        }
+    };
+
     useEffect(() => {
         if (isCopied) {
             const timer = setTimeout(() => setIsCopied(false), 2000);
@@ -107,6 +116,13 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             return () => clearTimeout(timer);
         }
     }, [isColumnBDCopied]);
+
+    useEffect(() => {
+        if (isPhotoLinkCopied) {
+            const timer = setTimeout(() => setIsPhotoLinkCopied(false), 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [isPhotoLinkCopied]);
 
     const isNotAvailable = listing.statusAQ && listing.statusAQ.toLowerCase().trim() !== 'available';
     // Removed red outline per user request: "UPDATE - no red outline on all NOT AVAILABLE situations"
@@ -315,9 +331,15 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             </div>
 
             <div className="space-y-2 text-sm text-gray-500">
-                <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4" />
-                    <span className="truncate">{listing.city}, {listing.province}</span>
+                <div
+                    className={`flex items-center gap-2 ${listing.photoLink ? 'cursor-pointer' : ''}`}
+                    onClick={listing.photoLink ? handleCopyPhotoLink : undefined}
+                    title={listing.photoLink ? 'Click to copy photo link' : undefined}
+                >
+                    <MapPin className={`w-4 h-4 ${isPhotoLinkCopied ? 'text-green-500' : ''}`} />
+                    <span className={`truncate transition-colors ${isPhotoLinkCopied ? 'text-green-600 font-semibold' : listing.photoLink ? 'hover:text-blue-600' : ''}`}>
+                        {isPhotoLinkCopied ? 'Photo link copied!' : `${listing.city}, ${listing.province}`}
+                    </span>
                 </div>
                 {(listing.building || listing.area || listing.barangay) && (
                     <div className="flex items-center gap-2">
