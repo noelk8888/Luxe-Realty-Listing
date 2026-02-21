@@ -19,6 +19,7 @@ const TABS = [
       latLong: "BE",
       lat: "BF",
       long: "BG",
+      fbLink: "Z",
     },
   },
   {
@@ -36,6 +37,7 @@ const TABS = [
       latLong: "AF",
       lat: "AG",
       long: "AH",
+      fbLink: "A",
     },
   },
 ];
@@ -186,6 +188,7 @@ serve(async (req) => {
       { db: "LAT LONG", key: "latLong" },
       { db: "LAT", key: "lat" },
       { db: "LONG", key: "long" },
+      { db: "FB LINK", key: "fbLink" },
     ];
 
     for (const field of fieldMappings) {
@@ -303,6 +306,13 @@ serve(async (req) => {
         updates.push({
           range: `${tab.name}!${tab.columns.long}${rowIndex}`,
           values: [[record["LONG"] ?? ""]],
+        });
+      }
+
+      if (changedFields.includes("fbLink")) {
+        updates.push({
+          range: `${tab.name}!${tab.columns.fbLink}${rowIndex}`,
+          values: [[record["FB LINK"] ?? ""]],
         });
       }
 
