@@ -128,7 +128,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     const isNotAvailable = status !== 'available' && status !== '';
     // Removed red outline per user request: "UPDATE - no red outline on all NOT AVAILABLE situations"
     const cardClassName = `
-                group relative bg-white rounded-3xl overflow-hidden transition-all duration-500
+                group relative bg-white rounded-3xl transition-all duration-500
                 ${isNotAvailable ? 'border-t-4 border-red-600' : ''}
                 ${isSelected
             ? 'ring-4 ring-blue-500 ring-offset-4 shadow-2xl scale-[1.02] z-10'
