@@ -6,7 +6,7 @@ interface StatusDropdownProps {
     onUpdate: (id: string, status: string) => Promise<void>;
 }
 
-const STATUS_OPTIONS = ['Available', 'SOLD', 'LEASED', 'NOT AVAILABLE', 'ON HOLD', 'TEMP HOLD'];
+const STATUS_OPTIONS = ['Available', 'SOLD', 'LEASED OUT', 'OFF MARKET', 'ON HOLD', 'UNDER NEGO'];
 
 export const StatusDropdown: React.FC<StatusDropdownProps> = ({
     currentStatus, listingId, onUpdate

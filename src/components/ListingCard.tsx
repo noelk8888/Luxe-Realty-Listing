@@ -124,21 +124,23 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         }
     }, [isPhotoLinkCopied]);
 
-    const isNotAvailable = listing.statusAQ && listing.statusAQ.toLowerCase().trim() !== 'available';
+    const status = (listing.statusAQ || '').toLowerCase().trim();
+    const isNotAvailable = status !== 'available' && status !== '';
     // Removed red outline per user request: "UPDATE - no red outline on all NOT AVAILABLE situations"
+    const cardClassName = `
+                group relative bg-white rounded-3xl overflow-hidden transition-all duration-500
+                ${isNotAvailable ? 'border-t-4 border-red-600' : ''}
+                ${isSelected
+            ? 'ring-4 ring-blue-500 ring-offset-4 shadow-2xl scale-[1.02] z-10'
+            : isNotAvailable
+                ? 'bg-white border-gray-100 hover:border-red-300 hover:shadow-red-100'  // NOT AVAILABLE hover - red tint
+                : 'border border-gray-100 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-50'
+        }
+    `;
 
     return (
         <div
-            className={`rounded-xl shadow-sm border p-5 hover:shadow-md transition-all relative group
-                ${isNotAvailable ? 'border-t-4 border-red-600' : ''}
-                ${isSelected
-                    ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500' // Selected State
-                    : isNotAvailable
-                        ? 'bg-white border-gray-100 hover:border-red-300 hover:shadow-red-100'  // NOT AVAILABLE hover - red tint
-                        : 'bg-white border-gray-100 hover:border-blue-200'  // Normal State
-                }
-                ${isDisabled && !isSelected ? 'opacity-50' : ''}
-            `}
+            className={`${cardClassName} ${isDisabled && !isSelected ? 'opacity-50' : ''} p-5`}
         >
             {userRole === 'editor' && onStatusUpdate ? (
                 <StatusDropdown

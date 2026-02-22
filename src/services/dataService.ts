@@ -291,11 +291,11 @@ export const normalizeDbListing = (row: DbListing): Listing => {
         if (combinedText.includes('SOLD')) {
             statusAQ = 'SOLD';
         } else if (combinedText.includes('LEASED') || combinedText.includes('RENTED')) {
-            statusAQ = 'LEASED';
-        } else if (combinedText.includes('TEMP HOLD')) {
-            statusAQ = 'TEMP HOLD';
+            statusAQ = 'LEASED OUT';
+        } else if (combinedText.includes('TEMP HOLD') || combinedText.includes('TEMP ON HOLD')) {
+            statusAQ = 'UNDER NEGO';
         } else if (combinedText.includes('NOT AVAILABLE')) {
-            statusAQ = 'NOT AVAILABLE';
+            statusAQ = 'OFF MARKET';
         }
     }
 

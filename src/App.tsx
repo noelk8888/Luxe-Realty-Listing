@@ -1103,12 +1103,12 @@ function App() {
       </header>
 
       {/* Hero / Search Section */}
-      < div className={`flex flex-col items-center justify-center transition-all duration-500 ease-out px-4 pt-20 ${(hasSearched || selectedType || selectedCategory || (selectedBedrooms.length > 0) || (selectedParking.length > 0) || (selectedPropertyTypes.length > 0)) ? 'py-12 min-h-[30vh]' : 'min-h-[100vh]'
+      < div className={`flex flex-col items-center justify-center transition-all duration-500 ease-out px-4 pt-28 ${(hasSearched || selectedType || selectedCategory || (selectedBedrooms.length > 0) || (selectedParking.length > 0) || (selectedPropertyTypes.length > 0)) ? 'py-12 min-h-[30vh]' : 'min-h-[100vh]'
         }`}>
         <div className={`w-full max-w-2xl text-center space-y-6 transition-all duration-500 ${(hasSearched || selectedType || selectedCategory || (selectedBedrooms.length > 0) || (selectedParking.length > 0) || (selectedPropertyTypes.length > 0)) ? 'translate-y-0' : '-translate-y-8'
           }`}>
 
-          <p className={`font-bold text-gray-900 tracking-tight transition-all duration-500 ${(hasSearched || selectedType || selectedCategory || (selectedBedrooms.length > 0) || (selectedParking.length > 0) || (selectedPropertyTypes.length > 0)) ? 'text-2xl mb-4' : 'text-4xl sm:text-5xl mb-8'}`}>
+          <p className={`font-bold text-gray-900 tracking-tight transition-all duration-500 ${(hasSearched || selectedType || selectedCategory || (selectedBedrooms.length > 0) || (selectedParking.length > 0) || (selectedPropertyTypes.length > 0)) ? 'text-2xl mb-4 mt-4' : 'text-4xl sm:text-5xl mb-8'}`}>
             {(selectedType || selectedCategory || hasSearched || (selectedBedrooms.length > 0) || (selectedParking.length > 0) || (selectedPropertyTypes.length > 0))
               ? `Found ${displayedResults.length.toLocaleString()} of ${allListings.length.toLocaleString()} Available Listings`
               : allListings.length > 0 ? `${allListings.length.toLocaleString()} Available Listings` : 'Loading properties...'
