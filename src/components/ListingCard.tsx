@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Listing } from '../types';
-import { MapPin, Building, Maximize, Facebook, ChevronDown, ChevronUp, Bed, Car } from 'lucide-react';
+import { MapPin, Building, Maximize, ChevronDown, ChevronUp, Bed, Car } from 'lucide-react';
 import { StatusDropdown } from './StatusDropdown';
 
 interface ListingCardProps {
@@ -126,10 +126,11 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
 
     const status = (listing.statusAQ || '').toLowerCase().trim();
     const isNotAvailable = status !== 'available' && status !== '';
+    const isUnderNego = status === 'under nego';
     // Removed red outline per user request: "UPDATE - no red outline on all NOT AVAILABLE situations"
     const cardClassName = `
                 group relative bg-white rounded-3xl transition-all duration-500
-                ${isNotAvailable ? 'border-t-4 border-red-600' : ''}
+                ${isUnderNego ? 'border-t-4 border-orange-500' : isNotAvailable ? 'border-t-4 border-red-600' : ''}
                 ${isSelected
             ? 'ring-4 ring-blue-500 ring-offset-4 shadow-2xl scale-[1.02] z-10'
             : isNotAvailable
@@ -151,8 +152,8 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             ) : (
                 isNotAvailable && (
                     <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-[50]">
-                        <div className="bg-white border-2 border-red-600 px-6 py-1.5 rounded-2xl shadow-md flex items-center justify-center min-w-[160px]">
-                            <span className="text-[12px] font-black uppercase tracking-[0.25em] text-red-600">
+                        <div className={`bg-white border-2 px-6 py-1.5 rounded-2xl shadow-md flex items-center justify-center min-w-[160px] ${isUnderNego ? 'border-orange-500' : 'border-red-600'}`}>
+                            <span className={`text-[12px] font-black uppercase tracking-[0.25em] ${isUnderNego ? 'text-orange-500' : 'text-red-600'}`}>
                                 {listing.statusAQ}
                             </span>
                         </div>
@@ -205,7 +206,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                             className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-300 text-gray-600 hover:bg-[#1877F2] hover:text-white transition-colors"
                             title="View on Facebook"
                         >
-                            <Facebook size={18} fill="currentColor" strokeWidth={0} />
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
                         </a>
                     )}
                     <div className="flex flex-col items-end">
