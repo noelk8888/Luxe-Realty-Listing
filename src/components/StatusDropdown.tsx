@@ -15,6 +15,7 @@ export const StatusDropdown: React.FC<StatusDropdownProps> = ({
     const [isUpdating, setIsUpdating] = useState(false);
 
     const isNotAvailable = currentStatus.toLowerCase().trim() !== 'available';
+    const isUnderNego = currentStatus.toLowerCase().trim() === 'under nego';
 
     const handleSelect = async (newStatus: string) => {
         if (newStatus === currentStatus) {
@@ -36,7 +37,9 @@ export const StatusDropdown: React.FC<StatusDropdownProps> = ({
                 onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
                 disabled={isUpdating}
                 className={`px-4 py-1.5 rounded-2xl shadow-md border-2 text-[11px] font-black uppercase tracking-[0.2em] transition-colors cursor-pointer
-                    ${isNotAvailable
+                    ${isUnderNego
+                        ? 'bg-white border-blue-500 text-blue-500 hover:bg-blue-50'
+                        : isNotAvailable
                         ? 'bg-white border-red-600 text-red-600 hover:bg-red-50'
                         : 'bg-white border-green-500 text-green-600 hover:bg-green-50'}
                     ${isUpdating ? 'opacity-50' : ''}
