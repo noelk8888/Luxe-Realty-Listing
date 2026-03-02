@@ -227,7 +227,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
     // ── Permissions ────────────────────────────────────────────────────────────
     async function fetchPermissions() {
         setPermsLoading(true);
-        const { data, error } = await supabase.from('role_permissions').select('role, feature, enabled');
+        const { data, error } = await supabase.from('luxe_listing_role_permissions').select('role, feature, enabled');
         if (error) setError('Failed to load permissions: ' + error.message);
         else if (data) {
             setPerms(prev => {
@@ -251,7 +251,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
         setPerms(prev => ({ ...prev, [feature]: { ...prev[feature], [role]: newVal } }));
         setSavingPerm(key);
         setError(null);
-        const { error } = await supabase.from('role_permissions')
+        const { error } = await supabase.from('luxe_listing_role_permissions')
             .upsert({ role, feature, enabled: newVal }, { onConflict: 'role,feature' });
         if (error) {
             setPerms(prev => ({ ...prev, [feature]: { ...prev[feature], [role]: !newVal } }));

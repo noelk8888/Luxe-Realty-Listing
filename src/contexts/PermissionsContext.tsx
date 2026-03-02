@@ -58,9 +58,9 @@ async function resolvePermissions(email: string, role: string): Promise<Record<F
     const typedRole = role as 'admin' | 'broker' | 'viewer';
     const perms: Record<Feature, boolean> = { ...ROLE_DEFAULTS[typedRole] };
 
-    // Apply role-level DB overrides (role_permissions uses uppercase role names)
+    // Apply role-level DB overrides
     const { data: rolePerms } = await supabase
-        .from('role_permissions')
+        .from('luxe_listing_role_permissions')
         .select('feature, enabled')
         .eq('role', role.toUpperCase());
 
