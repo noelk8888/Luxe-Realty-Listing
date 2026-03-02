@@ -1087,12 +1087,12 @@ function App() {
               {user.email}
             </span>
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-              role === 'superadmin' ? 'bg-purple-50 text-purple-600'
+              role === 'superadmin' ? 'bg-green-100 text-green-800'
               : role === 'admin'   ? 'bg-green-50 text-green-600'
               : role === 'broker'  ? 'bg-blue-50 text-blue-600'
               : 'bg-gray-100 text-gray-500'
             }`}>
-              {role === 'superadmin' ? 'SA' : role === 'admin' ? 'AD' : role === 'broker' ? 'BR' : 'V'}
+              {role === 'superadmin' || role === 'admin' ? 'ADMIN' : role === 'broker' ? 'BROKER' : 'VIEWER'}
             </span>
             <button
               onClick={signOut}
