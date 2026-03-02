@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import type { Feature } from '../contexts/PermissionsContext';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-type AppRole = 'ADMIN' | 'BROKER' | 'VIEWER';
+type AppRole = 'ADMIN' | 'EDITOR' | 'BROKER' | 'VIEWER';
 type Tab = 'users' | 'permissions';
 
 interface AppUser {
@@ -21,16 +21,18 @@ interface UserManagementModalProps {
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const ROLES: AppRole[] = ['ADMIN', 'BROKER', 'VIEWER'];
+const ROLES: AppRole[] = ['ADMIN', 'EDITOR', 'BROKER', 'VIEWER'];
 
 const ROLE_BADGE: Record<AppRole, string> = {
     ADMIN:  'bg-purple-50 text-purple-700 border border-purple-200',
+    EDITOR: 'bg-amber-50 text-amber-700 border border-amber-200',
     BROKER: 'bg-blue-50 text-blue-700 border border-blue-200',
     VIEWER: 'bg-gray-100 text-gray-500 border border-gray-200',
 };
 
 const ROLE_TOGGLE_COLORS: Record<AppRole, string> = {
     ADMIN:  'bg-purple-500',
+    EDITOR: 'bg-amber-500',
     BROKER: 'bg-blue-500',
     VIEWER: 'bg-gray-400',
 };
@@ -59,6 +61,12 @@ const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
         telegram_send: true, batch_review: true, ai_extract: true,
         geocoding: true, view_pricing: true, view_contact: true,
         view_geo_id: true, view_photos: true, export_data: true, manage_users: true,
+    },
+    EDITOR: {
+        add_listing: true, edit_listing: true, delete_listing: true,
+        telegram_send: false, batch_review: true, ai_extract: true,
+        geocoding: true, view_pricing: true, view_contact: true,
+        view_geo_id: true, view_photos: true, export_data: true, manage_users: false,
     },
     BROKER: {
         add_listing: true, edit_listing: true, delete_listing: false,
@@ -360,6 +368,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                             className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 bg-white"
                                         >
                                             <option value="ADMIN">ADMIN</option>
+                                            <option value="EDITOR">EDITOR</option>
                                             <option value="BROKER">BROKER</option>
                                             <option value="VIEWER">VIEWER</option>
                                         </select>
@@ -423,6 +432,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                                 className="text-xs font-bold border rounded-full px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-gray-300"
                                                             >
                                                                 <option value="ADMIN">ADMIN</option>
+                                                                <option value="EDITOR">EDITOR</option>
                                                                 <option value="BROKER">BROKER</option>
                                                                 <option value="VIEWER">VIEWER</option>
                                                             </select>

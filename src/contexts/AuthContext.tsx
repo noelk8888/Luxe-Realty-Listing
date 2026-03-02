@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import type { User, Session } from '@supabase/supabase-js';
 import { clearCache } from '../services/listingsCache';
 
-export type Role = 'superadmin' | 'admin' | 'broker' | 'viewer' | null;
+export type Role = 'superadmin' | 'admin' | 'editor' | 'broker' | 'viewer' | null;
 
 interface AuthContextType {
     user: User | null;
@@ -37,7 +37,8 @@ async function fetchRole(email: string): Promise<Role> {
     if (error || !data) return null;
 
     const r = (data.role as string).toUpperCase();
-    if (r === 'ADMIN') return 'admin';
+    if (r === 'ADMIN')  return 'admin';
+    if (r === 'EDITOR') return 'editor';
     if (r === 'BROKER') return 'broker';
     if (r === 'VIEWER') return 'viewer';
     return null;

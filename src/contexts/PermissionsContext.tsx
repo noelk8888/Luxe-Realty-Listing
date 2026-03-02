@@ -26,13 +26,19 @@ const ALL_FEATURES: Feature[] = [
     'view_geo_id', 'view_photos', 'export_data', 'manage_users',
 ];
 
-// ── Role defaults (identical to LUXE Edit) ────────────────────────────────────
-const ROLE_DEFAULTS: Record<'admin' | 'broker' | 'viewer', Record<Feature, boolean>> = {
+// ── Role defaults ─────────────────────────────────────────────────────────────
+const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'viewer', Record<Feature, boolean>> = {
     admin: {
         add_listing: true, edit_listing: true, delete_listing: true,
         telegram_send: true, batch_review: true, ai_extract: true,
         geocoding: true, view_pricing: true, view_contact: true,
         view_geo_id: true, view_photos: true, export_data: true, manage_users: true,
+    },
+    editor: {
+        add_listing: true, edit_listing: true, delete_listing: true,
+        telegram_send: false, batch_review: true, ai_extract: true,
+        geocoding: true, view_pricing: true, view_contact: true,
+        view_geo_id: true, view_photos: true, export_data: true, manage_users: false,
     },
     broker: {
         add_listing: true, edit_listing: true, delete_listing: false,
@@ -53,9 +59,9 @@ const ALL_DENIED  = Object.fromEntries(ALL_FEATURES.map(f => [f, false])) as Rec
 
 async function resolvePermissions(email: string, role: string): Promise<Record<Feature, boolean>> {
     if (role === 'superadmin') return ALL_ENABLED;
-    if (!['admin', 'broker', 'viewer'].includes(role)) return ALL_DENIED;
+    if (!['admin', 'editor', 'broker', 'viewer'].includes(role)) return ALL_DENIED;
 
-    const typedRole = role as 'admin' | 'broker' | 'viewer';
+    const typedRole = role as 'admin' | 'editor' | 'broker' | 'viewer';
     const perms: Record<Feature, boolean> = { ...ROLE_DEFAULTS[typedRole] };
 
     // Apply role-level DB overrides
