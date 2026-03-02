@@ -11,6 +11,7 @@ import { ContactFormModal } from './components/ContactFormModal';
 import { MapModal } from './components/MapModal';
 import { NoteModal } from './components/NoteModal';
 import { EditListingModal } from './components/EditListingModal';
+import { UserManagementModal } from './components/UserManagementModal';
 import Pagination from './components/Pagination';
 import { ScrollToTop } from './components/ScrollToTop';
 import { useAuth } from './contexts/AuthContext';
@@ -21,6 +22,8 @@ import { clearCache } from './services/listingsCache';
 
 function App() {
   const { user, role, isLoading: authLoading, signInWithGoogle, signOut } = useAuth();
+
+  const [showUserManagement, setShowUserManagement] = useState(false);
 
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -1094,6 +1097,14 @@ function App() {
             }`}>
               {role === 'superadmin' || role === 'admin' ? 'ADMIN' : role === 'broker' ? 'BROKER' : 'VIEWER'}
             </span>
+            {role === 'superadmin' && (
+              <button
+                onClick={() => setShowUserManagement(true)}
+                className="text-xs text-green-700 hover:text-green-900 font-bold transition-colors border border-green-200 hover:border-green-400 px-2 py-0.5 rounded-full"
+              >
+                Users
+              </button>
+            )}
             <button
               onClick={signOut}
               className="text-xs text-gray-400 hover:text-red-500 font-bold transition-colors"
@@ -2183,6 +2194,11 @@ function App() {
           setEditingListing(null);
         }}
         onSave={handleListingEdit}
+      />
+
+      <UserManagementModal
+        isOpen={showUserManagement}
+        onClose={() => setShowUserManagement(false)}
       />
 
       {/* Footer */}
