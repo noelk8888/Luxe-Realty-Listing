@@ -28,7 +28,7 @@ async function fetchRole(email: string): Promise<Role> {
     if (saEmails.includes(email.toLowerCase())) return 'superadmin';
 
     const { data, error } = await supabase
-        .from('app_users')
+        .from('luxe_listing_users')
         .select('role')
         .eq('email', email)
         .maybeSingle();
