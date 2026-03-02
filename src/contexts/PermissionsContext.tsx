@@ -35,7 +35,7 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'viewer', Record<Fea
         view_geo_id: true, view_photos: true, export_data: true, manage_users: true,
     },
     editor: {
-        add_listing: true, edit_listing: true, delete_listing: true,
+        add_listing: true, edit_listing: true, delete_listing: false,
         telegram_send: false, batch_review: true, ai_extract: true,
         geocoding: true, view_pricing: true, view_contact: true,
         view_geo_id: true, view_photos: true, export_data: true, manage_users: false,
