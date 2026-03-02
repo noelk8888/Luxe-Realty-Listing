@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { Listing } from '../types';
 import { MapPin, Building, Maximize, ChevronDown, ChevronUp, Bed, Car } from 'lucide-react';
 import { StatusDropdown } from './StatusDropdown';
+import { usePermissions } from '../contexts/PermissionsContext';
 
 interface ListingCardProps {
     listing: Listing;
@@ -16,7 +17,6 @@ interface ListingCardProps {
     isPopupView?: boolean;
     onBack?: () => void;
     backButtonVariant?: 'red' | 'blue' | 'gray';
-    userRole?: 'editor' | 'viewer' | null;
     onStatusUpdate?: (id: string, status: string) => Promise<void>;
     onEditClick?: (listing: Listing) => void;
 }
@@ -33,7 +33,6 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     isPopupView = false,
     onBack,
     backButtonVariant = 'blue',
-    userRole,
     onStatusUpdate,
     onEditClick,
 }) => {
@@ -43,6 +42,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     const [isPhotoLinkCopied, setIsPhotoLinkCopied] = useState(false);
 
     const [isExpanded, setIsExpanded] = useState(false);
+    const { permissions } = usePermissions();
 
     const formatPrice = (price: number) => {
         const formatted = new Intl.NumberFormat('en-PH', {
@@ -145,7 +145,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         <div
             className={`${cardClassName} ${isDisabled && !isSelected ? 'opacity-50' : ''} p-5`}
         >
-            {userRole === 'editor' && onStatusUpdate ? (
+            {permissions.edit_listing && onStatusUpdate ? (
                 <StatusDropdown
                     currentStatus={listing.statusAQ || 'Available'}
                     listingId={listing.id}
@@ -224,7 +224,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                             className={`text-2xl font-bold text-black font-sans cursor-pointer hover:text-blue-600 hover:underline transition-colors tracking-tighter ${isPopupView ? 'underline' : ''}`}
                             title={isPopupView ? "Back" : "View on Map"}
                         >
-                            {listing.id}
+                            {permissions.view_geo_id ? listing.id : '••••••'}
                         </span>
                         {/* Column BC: DATE UPDATED - Below Listing ID (Gray) */}
                         {listing.columnBC && !isPopupView && (
@@ -240,6 +240,10 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
 
             <div className="mb-4 mt-0.5">
                 <div className="w-full bg-gray-100 p-2 rounded-lg shadow-inner flex flex-col items-center justify-center gap-0.5 text-center">
+                {!permissions.view_pricing && (
+                    <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">Price Hidden</span>
+                )}
+                {permissions.view_pricing && <>
                     {/* Column BD: Top of Price, Light Green Theme */}
                     {listing.columnBD && (
                         <div
@@ -307,6 +311,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                             )}
                         </>
                     )}
+                </>}
                 </div>
                 {/* Column BD removed from here */}
                 {listing.displaySummary && (
@@ -432,7 +437,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         </button>
                     )
                 )}
-                {listing.photoLink && (
+                {permissions.view_photos && listing.photoLink && (
                     <a
                         href={listing.photoLink}
                         target="_blank"
@@ -466,7 +471,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                 >
                     NOTES
                 </button>
-                {userRole === 'editor' && onEditClick && (
+                {permissions.edit_listing && onEditClick && (
                     <button
                         onClick={(e) => {
                             e.stopPropagation();

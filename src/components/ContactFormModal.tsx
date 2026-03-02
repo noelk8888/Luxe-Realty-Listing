@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, MapPin, Locate } from 'lucide-react';
+import { usePermissions } from '../contexts/PermissionsContext';
 
 
 interface ContactFormModalProps {
@@ -38,6 +39,7 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
     const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const [isGettingLocation, setIsGettingLocation] = useState(false);
     const [locationError, setLocationError] = useState<string | null>(null);
+    const { permissions } = usePermissions();
 
     // Reset form state on close
     useEffect(() => {
@@ -225,6 +227,7 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
                                     <label className="block text-sm font-medium text-gray-700">
                                         Suggested Edits
                                     </label>
+                                    {permissions.geocoding && (
                                     <button
                                         type="button"
                                         onClick={handleGetLocation}
@@ -238,6 +241,7 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
                                         }
                                         GPS Coordinates
                                     </button>
+                                    )}
                                 </div>
                                 <textarea
                                     value={formData.additionalQuestions}

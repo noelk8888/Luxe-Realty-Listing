@@ -1,0 +1,140 @@
+import { createContext, useContext, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from './AuthContext';
+
+// ── Feature types (mirrored from LUXE Edit) ───────────────────────────────────
+export type Feature =
+    | 'add_listing'
+    | 'edit_listing'
+    | 'delete_listing'
+    | 'telegram_send'
+    | 'batch_review'
+    | 'ai_extract'
+    | 'geocoding'
+    | 'view_pricing'
+    | 'view_contact'
+    | 'view_geo_id'
+    | 'view_photos'
+    | 'export_data'
+    | 'manage_users';
+
+const ALL_FEATURES: Feature[] = [
+    'add_listing', 'edit_listing', 'delete_listing',
+    'telegram_send', 'batch_review', 'ai_extract',
+    'geocoding', 'view_pricing', 'view_contact',
+    'view_geo_id', 'view_photos', 'export_data', 'manage_users',
+];
+
+// ── Role defaults (identical to LUXE Edit) ────────────────────────────────────
+const ROLE_DEFAULTS: Record<'admin' | 'broker' | 'viewer', Record<Feature, boolean>> = {
+    admin: {
+        add_listing: true, edit_listing: true, delete_listing: true,
+        telegram_send: true, batch_review: true, ai_extract: true,
+        geocoding: true, view_pricing: true, view_contact: true,
+        view_geo_id: true, view_photos: true, export_data: true, manage_users: true,
+    },
+    broker: {
+        add_listing: true, edit_listing: true, delete_listing: false,
+        telegram_send: false, batch_review: false, ai_extract: true,
+        geocoding: true, view_pricing: true, view_contact: true,
+        view_geo_id: true, view_photos: true, export_data: false, manage_users: false,
+    },
+    viewer: {
+        add_listing: false, edit_listing: false, delete_listing: false,
+        telegram_send: false, batch_review: false, ai_extract: false,
+        geocoding: false, view_pricing: false, view_contact: false,
+        view_geo_id: false, view_photos: true, export_data: false, manage_users: false,
+    },
+};
+
+const ALL_ENABLED = Object.fromEntries(ALL_FEATURES.map(f => [f, true])) as Record<Feature, boolean>;
+const ALL_DENIED  = Object.fromEntries(ALL_FEATURES.map(f => [f, false])) as Record<Feature, boolean>;
+
+async function resolvePermissions(email: string, role: string): Promise<Record<Feature, boolean>> {
+    if (role === 'superadmin') return ALL_ENABLED;
+    if (!['admin', 'broker', 'viewer'].includes(role)) return ALL_DENIED;
+
+    const typedRole = role as 'admin' | 'broker' | 'viewer';
+    const perms: Record<Feature, boolean> = { ...ROLE_DEFAULTS[typedRole] };
+
+    // Apply role-level DB overrides (role_permissions uses uppercase role names)
+    const { data: rolePerms } = await supabase
+        .from('role_permissions')
+        .select('feature, enabled')
+        .eq('role', role.toUpperCase());
+
+    if (rolePerms) {
+        for (const row of rolePerms) {
+            if (ALL_FEATURES.includes(row.feature as Feature)) {
+                perms[row.feature as Feature] = row.enabled;
+            }
+        }
+    }
+
+    // Apply per-user overrides (highest priority)
+    const { data: userOverrides } = await supabase
+        .from('user_permission_overrides')
+        .select('feature, enabled')
+        .eq('user_email', email.toLowerCase());
+
+    if (userOverrides) {
+        for (const row of userOverrides) {
+            if (ALL_FEATURES.includes(row.feature as Feature)) {
+                perms[row.feature as Feature] = row.enabled;
+            }
+        }
+    }
+
+    return perms;
+}
+
+// ── Context ───────────────────────────────────────────────────────────────────
+interface PermissionsContextType {
+    permissions: Record<Feature, boolean>;
+    isLoading: boolean;
+}
+
+const PermissionsContext = createContext<PermissionsContextType | undefined>(undefined);
+
+export function PermissionsProvider({ children }: { children: ReactNode }) {
+    const { user, role } = useAuth();
+    const [permissions, setPermissions] = useState<Record<Feature, boolean>>(ALL_DENIED);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (!user?.email || !role) {
+            setPermissions(ALL_DENIED);
+            setIsLoading(false);
+            return;
+        }
+
+        let cancelled = false;
+        setIsLoading(true);
+
+        resolvePermissions(user.email, role).then(perms => {
+            if (cancelled) return;
+            setPermissions(perms);
+            setIsLoading(false);
+        }).catch(() => {
+            if (cancelled) return;
+            setIsLoading(false);
+        });
+
+        return () => { cancelled = true; };
+    }, [user?.email, role]);
+
+    return (
+        <PermissionsContext.Provider value={{ permissions, isLoading }}>
+            {children}
+        </PermissionsContext.Provider>
+    );
+}
+
+export function usePermissions() {
+    const context = useContext(PermissionsContext);
+    if (context === undefined) {
+        throw new Error('usePermissions must be used within a PermissionsProvider');
+    }
+    return context;
+}

@@ -1086,11 +1086,13 @@ function App() {
             <span className="text-xs text-gray-500 font-medium truncate max-w-[160px]">
               {user.email}
             </span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${role === 'editor'
-              ? 'bg-green-50 text-green-600'
-              : 'bg-blue-50 text-blue-600'
-              }`}>
-              {role}
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+              role === 'superadmin' ? 'bg-purple-50 text-purple-600'
+              : role === 'admin'   ? 'bg-green-50 text-green-600'
+              : role === 'broker'  ? 'bg-blue-50 text-blue-600'
+              : 'bg-gray-100 text-gray-500'
+            }`}>
+              {role === 'superadmin' ? 'SA' : role === 'admin' ? 'AD' : role === 'broker' ? 'BR' : 'V'}
             </span>
             <button
               onClick={signOut}
@@ -2124,7 +2126,6 @@ function App() {
                       onMapClick={handleMapClick}
                       index={(currentPage - 1) * ITEMS_PER_PAGE + idx + 1}
                       activeFilter={selectedType}
-                      userRole={role}
                       onStatusUpdate={handleStatusUpdate}
                       onEditClick={handleEditClick}
                     />

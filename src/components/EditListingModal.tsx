@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, MapPin, Locate } from 'lucide-react';
 import type { Listing } from '../types';
+import { usePermissions } from '../contexts/PermissionsContext';
 
 interface EditListingModalProps {
     isOpen: boolean;
@@ -30,6 +31,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
     const [fbLink, setFbLink] = useState('');
     const [isGettingLocation, setIsGettingLocation] = useState(false);
     const [locationError, setLocationError] = useState<string | null>(null);
+    const { permissions } = usePermissions();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -224,6 +226,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                                 placeholder="e.g. 14.5995, 120.9842"
                                 className="flex-1 px-4 py-3 border border-gray-200 rounded-xl text-base font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             />
+                            {permissions.geocoding && (
                             <button
                                 type="button"
                                 onClick={handleGetLocation}
@@ -237,6 +240,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                                 }
                                 HERE
                             </button>
+                            )}
                         </div>
                         {parsedCoords && (
                             <p className="text-xs text-gray-500 mt-1">

@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import type { User, Session } from '@supabase/supabase-js';
 import { clearCache } from '../services/listingsCache';
 
-type Role = 'editor' | 'viewer' | null;
+export type Role = 'superadmin' | 'admin' | 'broker' | 'viewer' | null;
 
 interface AuthContextType {
     user: User | null;
@@ -19,6 +19,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 async function fetchRole(email: string): Promise<Role> {
     console.log('Auth: fetching role for', email);
+
+    // Check SUPERADMIN env var first (bypasses DB, same as LUXE Edit)
+    const saEmails = (import.meta.env.VITE_SUPERADMIN_EMAILS || '')
+        .split(',')
+        .map((e: string) => e.trim().toLowerCase())
+        .filter(Boolean);
+    if (saEmails.includes(email.toLowerCase())) return 'superadmin';
+
     const { data, error } = await supabase
         .from('app_users')
         .select('role')
@@ -29,7 +37,8 @@ async function fetchRole(email: string): Promise<Role> {
     if (error || !data) return null;
 
     const r = (data.role as string).toUpperCase();
-    if (r === 'ADMIN' || r === 'BROKER' || r === 'SUPERADMIN') return 'editor';
+    if (r === 'ADMIN') return 'admin';
+    if (r === 'BROKER') return 'broker';
     if (r === 'VIEWER') return 'viewer';
     return null;
 }

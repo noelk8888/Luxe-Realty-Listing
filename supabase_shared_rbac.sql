@@ -1,14 +1,14 @@
 -- ============================================================
--- Shared RBAC: Luxe Listing → app_users table
+-- Shared RBAC: Luxe Listing ↔ LUXE Edit (full mirror)
 -- Run this in the Supabase SQL Editor
 -- ============================================================
 --
--- This makes Luxe Listing read roles from the same app_users
--- table used by LUXE Edit, so both apps share the same RBAC.
+-- Luxe Listing reads from the same tables as LUXE Edit:
+--   app_users                  → role assignment
+--   role_permissions           → role-level feature overrides
+--   user_permission_overrides  → per-user feature overrides
 --
--- Role mapping:
---   SUPERADMIN / ADMIN / BROKER → 'editor' in Luxe Listing
---   VIEWER                      → 'viewer' in Luxe Listing
+-- Roles: SUPERADMIN (env var) | ADMIN | BROKER | VIEWER
 -- ============================================================
 
 -- Step 1: Enable RLS on app_users (safe to run even if already enabled)
@@ -38,8 +38,32 @@ CREATE POLICY "Users can read their own role"
 
 
 -- ============================================================
--- Verification: Check the policy was created
+-- Step 4: Allow authenticated users to read role_permissions
+--         (role-level feature overrides — not sensitive)
 -- ============================================================
--- SELECT policyname, cmd, qual
+ALTER TABLE role_permissions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users can read role_permissions" ON role_permissions;
+CREATE POLICY "Authenticated users can read role_permissions"
+    ON role_permissions
+    FOR SELECT
+    USING (auth.role() = 'authenticated');
+
+
+-- ============================================================
+-- Step 5: Allow users to read their own permission overrides
+-- ============================================================
+ALTER TABLE user_permission_overrides ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can read their own overrides" ON user_permission_overrides;
+CREATE POLICY "Users can read their own overrides"
+    ON user_permission_overrides
+    FOR SELECT
+    USING (auth.jwt() ->> 'email' = lower(user_email));
+
+
+-- ============================================================
+-- Verification
+-- ============================================================
+-- SELECT tablename, policyname, cmd
 -- FROM pg_policies
--- WHERE tablename = 'app_users';
+-- WHERE tablename IN ('app_users', 'role_permissions', 'user_permission_overrides')
+-- ORDER BY tablename;
