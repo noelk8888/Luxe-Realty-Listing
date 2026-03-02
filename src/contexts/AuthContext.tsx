@@ -20,14 +20,18 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 async function fetchRole(email: string): Promise<Role> {
     console.log('Auth: fetching role for', email);
     const { data, error } = await supabase
-        .from('authorized_members')
+        .from('app_users')
         .select('role')
         .eq('email', email)
         .maybeSingle();
 
     console.log('Auth: fetchRole response', { data, error });
     if (error || !data) return null;
-    return data.role as Role;
+
+    const r = (data.role as string).toUpperCase();
+    if (r === 'ADMIN' || r === 'BROKER' || r === 'SUPERADMIN') return 'editor';
+    if (r === 'VIEWER') return 'viewer';
+    return null;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
