@@ -10,6 +10,7 @@ interface AuthContextType {
     user: User | null;
     session: Session | null;
     role: Role;
+    fbLink: string | null;
     isLoading: boolean;
     signInWithGoogle: () => Promise<void>;
     signOut: () => Promise<void>;
@@ -17,37 +18,48 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-async function fetchRole(email: string): Promise<Role> {
-    console.log('Auth: fetching role for', email);
+async function fetchUserProfile(email: string): Promise<{ role: Role; fbLink: string | null }> {
+    console.log('Auth: fetching profile for', email);
 
     // Check SUPERADMIN env var first (bypasses DB, same as LUXE Edit)
     const saEmails = (import.meta.env.VITE_SUPERADMIN_EMAILS || '')
         .split(',')
         .map((e: string) => e.trim().toLowerCase())
         .filter(Boolean);
-    if (saEmails.includes(email.toLowerCase())) return 'superadmin';
+    if (saEmails.includes(email.toLowerCase())) {
+        // SA role is from env var, but still fetch fb_link from DB if the user exists there
+        const { data: saData } = await supabase
+            .from('luxe_listing_users')
+            .select('fb_link')
+            .eq('email', email.toLowerCase())
+            .maybeSingle();
+        return { role: 'superadmin', fbLink: (saData as { fb_link?: string | null } | null)?.fb_link ?? null };
+    }
 
     const { data, error } = await supabase
         .from('luxe_listing_users')
-        .select('role')
+        .select('role, fb_link')
         .eq('email', email)
         .maybeSingle();
 
-    console.log('Auth: fetchRole response', { data, error });
-    if (error || !data) return null;
+    console.log('Auth: fetchUserProfile response', { data, error });
+    if (error || !data) return { role: null, fbLink: null };
 
     const r = (data.role as string).toUpperCase();
-    if (r === 'ADMIN')  return 'admin';
-    if (r === 'EDITOR') return 'editor';
-    if (r === 'BROKER') return 'broker';
-    if (r === 'VIEWER') return 'viewer';
-    return null;
+    let role: Role = null;
+    if (r === 'ADMIN')  role = 'admin';
+    else if (r === 'EDITOR') role = 'editor';
+    else if (r === 'BROKER') role = 'broker';
+    else if (r === 'VIEWER') role = 'viewer';
+
+    return { role, fbLink: (data as { fb_link?: string | null }).fb_link ?? null };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [session, setSession] = useState<Session | null>(null);
     const [role, setRole] = useState<Role>(null);
+    const [fbLink, setFbLink] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     // Listen for auth state changes — keep this lightweight (no API calls)
@@ -77,20 +89,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return () => subscription.unsubscribe();
     }, []);
 
-    // Fetch role separately — runs after user state is set, outside the auth callback
+    // Fetch user profile separately — runs after user state is set, outside the auth callback
     useEffect(() => {
         if (!user?.email) return;
         let cancelled = false;
 
-        console.log('Auth: fetching role (separate effect) for', user.email);
-        fetchRole(user.email).then(r => {
+        console.log('Auth: fetching profile (separate effect) for', user.email);
+        fetchUserProfile(user.email).then(({ role: r, fbLink: fb }) => {
             if (cancelled) return;
-            console.log('Auth: role =', r);
+            console.log('Auth: role =', r, 'fbLink =', fb);
             setRole(r);
+            setFbLink(fb);
             setIsLoading(false);
-        }).catch(err => {
+        }).catch((err: unknown) => {
             if (cancelled) return;
-            console.error('Auth: fetchRole failed', err);
+            console.error('Auth: fetchUserProfile failed', err);
             setIsLoading(false);
         });
 
@@ -110,10 +123,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await clearCache();
         await supabase.auth.signOut();
         setRole(null);
+        setFbLink(null);
     };
 
     return (
-        <AuthContext.Provider value={{ user, session, role, isLoading, signInWithGoogle, signOut }}>
+        <AuthContext.Provider value={{ user, session, role, fbLink, isLoading, signInWithGoogle, signOut }}>
             {children}
         </AuthContext.Provider>
     );

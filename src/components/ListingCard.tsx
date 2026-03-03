@@ -3,6 +3,7 @@ import type { Listing } from '../types';
 import { MapPin, Building, Maximize, ChevronDown, ChevronUp, Bed, Car } from 'lucide-react';
 import { StatusDropdown } from './StatusDropdown';
 import { usePermissions } from '../contexts/PermissionsContext';
+import { useAuth } from '../contexts/AuthContext';
 
 interface ListingCardProps {
     listing: Listing;
@@ -43,6 +44,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
 
     const [isExpanded, setIsExpanded] = useState(false);
     const { permissions } = usePermissions();
+    const { fbLink } = useAuth();
 
     const formatPrice = (price: number) => {
         const formatted = new Intl.NumberFormat('en-PH', {
@@ -199,9 +201,9 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
 
                 </div>
                 <div className="flex items-center gap-2">
-                    {listing.facebookLink && (
+                    {fbLink && listing.facebookLink && listing.facebookLink === fbLink && (
                         <a
-                            href={listing.facebookLink}
+                            href={fbLink}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
