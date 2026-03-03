@@ -17,13 +17,23 @@ export type Feature =
     | 'view_geo_id'
     | 'view_photos'
     | 'export_data'
-    | 'manage_users';
+    | 'manage_users'
+    | 'view_fb_link'
+    | 'view_col_k'
+    | 'view_col_aa'
+    | 'view_col_ac'
+    | 'view_map'
+    | 'view_copy'
+    | 'view_notes';
 
 const ALL_FEATURES: Feature[] = [
     'add_listing', 'edit_listing', 'delete_listing',
     'telegram_send', 'batch_review', 'ai_extract',
     'geocoding', 'view_pricing', 'view_contact',
     'view_geo_id', 'view_photos', 'export_data', 'manage_users',
+    'view_fb_link',
+    'view_col_k', 'view_col_aa', 'view_col_ac',
+    'view_map', 'view_copy', 'view_notes',
 ];
 
 // ── Role defaults ─────────────────────────────────────────────────────────────
@@ -33,24 +43,36 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'viewer', Record<Fea
         telegram_send: true, batch_review: true, ai_extract: true,
         geocoding: true, view_pricing: true, view_contact: true,
         view_geo_id: true, view_photos: true, export_data: true, manage_users: true,
+        view_fb_link: true,
+        view_col_k: true, view_col_aa: true, view_col_ac: true,
+        view_map: true, view_copy: true, view_notes: true,
     },
     editor: {
         add_listing: true, edit_listing: true, delete_listing: false,
         telegram_send: false, batch_review: true, ai_extract: true,
         geocoding: true, view_pricing: true, view_contact: true,
         view_geo_id: true, view_photos: true, export_data: true, manage_users: false,
+        view_fb_link: true,
+        view_col_k: true, view_col_aa: true, view_col_ac: true,
+        view_map: true, view_copy: true, view_notes: true,
     },
     broker: {
         add_listing: true, edit_listing: true, delete_listing: false,
         telegram_send: false, batch_review: false, ai_extract: true,
         geocoding: true, view_pricing: true, view_contact: true,
         view_geo_id: true, view_photos: true, export_data: false, manage_users: false,
+        view_fb_link: true,
+        view_col_k: true, view_col_aa: true, view_col_ac: true,
+        view_map: true, view_copy: true, view_notes: true,
     },
     viewer: {
         add_listing: false, edit_listing: false, delete_listing: false,
         telegram_send: false, batch_review: false, ai_extract: false,
         geocoding: false, view_pricing: false, view_contact: false,
         view_geo_id: false, view_photos: true, export_data: false, manage_users: false,
+        view_fb_link: false,
+        view_col_k: false, view_col_aa: true, view_col_ac: true,
+        view_map: true, view_copy: false, view_notes: false,
     },
 };
 

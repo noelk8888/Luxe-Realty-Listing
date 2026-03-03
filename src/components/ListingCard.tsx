@@ -44,7 +44,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
 
     const [isExpanded, setIsExpanded] = useState(false);
     const { permissions } = usePermissions();
-    const { fbLink } = useAuth();
+    const { fbGroup } = useAuth();
 
     const formatPrice = (price: number) => {
         const formatted = new Intl.NumberFormat('en-PH', {
@@ -166,7 +166,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             )}
             <div className="flex justify-between items-start mb-1">
                 <div className="flex flex-col gap-1.5 flex-1 mr-4">
-                    {listing.columnK && (
+                    {permissions.view_col_k && listing.columnK && (
                         <div
                             onClick={handleCopyColumnK}
                             className={`text-sm font-extrabold leading-tight cursor-pointer transition-colors
@@ -201,9 +201,9 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
 
                 </div>
                 <div className="flex items-center gap-2">
-                    {fbLink && listing.facebookLink && listing.facebookLink === fbLink && (
+                    {fbGroup && listing.facebookLink && permissions.view_fb_link && (
                         <a
-                            href={fbLink}
+                            href={listing.facebookLink}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
@@ -343,17 +343,19 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             </div>
 
             <div className="space-y-2 text-sm text-gray-500">
-                <div
-                    className={`flex items-center gap-2 ${listing.photoLink ? 'cursor-pointer' : ''}`}
-                    onClick={listing.photoLink ? handleCopyPhotoLink : undefined}
-                    title={listing.photoLink ? 'Click to copy photo link' : undefined}
-                >
-                    <MapPin className={`w-4 h-4 ${isPhotoLinkCopied ? 'text-green-500' : ''}`} />
-                    <span className={`truncate transition-colors ${isPhotoLinkCopied ? 'text-green-600 font-semibold' : listing.photoLink ? 'hover:text-blue-600' : ''}`}>
-                        {isPhotoLinkCopied ? 'Photo link copied!' : `${listing.city}, ${listing.province}`}
-                    </span>
-                </div>
-                {(listing.building || listing.area || listing.barangay) && (
+                {permissions.view_col_aa && (
+                    <div
+                        className={`flex items-center gap-2 ${listing.photoLink ? 'cursor-pointer' : ''}`}
+                        onClick={listing.photoLink ? handleCopyPhotoLink : undefined}
+                        title={listing.photoLink ? 'Click to copy photo link' : undefined}
+                    >
+                        <MapPin className={`w-4 h-4 ${isPhotoLinkCopied ? 'text-green-500' : ''}`} />
+                        <span className={`truncate transition-colors ${isPhotoLinkCopied ? 'text-green-600 font-semibold' : listing.photoLink ? 'hover:text-blue-600' : ''}`}>
+                            {isPhotoLinkCopied ? 'Photo link copied!' : `${listing.city}, ${listing.province}`}
+                        </span>
+                    </div>
+                )}
+                {permissions.view_col_ac && (listing.building || listing.area || listing.barangay) && (
                     <div className="flex items-center gap-2">
                         <Building className="w-4 h-4" />
                         <span className="truncate">{listing.building || listing.area || listing.barangay}</span>
@@ -416,7 +418,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         {backButtonVariant === 'red' ? 'FEATURED' :
                             backButtonVariant === 'blue' ? 'SIMILAR' : 'BACK'}
                     </button>
-                ) : (
+                ) : permissions.view_map ? (
                     listing.lat && listing.lng ? (
                         <a
                             href={`https://www.google.com/maps/dir/?api=1&destination=${listing.lat},${listing.lng}`}
@@ -438,7 +440,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                             MAP
                         </button>
                     )
-                )}
+                ) : null}
                 {permissions.view_photos && listing.photoLink && (
                     <a
                         href={listing.photoLink}
@@ -450,29 +452,32 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         PHOTO
                     </a>
                 )}
-                <button
-                    onClick={handleCopy}
-                    className={`flex-1 text-center py-2 rounded-lg text-xs font-bold transition-all duration-200 uppercase tracking-wider flex items-center justify-center gap-1
-                        ${isCopied
-                            ? 'bg-green-500 text-white scale-105 shadow-sm'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }
-                    `}
-                >
-                    {isCopied ? 'COPIED!' : 'COPY'}
-                </button>
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        // Always open contact form directly
-                        onNotesClick && onNotesClick(listing.id);
-                    }}
-                    className={`flex-1 text-center py-2 bg-yellow-50 rounded-lg text-xs font-bold hover:bg-yellow-100 transition-colors uppercase tracking-wider
-                        ${listing.columnV ? 'text-yellow-700' : 'text-blue-600'}
-                    `}
-                >
-                    NOTES
-                </button>
+                {permissions.view_copy && (
+                    <button
+                        onClick={handleCopy}
+                        className={`flex-1 text-center py-2 rounded-lg text-xs font-bold transition-all duration-200 uppercase tracking-wider flex items-center justify-center gap-1
+                            ${isCopied
+                                ? 'bg-green-500 text-white scale-105 shadow-sm'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }
+                        `}
+                    >
+                        {isCopied ? 'COPIED!' : 'COPY'}
+                    </button>
+                )}
+                {permissions.view_notes && (
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onNotesClick && onNotesClick(listing.id);
+                        }}
+                        className={`flex-1 text-center py-2 bg-yellow-50 rounded-lg text-xs font-bold hover:bg-yellow-100 transition-colors uppercase tracking-wider
+                            ${listing.columnV ? 'text-yellow-700' : 'text-blue-600'}
+                        `}
+                    >
+                        NOTES
+                    </button>
+                )}
                 {permissions.edit_listing && onEditClick && (
                     <button
                         onClick={(e) => {

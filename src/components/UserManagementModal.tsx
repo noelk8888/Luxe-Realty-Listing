@@ -50,7 +50,6 @@ const FEATURES: { key: Feature; label: string; group: string; active: boolean }[
     { key: 'view_pricing',   label: 'View Pricing',    group: 'Listing View',    active: true  },
     { key: 'view_geo_id',    label: 'View GEO ID',     group: 'Listing View',    active: true  },
     { key: 'view_contact',   label: 'View Contact',    group: 'Listing View',    active: false },
-    { key: 'edit_listing',   label: 'Edit Listing',    group: 'Listing Actions', active: true  },
     { key: 'add_listing',    label: 'Add Listing',     group: 'Listing Actions', active: false },
     { key: 'delete_listing', label: 'Delete Listing',  group: 'Listing Actions', active: false },
     { key: 'geocoding',      label: 'GPS / Geocoding', group: 'Tools',           active: true  },
@@ -59,9 +58,17 @@ const FEATURES: { key: Feature; label: string; group: string; active: boolean }[
     { key: 'batch_review',   label: 'Batch Review',    group: 'Tools',           active: false },
     { key: 'export_data',    label: 'Export Data',     group: 'Tools',           active: false },
     { key: 'manage_users',   label: 'Manage Users',    group: 'Admin',           active: false },
+    { key: 'view_fb_link',   label: 'FB Link Button',  group: 'Admin',           active: true  },
+    { key: 'view_col_k',     label: 'Col K',           group: 'Listing Card',    active: true  },
+    { key: 'view_col_aa',    label: 'Col AA (City)',    group: 'Listing Card',    active: true  },
+    { key: 'view_col_ac',    label: 'Col AC (Area)',    group: 'Listing Card',    active: true  },
+    { key: 'view_map',       label: 'Map Button',       group: 'Listing Card',    active: true  },
+    { key: 'view_copy',      label: 'Copy Button',      group: 'Listing Card',    active: true  },
+    { key: 'view_notes',     label: 'Notes Button',     group: 'Listing Card',    active: true  },
+    { key: 'edit_listing',   label: 'Edit Button',      group: 'Listing Card',    active: true  },
 ];
 
-const FEATURE_GROUPS = ['Listing View', 'Listing Actions', 'Tools', 'Admin'];
+const FEATURE_GROUPS = ['Listing View', 'Listing Actions', 'Tools', 'Admin', 'Listing Card'];
 
 const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
     ADMIN: {
@@ -69,24 +76,36 @@ const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
         telegram_send: true, batch_review: true, ai_extract: true,
         geocoding: true, view_pricing: true, view_contact: true,
         view_geo_id: true, view_photos: true, export_data: true, manage_users: true,
+        view_fb_link: true,
+        view_col_k: true, view_col_aa: true, view_col_ac: true,
+        view_map: true, view_copy: true, view_notes: true,
     },
     EDITOR: {
         add_listing: true, edit_listing: true, delete_listing: false,
         telegram_send: false, batch_review: true, ai_extract: true,
         geocoding: true, view_pricing: true, view_contact: true,
         view_geo_id: true, view_photos: true, export_data: true, manage_users: false,
+        view_fb_link: true,
+        view_col_k: true, view_col_aa: true, view_col_ac: true,
+        view_map: true, view_copy: true, view_notes: true,
     },
     BROKER: {
         add_listing: true, edit_listing: true, delete_listing: false,
         telegram_send: false, batch_review: false, ai_extract: true,
         geocoding: true, view_pricing: true, view_contact: true,
         view_geo_id: true, view_photos: true, export_data: false, manage_users: false,
+        view_fb_link: true,
+        view_col_k: true, view_col_aa: true, view_col_ac: true,
+        view_map: true, view_copy: true, view_notes: true,
     },
     VIEWER: {
         add_listing: false, edit_listing: false, delete_listing: false,
         telegram_send: false, batch_review: false, ai_extract: false,
         geocoding: false, view_pricing: false, view_contact: false,
         view_geo_id: false, view_photos: true, export_data: false, manage_users: false,
+        view_fb_link: false,
+        view_col_k: false, view_col_aa: true, view_col_ac: true,
+        view_map: true, view_copy: false, view_notes: false,
     },
 };
 
@@ -278,11 +297,10 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
     async function handleAddGroup(e: React.FormEvent) {
         e.preventDefault();
         const nameTrimmed = newGroupName.trim();
-        const linkTrimmed = newGroupFbLink.trim();
-        if (!nameTrimmed || !linkTrimmed) return;
+        if (!nameTrimmed) return;
         setAddingGroup(true);
         setError(null);
-        const { error } = await supabase.from('luxe_listing_fb_groups').insert({ name: nameTrimmed, fb_link: linkTrimmed });
+        const { error } = await supabase.from('luxe_listing_fb_groups').insert({ name: nameTrimmed, fb_link: '' });
         if (error) {
             setError(error.code === '23505' ? `Group "${nameTrimmed}" already exists.` : 'Failed to add group: ' + error.message);
         } else {
@@ -297,7 +315,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
         setSavingGroup(id);
         setError(null);
         const { error } = await supabase.from('luxe_listing_fb_groups')
-            .update({ name: editGroupName.trim(), fb_link: editGroupFbLink.trim() })
+            .update({ name: editGroupName.trim() })
             .eq('id', id);
         if (error) setError('Failed to update group: ' + error.message);
         else {
@@ -326,10 +344,8 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
         setDeletingGroup(null);
     }
 
-    function handleGroupSelect(groupName: string, setter: (link: string) => void, groupSetter: (name: string) => void) {
+    function handleGroupSelect(groupName: string, groupSetter: (name: string) => void) {
         groupSetter(groupName);
-        const found = groups.find(g => g.name === groupName);
-        setter(found ? found.fb_link : '');
     }
 
     // ── Permissions ────────────────────────────────────────────────────────────
@@ -486,7 +502,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                         <label className="block text-xs text-gray-500 mb-1">Group</label>
                                         <select
                                             value={newFbGroup}
-                                            onChange={e => handleGroupSelect(e.target.value, setNewFbLink, setNewFbGroup)}
+                                            onChange={e => handleGroupSelect(e.target.value, setNewFbGroup)}
                                             className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 bg-white"
                                         >
                                             <option value="">(no group)</option>
@@ -545,7 +561,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                             />
                                                             <select
                                                                 value={editFbGroup}
-                                                                onChange={e => handleGroupSelect(e.target.value, setEditFbLink, setEditFbGroup)}
+                                                                onChange={e => handleGroupSelect(e.target.value, setEditFbGroup)}
                                                                 className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-gray-300 text-gray-600"
                                                             >
                                                                 <option value="">(no group)</option>
@@ -680,24 +696,16 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                         <form onSubmit={handleAddGroup} className="mx-4 mt-3 p-4 bg-gray-50 rounded-xl border border-gray-200 flex-shrink-0">
                             <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">New Group</p>
                             <div className="flex flex-wrap gap-2 items-end">
-                                <div>
+                                <div className="flex-1 min-w-[180px]">
                                     <label className="block text-xs text-gray-500 mb-1">Group Name *</label>
                                     <input
                                         type="text" value={newGroupName} onChange={e => setNewGroupName(e.target.value)}
                                         placeholder="e.g. KIU" required autoFocus
-                                        className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 bg-white"
-                                    />
-                                </div>
-                                <div className="flex-1 min-w-[220px]">
-                                    <label className="block text-xs text-gray-500 mb-1">Facebook Page URL *</label>
-                                    <input
-                                        type="url" value={newGroupFbLink} onChange={e => setNewGroupFbLink(e.target.value)}
-                                        placeholder="https://facebook.com/..." required
                                         className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 bg-white"
                                     />
                                 </div>
                                 <button
-                                    type="submit" disabled={addingGroup || !newGroupName.trim() || !newGroupFbLink.trim()}
+                                    type="submit" disabled={addingGroup || !newGroupName.trim()}
                                     className="flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white text-sm font-bold rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
                                 >
                                     {addingGroup ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
@@ -719,7 +727,6 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                     <thead className="sticky top-0 bg-white z-10">
                                         <tr className="border-b border-gray-100">
                                             <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Group</th>
-                                            <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Facebook Page URL</th>
                                             <th className="text-right px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Actions</th>
                                         </tr>
                                     </thead>
@@ -732,14 +739,6 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                             <input
                                                                 value={editGroupName}
                                                                 onChange={e => setEditGroupName(e.target.value)}
-                                                                className="w-full text-sm border border-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-gray-300"
-                                                            />
-                                                        </td>
-                                                        <td className="px-5 py-2.5">
-                                                            <input
-                                                                type="url"
-                                                                value={editGroupFbLink}
-                                                                onChange={e => setEditGroupFbLink(e.target.value)}
                                                                 className="w-full text-sm border border-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-gray-300"
                                                             />
                                                         </td>
@@ -783,9 +782,6 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                                 {g.name}
                                                             </span>
                                                         </td>
-                                                        <td className="px-5 py-3 text-gray-400 text-xs truncate max-w-[280px]">
-                                                            <a href={g.fb_link} target="_blank" rel="noopener noreferrer" className="hover:text-blue-500 transition-colors">{g.fb_link}</a>
-                                                        </td>
                                                         <td className="px-5 py-3 text-right">
                                                             <div className="flex items-center justify-end gap-1">
                                                                 <button
@@ -815,7 +811,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
 
                         <div className="px-5 py-3 border-t border-gray-100 flex-shrink-0">
                             <p className="text-[11px] text-gray-400">
-                                Groups define which listings show a Facebook button for a user. The group's URL must match the listing's <code className="font-mono bg-gray-100 px-1 rounded">FB LINK</code> (Col Z) exactly.
+                                Users assigned to a group will see the Facebook button on listings that have a value in <code className="font-mono bg-gray-100 px-1 rounded">FB LINK</code> (Col Z). Users with no group see no Facebook buttons.
                             </p>
                         </div>
                     </div>
