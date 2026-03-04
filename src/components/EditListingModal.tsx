@@ -41,7 +41,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
             setSalePrice(listing.price > 0 ? listing.price.toString() : '');
             setLeasePrice(listing.leasePrice > 0 ? listing.leasePrice.toString() : '');
             setNotes(listing.columnV || '');
-            setUpdateDate(true);
+            setUpdateDate(false);
             setLatLong(listing.lat && listing.lng ? `${listing.lat}, ${listing.lng}` : '');
             setFbLink(listing.facebookLink || '');
             setLocationError(null);
