@@ -115,9 +115,10 @@ function buildDefaultPermState(): PermState {
     const state = {} as PermState;
     for (const f of FEATURES) {
         state[f.key] = {
-            ADMIN:  ROLE_DEFAULTS.ADMIN[f.key],
-            BROKER: ROLE_DEFAULTS.BROKER[f.key],
-            VIEWER: ROLE_DEFAULTS.VIEWER[f.key],
+            ADMIN:   ROLE_DEFAULTS.ADMIN[f.key],
+            EDITOR:  ROLE_DEFAULTS.EDITOR[f.key],
+            BROKER:  ROLE_DEFAULTS.BROKER[f.key],
+            VIEWER:  ROLE_DEFAULTS.VIEWER[f.key],
         };
     }
     return state;
@@ -167,11 +168,11 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
     const [groups, setGroups] = useState<FbGroup[]>([]);
     const [groupsLoading, setGroupsLoading] = useState(true);
     const [newGroupName, setNewGroupName] = useState('');
-    const [newGroupFbLink, setNewGroupFbLink] = useState('');
+    const [_newGroupFbLink, setNewGroupFbLink] = useState('');
     const [addingGroup, setAddingGroup] = useState(false);
     const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
     const [editGroupName, setEditGroupName] = useState('');
-    const [editGroupFbLink, setEditGroupFbLink] = useState('');
+    const [_editGroupFbLink, setEditGroupFbLink] = useState('');
     const [savingGroup, setSavingGroup] = useState<string | null>(null);
     const [confirmDeleteGroup, setConfirmDeleteGroup] = useState<string | null>(null);
     const [deletingGroup, setDeletingGroup] = useState<string | null>(null);
