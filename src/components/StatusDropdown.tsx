@@ -6,7 +6,7 @@ interface StatusDropdownProps {
     onUpdate: (id: string, status: string) => Promise<void>;
 }
 
-const STATUS_OPTIONS = ['Available', 'SOLD', 'LEASED OUT', 'OFF MARKET', 'ON HOLD', 'UNDER NEGO', 'UNDECISIVE SELLER'];
+const STATUS_OPTIONS = ['Available', 'SOLD', 'LEASED OUT', 'OFF MARKET', 'ON HOLD', 'UNDER NEGO', 'UNDECISIVE BUYER'];
 
 export const StatusDropdown: React.FC<StatusDropdownProps> = ({
     currentStatus, listingId, onUpdate
@@ -16,7 +16,7 @@ export const StatusDropdown: React.FC<StatusDropdownProps> = ({
 
     const isNotAvailable = currentStatus.toLowerCase().trim() !== 'available';
     const isUnderNego = currentStatus.toLowerCase().trim() === 'under nego';
-    const isUndecisiveSeller = currentStatus.toLowerCase().trim() === 'undecisive seller';
+    const isUndecisiveBuyer = currentStatus.toLowerCase().trim() === 'undecisive buyer';
 
     const handleSelect = async (newStatus: string) => {
         if (newStatus === currentStatus) {
@@ -38,8 +38,8 @@ export const StatusDropdown: React.FC<StatusDropdownProps> = ({
                 onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
                 disabled={isUpdating}
                 className={`px-4 py-1.5 rounded-2xl shadow-md border-2 text-[11px] font-black uppercase tracking-[0.2em] transition-colors cursor-pointer
-                    ${isUndecisiveSeller
-                        ? 'bg-white border-indigo-500 text-indigo-500 hover:bg-indigo-50'
+                    ${isUndecisiveBuyer
+                        ? 'bg-white border-amber-800 text-amber-800 hover:bg-amber-50'
                         : isUnderNego
                         ? 'bg-white border-blue-500 text-blue-500 hover:bg-blue-50'
                         : isNotAvailable

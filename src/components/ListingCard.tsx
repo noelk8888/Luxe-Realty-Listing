@@ -129,15 +129,15 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     const status = (listing.statusAQ || '').toLowerCase().trim();
     const isNotAvailable = status !== 'available' && status !== '';
     const isUnderNego = status === 'under nego';
-    const isUndecisiveSeller = status === 'undecisive seller';
+    const isUndecisiveBuyer = status === 'undecisive buyer';
     // Removed red outline per user request: "UPDATE - no red outline on all NOT AVAILABLE situations"
     const cardClassName = `
                 group relative bg-white rounded-3xl transition-all duration-500
-                ${isUndecisiveSeller ? 'border-t-4 border-t-indigo-500' : isUnderNego ? 'border-t-4 border-t-blue-500' : isNotAvailable ? 'border-t-4 border-t-red-600' : ''}
+                ${isUndecisiveBuyer ? 'border-t-4 border-t-amber-800' : isUnderNego ? 'border-t-4 border-t-blue-500' : isNotAvailable ? 'border-t-4 border-t-red-600' : ''}
                 ${isSelected
             ? 'ring-4 ring-blue-500 ring-offset-4 shadow-2xl scale-[1.02] z-10'
-            : isUndecisiveSeller
-                ? 'bg-white border-gray-100 hover:border-indigo-300 hover:shadow-indigo-100'
+            : isUndecisiveBuyer
+                ? 'bg-white border-gray-100 hover:border-amber-700 hover:shadow-amber-100'
                 : isUnderNego
                 ? 'bg-white border-gray-100 hover:border-blue-300 hover:shadow-blue-100'
                 : isNotAvailable
@@ -159,8 +159,8 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             ) : (
                 isNotAvailable && (
                     <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-[50]">
-                        <div className={`bg-white border-2 px-6 py-1.5 rounded-2xl shadow-md flex items-center justify-center min-w-[160px] ${isUndecisiveSeller ? 'border-indigo-500' : isUnderNego ? 'border-blue-500' : 'border-red-600'}`}>
-                            <span className={`text-[12px] font-black uppercase tracking-[0.25em] ${isUndecisiveSeller ? 'text-indigo-500' : isUnderNego ? 'text-blue-500' : 'text-red-600'}`}>
+                        <div className={`bg-white border-2 px-6 py-1.5 rounded-2xl shadow-md flex items-center justify-center min-w-[160px] ${isUndecisiveBuyer ? 'border-amber-800' : isUnderNego ? 'border-blue-500' : 'border-red-600'}`}>
+                            <span className={`text-[12px] font-black uppercase tracking-[0.25em] ${isUndecisiveBuyer ? 'text-amber-800' : isUnderNego ? 'text-blue-500' : 'text-red-600'}`}>
                                 {listing.statusAQ}
                             </span>
                         </div>
