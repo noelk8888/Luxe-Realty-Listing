@@ -362,7 +362,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                 name: editGroupName.trim(),
                 brand_name: editBrandName.trim() || null,
                 logo_url: editLogoUrl.trim() || null,
-                fb_link: editFacebookUrl.trim() || null,
+                fb_link: editFacebookUrl.trim() || '',
                 messenger_url: editMessengerUrl.trim() || null,
                 instagram_url: editInstagramUrl.trim() || null,
                 tiktok_url: editTiktokUrl.trim() || null,
