@@ -88,8 +88,6 @@ const FEATURE_GROUPS = ['Listing Card', 'Edit Section', 'Misc'];
 
 const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
     ADMIN: {
-        add_listing: true, edit_listing: true, delete_listing: true,
-        telegram_send: true, batch_review: true, ai_extract: true,
         // Listing Card
         view_col_k: true, view_listing_ownership: true, view_pricing: true,
         view_photos: true, view_col_aa: true, view_col_ac: true,
@@ -910,12 +908,12 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                 </div>
                             ) : (
                                 <table className="w-full text-sm border-collapse">
-                                    <thead className="sticky top-0 bg-white z-10">
-                                        <tr className="border-b border-gray-100">
-                                            <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Feature</th>
+                                    <thead className="sticky top-0 bg-white z-10 shadow-[0_1px_0_0_#f3f4f6]">
+                                        <tr>
+                                            <th className="text-left px-5 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest w-[40%]">Feature</th>
                                             {ROLES.map(role => (
-                                                <th key={role} className="px-4 py-3 text-center">
-                                                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${ROLE_BADGE[role]}`}>
+                                                <th key={role} className="px-3 py-4 text-center">
+                                                    <span className={`inline-flex items-center justify-center px-3 py-1 rounded-2xl text-[11px] font-extrabold uppercase tracking-wider ${ROLE_BADGE[role]}`}>
                                                         {role}
                                                     </span>
                                                 </th>
@@ -925,16 +923,20 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                     <tbody>
                                         {FEATURE_GROUPS.map(group => (
                                             <React.Fragment key={group}>
-                                                <tr className="bg-gray-50">
-                                                    <td colSpan={4} className="px-5 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                                        {group}
+                                                <tr>
+                                                    <td colSpan={5} className="px-5 pt-5 pb-2 text-[10px] font-extrabold text-gray-400 uppercase tracking-[0.18em] bg-white">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="h-px flex-1 bg-gray-100" />
+                                                            <span>{group}</span>
+                                                            <div className="h-px flex-1 bg-gray-100" />
+                                                        </div>
                                                     </td>
                                                 </tr>
                                                 {FEATURES.filter(f => f.group === group).map(f => (
-                                                    <tr key={f.key} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                                                        <td className="px-5 py-3">
+                                                    <tr key={f.key} className="hover:bg-gray-50/70 transition-colors">
+                                                        <td className="px-5 py-3.5">
                                                             <div className="flex items-center gap-2">
-                                                                <span className="font-medium text-gray-800">{f.label}</span>
+                                                                <span className="font-semibold text-gray-800 text-[13px]">{f.label}</span>
                                                                 {f.active && (
                                                                     <span className="text-[9px] font-bold uppercase tracking-wider text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded-full border border-blue-100">Active</span>
                                                                 )}
@@ -944,7 +946,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                             const key = `${f.key}-${role}`;
                                                             const isDefault = ROLE_DEFAULTS[role][f.key] === perms[f.key][role];
                                                             return (
-                                                                <td key={role} className="px-4 py-3 text-center">
+                                                                <td key={role} className="px-3 py-3.5 text-center">
                                                                     <div className="flex items-center justify-center gap-1">
                                                                         {savingPerm === key ? (
                                                                             <Loader2 size={14} className="animate-spin text-gray-400" />
