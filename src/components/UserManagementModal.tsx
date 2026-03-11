@@ -51,6 +51,7 @@ const FEATURES: { key: Feature; label: string; group: string; active: boolean }[
     { key: 'view_geo_id',    label: 'View GEO ID',     group: 'Listing View',    active: true  },
     { key: 'view_contact',   label: 'View Contact',    group: 'Listing View',    active: false },
     { key: 'add_listing',    label: 'Add Listing',     group: 'Listing Actions', active: false },
+    { key: 'edit_listing',   label: 'Edit Listing',    group: 'Listing Actions', active: true  },
     { key: 'delete_listing', label: 'Delete Listing',  group: 'Listing Actions', active: false },
     { key: 'geocoding',      label: 'GPS / Geocoding', group: 'Tools',           active: true  },
     { key: 'ai_extract',     label: 'AI Extract',      group: 'Tools',           active: false },
@@ -65,7 +66,6 @@ const FEATURES: { key: Feature; label: string; group: string; active: boolean }[
     { key: 'view_map',       label: 'Map Button',       group: 'Listing Card',    active: true  },
     { key: 'view_copy',      label: 'Copy Button',      group: 'Listing Card',    active: true  },
     { key: 'view_notes',     label: 'Notes Button',     group: 'Listing Card',    active: true  },
-    { key: 'edit_listing',   label: 'Edit Button',      group: 'Listing Card',    active: true  },
 ];
 
 const FEATURE_GROUPS = ['Listing View', 'Listing Actions', 'Tools', 'Admin', 'Listing Card'];

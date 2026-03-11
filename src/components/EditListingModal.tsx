@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, MapPin, Locate } from 'lucide-react';
 import type { Listing } from '../types';
 import { usePermissions } from '../contexts/PermissionsContext';
+import { useAuth } from '../contexts/AuthContext';
 
 interface EditListingModalProps {
     isOpen: boolean;
@@ -32,6 +33,8 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
     const [isGettingLocation, setIsGettingLocation] = useState(false);
     const [locationError, setLocationError] = useState<string | null>(null);
     const { permissions } = usePermissions();
+    const { role } = useAuth();
+    const isBroker = role === 'broker';
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -161,7 +164,8 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="p-6 space-y-5">
-                    {/* Sale Price */}
+                    {/* Sale Price — hidden for broker */}
+                    {!isBroker && (
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1.5">
                             Sale Price (PHP)
@@ -179,8 +183,10 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                             </p>
                         )}
                     </div>
+                    )}
 
-                    {/* Lease Price */}
+                    {/* Lease Price — hidden for broker */}
+                    {!isBroker && (
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1.5">
                             Lease Price (PHP/month)
@@ -198,8 +204,10 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                             </p>
                         )}
                     </div>
+                    )}
 
-                    {/* Notes */}
+                    {/* Notes — hidden for broker */}
+                    {!isBroker && (
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1.5">
                             Notes
@@ -212,6 +220,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                             className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                         />
                     </div>
+                    )}
 
                     {/* LAT LONG */}
                     <div>
