@@ -925,7 +925,7 @@ function App() {
     const today = new Date();
     const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     const authorName = fbGroup && fbGroup !== 'LUXE REALTY' ? fbGroup : (user?.user_metadata?.full_name || user?.email || '');
-    const dateUpdated = `${dateStr} | ${authorName}`.trim().replace(/ \| $/, '');
+    const dateUpdated = `${dateStr} | ${authorName} | STATUS`.trim();
 
     const { data, error } = await supabase
       .from('KIU Properties')
@@ -1012,7 +1012,7 @@ function App() {
         'Extracted Lease Price': updates.leasePrice || null,
         'Lease Price/Sqm': leasePricePerSqm || null,
         'COMMENTS': updates.notes || null,
-        ...(updates.updateDate && { 'DATE UPDATED': `${dateStr} | ${fbGroup && fbGroup !== 'LUXE REALTY' ? fbGroup : (user?.user_metadata?.full_name || user?.email || '')}`.trim().replace(/ \| $/, '') }),
+        ...(updates.updateDate && { 'DATE UPDATED': `${dateStr} | ${fbGroup && fbGroup !== 'LUXE REALTY' ? fbGroup : (user?.user_metadata?.full_name || user?.email || '')} | LISTING` }),
         ...(updates.latLong && { 'LAT LONG': updates.latLong }),
         ...(parsedLat !== null && { 'LAT': parsedLat.toString() }),
         ...(parsedLng !== null && { 'LONG': parsedLng.toString() }),
@@ -1042,7 +1042,7 @@ function App() {
         leasePrice: updates.leasePrice,
         leasePricePerSqm: leasePricePerSqm,
         columnV: updates.notes,
-        ...(updates.updateDate && { columnBC: `${dateStr} | ${fbGroup && fbGroup !== 'LUXE REALTY' ? fbGroup : (user?.user_metadata?.full_name || user?.email || '')}`.trim().replace(/ \| $/, '') }),
+        ...(updates.updateDate && { columnBC: `${dateStr} | ${fbGroup && fbGroup !== 'LUXE REALTY' ? fbGroup : (user?.user_metadata?.full_name || user?.email || '')} | LISTING` }),
         ...(parsedLat !== null && { lat: parsedLat }),
         ...(parsedLng !== null && { lng: parsedLng }),
         facebookLink: updates.fbLink || l.facebookLink,
