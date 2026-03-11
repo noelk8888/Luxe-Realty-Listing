@@ -6,12 +6,23 @@ import { clearCache } from '../services/listingsCache';
 
 export type Role = 'superadmin' | 'admin' | 'editor' | 'broker' | 'viewer' | null;
 
+export interface GroupBranding {
+    brandName: string | null;
+    logoUrl: string | null;
+    messengerUrl: string | null;
+    facebookUrl: string | null;
+    instagramUrl: string | null;
+    tiktokUrl: string | null;
+    youtubeUrl: string | null;
+}
+
 interface AuthContextType {
     user: User | null;
     session: Session | null;
     role: Role;
     fbLink: string | null;
     fbGroup: string | null;
+    groupBranding: GroupBranding | null;
     isLoading: boolean;
     signInWithGoogle: () => Promise<void>;
     signOut: () => Promise<void>;
@@ -63,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [role, setRole] = useState<Role>(null);
     const [fbLink, setFbLink] = useState<string | null>(null);
     const [fbGroup, setFbGroup] = useState<string | null>(null);
+    const [groupBranding, setGroupBranding] = useState<GroupBranding | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     // Listen for auth state changes — keep this lightweight (no API calls)
@@ -98,13 +110,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         let cancelled = false;
 
         console.log('Auth: fetching profile (separate effect) for', user.email);
-        fetchUserProfile(user.email).then(({ role: r, fbLink: fb, fbGroup: fg }) => {
+        fetchUserProfile(user.email).then(async ({ role: r, fbLink: fb, fbGroup: fg }) => {
             if (cancelled) return;
             console.log('Auth: role =', r, 'fbLink =', fb, 'fbGroup =', fg);
             setRole(r);
             setFbLink(fb);
             setFbGroup(fg);
-            setIsLoading(false);
+
+            if (fg) {
+                const { data: gData } = await supabase
+                    .from('luxe_listing_fb_groups')
+                    .select('brand_name, logo_url, messenger_url, fb_link, instagram_url, tiktok_url, youtube_url')
+                    .eq('name', fg)
+                    .maybeSingle();
+                if (!cancelled && gData) {
+                    const g = gData as Record<string, string | null>;
+                    setGroupBranding({
+                        brandName: g['brand_name'] ?? null,
+                        logoUrl: g['logo_url'] ?? null,
+                        messengerUrl: g['messenger_url'] ?? null,
+                        facebookUrl: g['fb_link'] ?? null,
+                        instagramUrl: g['instagram_url'] ?? null,
+                        tiktokUrl: g['tiktok_url'] ?? null,
+                        youtubeUrl: g['youtube_url'] ?? null,
+                    });
+                }
+            }
+
+            if (!cancelled) setIsLoading(false);
         }).catch((err: unknown) => {
             if (cancelled) return;
             console.error('Auth: fetchUserProfile failed', err);
@@ -130,10 +163,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRole(null);
         setFbLink(null);
         setFbGroup(null);
+        setGroupBranding(null);
     };
 
     return (
-        <AuthContext.Provider value={{ user, session, role, fbLink, fbGroup, isLoading, signInWithGoogle, signOut }}>
+        <AuthContext.Provider value={{ user, session, role, fbLink, fbGroup, groupBranding, isLoading, signInWithGoogle, signOut }}>
             {children}
         </AuthContext.Provider>
     );

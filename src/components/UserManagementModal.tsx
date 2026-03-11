@@ -11,6 +11,12 @@ interface FbGroup {
     id: string;
     name: string;
     fb_link: string;
+    brand_name: string | null;
+    logo_url: string | null;
+    messenger_url: string | null;
+    instagram_url: string | null;
+    tiktok_url: string | null;
+    youtube_url: string | null;
 }
 
 interface AppUser {
@@ -173,6 +179,13 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
     const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
     const [editGroupName, setEditGroupName] = useState('');
     const [_editGroupFbLink, setEditGroupFbLink] = useState('');
+    const [editBrandName, setEditBrandName] = useState('');
+    const [editLogoUrl, setEditLogoUrl] = useState('');
+    const [editFacebookUrl, setEditFacebookUrl] = useState('');
+    const [editMessengerUrl, setEditMessengerUrl] = useState('');
+    const [editInstagramUrl, setEditInstagramUrl] = useState('');
+    const [editTiktokUrl, setEditTiktokUrl] = useState('');
+    const [editYoutubeUrl, setEditYoutubeUrl] = useState('');
     const [savingGroup, setSavingGroup] = useState<string | null>(null);
     const [confirmDeleteGroup, setConfirmDeleteGroup] = useState<string | null>(null);
     const [deletingGroup, setDeletingGroup] = useState<string | null>(null);
@@ -288,7 +301,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
         setGroupsLoading(true);
         const { data, error } = await supabase
             .from('luxe_listing_fb_groups')
-            .select('id, name, fb_link')
+            .select('id, name, fb_link, brand_name, logo_url, messenger_url, instagram_url, tiktok_url, youtube_url')
             .order('name');
         if (error) setError('Failed to load groups: ' + error.message);
         else setGroups(data ?? []);
@@ -316,7 +329,16 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
         setSavingGroup(id);
         setError(null);
         const { error } = await supabase.from('luxe_listing_fb_groups')
-            .update({ name: editGroupName.trim() })
+            .update({
+                name: editGroupName.trim(),
+                brand_name: editBrandName.trim() || null,
+                logo_url: editLogoUrl.trim() || null,
+                fb_link: editFacebookUrl.trim() || null,
+                messenger_url: editMessengerUrl.trim() || null,
+                instagram_url: editInstagramUrl.trim() || null,
+                tiktok_url: editTiktokUrl.trim() || null,
+                youtube_url: editYoutubeUrl.trim() || null,
+            })
             .eq('id', id);
         if (error) setError('Failed to update group: ' + error.message);
         else {
@@ -735,28 +757,53 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                         {groups.map(g => (
                                             <tr key={g.id} className={`hover:bg-gray-50/60 transition-colors ${editingGroupId === g.id ? 'bg-blue-50/40' : ''}`}>
                                                 {editingGroupId === g.id ? (
-                                                    <>
-                                                        <td className="px-5 py-2.5">
-                                                            <input
-                                                                value={editGroupName}
-                                                                onChange={e => setEditGroupName(e.target.value)}
-                                                                className="w-full text-sm border border-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-gray-300"
-                                                            />
-                                                        </td>
-                                                        <td className="px-5 py-2.5 text-right">
-                                                            <div className="flex items-center justify-end gap-2">
-                                                                <button
-                                                                    onClick={() => saveGroupEdit(g.id)}
-                                                                    disabled={savingGroup === g.id}
-                                                                    className="text-xs px-3 py-1 bg-gray-900 text-white rounded-lg font-bold hover:bg-gray-700 disabled:opacity-50 flex items-center gap-1"
-                                                                >
-                                                                    {savingGroup === g.id ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
-                                                                    Save
-                                                                </button>
-                                                                <button onClick={() => setEditingGroupId(null)} className="text-xs px-3 py-1 bg-gray-100 text-gray-600 rounded-lg font-bold hover:bg-gray-200">Cancel</button>
+                                                    <td colSpan={2} className="px-5 py-4">
+                                                        <div className="grid grid-cols-2 gap-3 mb-3">
+                                                            <div>
+                                                                <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Group Name *</label>
+                                                                <input value={editGroupName} onChange={e => setEditGroupName(e.target.value)} className="w-full text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-gray-300" />
                                                             </div>
-                                                        </td>
-                                                    </>
+                                                            <div>
+                                                                <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Brand Name (header)</label>
+                                                                <input value={editBrandName} onChange={e => setEditBrandName(e.target.value)} placeholder="e.g. Luxe Realty Ph" className="w-full text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-gray-300" />
+                                                            </div>
+                                                            <div className="col-span-2">
+                                                                <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Logo URL (header)</label>
+                                                                <input value={editLogoUrl} onChange={e => setEditLogoUrl(e.target.value)} placeholder="https://..." className="w-full text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-gray-300" />
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Facebook URL</label>
+                                                                <input value={editFacebookUrl} onChange={e => setEditFacebookUrl(e.target.value)} placeholder="https://facebook.com/..." className="w-full text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-gray-300" />
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Messenger URL</label>
+                                                                <input value={editMessengerUrl} onChange={e => setEditMessengerUrl(e.target.value)} placeholder="https://messenger.com/t/..." className="w-full text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-gray-300" />
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Instagram URL</label>
+                                                                <input value={editInstagramUrl} onChange={e => setEditInstagramUrl(e.target.value)} placeholder="https://instagram.com/..." className="w-full text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-gray-300" />
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">TikTok URL</label>
+                                                                <input value={editTiktokUrl} onChange={e => setEditTiktokUrl(e.target.value)} placeholder="https://tiktok.com/@..." className="w-full text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-gray-300" />
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">YouTube URL</label>
+                                                                <input value={editYoutubeUrl} onChange={e => setEditYoutubeUrl(e.target.value)} placeholder="https://youtube.com/@..." className="w-full text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-gray-300" />
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                onClick={() => saveGroupEdit(g.id)}
+                                                                disabled={savingGroup === g.id}
+                                                                className="text-xs px-3 py-1.5 bg-gray-900 text-white rounded-lg font-bold hover:bg-gray-700 disabled:opacity-50 flex items-center gap-1"
+                                                            >
+                                                                {savingGroup === g.id ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
+                                                                Save
+                                                            </button>
+                                                            <button onClick={() => setEditingGroupId(null)} className="text-xs px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg font-bold hover:bg-gray-200">Cancel</button>
+                                                        </div>
+                                                    </td>
                                                 ) : confirmDeleteGroup === g.id ? (
                                                     <>
                                                         <td colSpan={2} className="px-5 py-2.5 text-sm text-red-600 font-medium">
@@ -778,15 +825,18 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                 ) : (
                                                     <>
                                                         <td className="px-5 py-3 font-semibold text-gray-800">
-                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-full text-[12px] font-bold">
-                                                                <Link2 size={11} />
-                                                                {g.name}
-                                                            </span>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-full text-[12px] font-bold">
+                                                                    <Link2 size={11} />
+                                                                    {g.name}
+                                                                </span>
+                                                                {g.brand_name && <span className="text-[11px] text-gray-400">{g.brand_name}</span>}
+                                                            </div>
                                                         </td>
                                                         <td className="px-5 py-3 text-right">
                                                             <div className="flex items-center justify-end gap-1">
                                                                 <button
-                                                                    onClick={() => { setEditingGroupId(g.id); setEditGroupName(g.name); setEditGroupFbLink(g.fb_link); setConfirmDeleteGroup(null); }}
+                                                                    onClick={() => { setEditingGroupId(g.id); setEditGroupName(g.name); setEditGroupFbLink(g.fb_link); setEditBrandName(g.brand_name ?? ''); setEditLogoUrl(g.logo_url ?? ''); setEditFacebookUrl(g.fb_link ?? ''); setEditMessengerUrl(g.messenger_url ?? ''); setEditInstagramUrl(g.instagram_url ?? ''); setEditTiktokUrl(g.tiktok_url ?? ''); setEditYoutubeUrl(g.youtube_url ?? ''); setConfirmDeleteGroup(null); }}
                                                                     className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                                                                     title="Edit"
                                                                 >
