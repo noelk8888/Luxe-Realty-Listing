@@ -22,7 +22,7 @@ import { supabase } from './lib/supabase';
 import { clearCache } from './services/listingsCache';
 
 function App() {
-  const { user, role, groupBranding, isLoading: authLoading, signInWithGoogle, signOut } = useAuth();
+  const { user, role, fbGroup, groupBranding, isLoading: authLoading, signInWithGoogle, signOut } = useAuth();
   const { permissions } = usePermissions();
 
   const [showUserManagement, setShowUserManagement] = useState(false);
@@ -1007,7 +1007,7 @@ function App() {
         'Extracted Lease Price': updates.leasePrice || null,
         'Lease Price/Sqm': leasePricePerSqm || null,
         'COMMENTS': updates.notes || null,
-        ...(updates.updateDate && { 'DATE UPDATED': `${dateStr} | ${user?.user_metadata?.full_name || user?.email || ''}`.trim().replace(/ \| $/, '') }),
+        ...(updates.updateDate && { 'DATE UPDATED': `${dateStr} | ${fbGroup && fbGroup !== 'LUXE REALTY' ? fbGroup : (user?.user_metadata?.full_name || user?.email || '')}`.trim().replace(/ \| $/, '') }),
         ...(updates.latLong && { 'LAT LONG': updates.latLong }),
         ...(parsedLat !== null && { 'LAT': parsedLat.toString() }),
         ...(parsedLng !== null && { 'LONG': parsedLng.toString() }),
@@ -1037,7 +1037,7 @@ function App() {
         leasePrice: updates.leasePrice,
         leasePricePerSqm: leasePricePerSqm,
         columnV: updates.notes,
-        ...(updates.updateDate && { columnBC: `${dateStr} | ${user?.user_metadata?.full_name || user?.email || ''}`.trim().replace(/ \| $/, '') }),
+        ...(updates.updateDate && { columnBC: `${dateStr} | ${fbGroup && fbGroup !== 'LUXE REALTY' ? fbGroup : (user?.user_metadata?.full_name || user?.email || '')}`.trim().replace(/ \| $/, '') }),
         ...(parsedLat !== null && { lat: parsedLat }),
         ...(parsedLng !== null && { lng: parsedLng }),
         facebookLink: updates.fbLink || l.facebookLink,

@@ -65,6 +65,7 @@ const FEATURES: { key: Feature; label: string; group: string; active: boolean }[
     { key: 'view_notes',            label: 'Notes Button',      group: 'Listing Card',  active: true  },
     { key: 'change_status',         label: 'Change Status',     group: 'Listing Card',  active: true  },
     { key: 'geo_id_click',          label: 'GEO ID Click',      group: 'Listing Card',  active: true  },
+    { key: 'view_last_update',      label: 'Last Update',       group: 'Listing Card',  active: true  },
     { key: 'edit_listing',          label: 'Edit Button',       group: 'Listing Card',  active: true  },
     // ── Edit Section ──────────────────────────────────────────────────────────
     { key: 'edit_sale_price',       label: 'Sale Price',        group: 'Edit Section',  active: true  },
@@ -84,7 +85,7 @@ const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
         view_col_k: true, view_listing_ownership: true, view_pricing: true,
         view_photos: true, view_col_aa: true, view_col_ac: true,
         show_all: true, view_fb_link: true, view_map: true, view_copy: true, view_notes: true,
-        change_status: true, geo_id_click: true, edit_listing: true,
+        change_status: true, geo_id_click: true, view_last_update: true, edit_listing: true,
         // Edit Section
         edit_sale_price: true, edit_lease_price: true, edit_notes: true,
         edit_coordinates: true, geocoding: true, edit_fb_link: true, edit_update_date: true,
@@ -100,7 +101,7 @@ const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
         view_col_k: true, view_listing_ownership: true, view_pricing: true,
         view_photos: true, view_col_aa: true, view_col_ac: true,
         show_all: true, view_fb_link: true, view_map: true, view_copy: true, view_notes: true,
-        change_status: true, geo_id_click: true,
+        change_status: true, geo_id_click: true, view_last_update: true,
         // Edit Section
         edit_sale_price: true, edit_lease_price: true, edit_notes: true,
         edit_coordinates: true, geocoding: true, edit_fb_link: true, edit_update_date: true,
@@ -114,7 +115,7 @@ const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
         view_col_k: true, view_listing_ownership: true, view_pricing: true,
         view_photos: true, view_col_aa: true, view_col_ac: true,
         show_all: true, view_fb_link: true, view_map: true, view_copy: true, view_notes: true,
-        change_status: true, geo_id_click: true,
+        change_status: true, geo_id_click: true, view_last_update: true,
         // Edit Section
         edit_sale_price: false, edit_lease_price: false, edit_notes: false,
         edit_coordinates: true, geocoding: true, edit_fb_link: true, edit_update_date: true,
@@ -128,7 +129,7 @@ const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
         view_col_k: false, view_listing_ownership: false, view_pricing: false,
         view_photos: true, view_col_aa: true, view_col_ac: true,
         show_all: false, view_fb_link: false, view_map: true, view_copy: false, view_notes: false,
-        change_status: false, geo_id_click: true,
+        change_status: false, geo_id_click: true, view_last_update: true,
         // Edit Section
         edit_sale_price: false, edit_lease_price: false, edit_notes: false,
         edit_coordinates: false, geocoding: false, edit_fb_link: false, edit_update_date: false,
