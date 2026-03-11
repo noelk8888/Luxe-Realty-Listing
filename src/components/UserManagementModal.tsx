@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { X, Users, Shield, Plus, Trash2, Loader2, Check, AlertCircle, Pencil, Link2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Feature } from '../contexts/PermissionsContext';
+import { useAuth } from '../contexts/AuthContext';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type AppRole = 'ADMIN' | 'EDITOR' | 'BROKER' | 'VIEWER';
@@ -170,6 +171,11 @@ function Toggle({ enabled, onChange, disabled, color }: {
 
 // ── Main component ─────────────────────────────────────────────────────────────
 export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClose }) => {
+    const { role: currentRole } = useAuth();
+    const visibleRoles: AppRole[] = currentRole === 'admin'
+        ? ['EDITOR', 'BROKER', 'VIEWER']
+        : ['ADMIN', 'EDITOR', 'BROKER', 'VIEWER'];
+
     const [activeTab, setActiveTab] = useState<Tab>('users');
 
     // ── Users tab state
@@ -904,7 +910,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                     <thead className="sticky top-0 bg-white z-10 shadow-[0_1px_0_0_#f3f4f6]">
                                         <tr>
                                             <th className="text-left px-5 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest w-[40%]">Feature</th>
-                                            {ROLES.map(role => (
+                                            {visibleRoles.map(role => (
                                                 <th key={role} className="px-3 py-4 text-center">
                                                     <span className={`inline-flex items-center justify-center px-3 py-1 rounded-2xl text-[11px] font-extrabold uppercase tracking-wider ${ROLE_BADGE[role]}`}>
                                                         {role}
@@ -917,7 +923,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                         {FEATURE_GROUPS.map(group => (
                                             <React.Fragment key={group}>
                                                 <tr>
-                                                    <td colSpan={5} className="px-5 pt-5 pb-2 text-[10px] font-extrabold text-gray-400 uppercase tracking-[0.18em] bg-white">
+                                                    <td colSpan={1 + visibleRoles.length} className="px-5 pt-5 pb-2 text-[10px] font-extrabold text-gray-400 uppercase tracking-[0.18em] bg-white">
                                                         <div className="flex items-center gap-2">
                                                             <div className="h-px flex-1 bg-gray-100" />
                                                             <span>{group}</span>
@@ -935,7 +941,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                                 )}
                                                             </div>
                                                         </td>
-                                                        {ROLES.map(role => {
+                                                        {visibleRoles.map(role => {
                                                             const key = `${f.key}-${role}`;
                                                             const isDefault = ROLE_DEFAULTS[role][f.key] === perms[f.key][role];
                                                             return (
