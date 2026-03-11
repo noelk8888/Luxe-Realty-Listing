@@ -922,9 +922,14 @@ function App() {
   const handleStatusUpdate = async (listingId: string, newStatus: string) => {
     console.log('Updating status:', { listingId, newStatus });
 
+    const today = new Date();
+    const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const authorName = fbGroup && fbGroup !== 'LUXE REALTY' ? fbGroup : (user?.user_metadata?.full_name || user?.email || '');
+    const dateUpdated = `${dateStr} | ${authorName}`.trim().replace(/ \| $/, '');
+
     const { data, error } = await supabase
       .from('KIU Properties')
-      .update({ STATUS: newStatus })
+      .update({ STATUS: newStatus, 'DATE UPDATED': dateUpdated })
       .eq('"GEO ID"', listingId)
       .select('"GEO ID", STATUS');
 
@@ -944,7 +949,7 @@ function App() {
 
     // Update local state
     const updateListing = (l: Listing) =>
-      l.id === listingId ? { ...l, status: newStatus, statusAQ: newStatus } : l;
+      l.id === listingId ? { ...l, status: newStatus, statusAQ: newStatus, columnBC: dateUpdated } : l;
 
     setAllListings(prev => prev.map(updateListing));
     setResults(prev => prev.map(updateListing));
