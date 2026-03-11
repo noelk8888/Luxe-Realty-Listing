@@ -72,9 +72,17 @@ const FEATURES: { key: Feature; label: string; group: string; active: boolean }[
     { key: 'view_map',       label: 'Map Button',       group: 'Listing Card',    active: true  },
     { key: 'view_copy',      label: 'Copy Button',      group: 'Listing Card',    active: true  },
     { key: 'view_notes',     label: 'Notes Button',     group: 'Listing Card',    active: true  },
+    { key: 'change_status',  label: 'Change Status',    group: 'Listing Card',    active: true  },
+    { key: 'geo_id_click',   label: 'GEO ID Click',     group: 'Listing Card',    active: true  },
+    { key: 'edit_sale_price',   label: 'Sale Price',       group: 'Edit Fields',     active: true  },
+    { key: 'edit_lease_price',  label: 'Lease Price',      group: 'Edit Fields',     active: true  },
+    { key: 'edit_notes',        label: 'Notes',            group: 'Edit Fields',     active: true  },
+    { key: 'edit_coordinates',  label: 'Coordinates',      group: 'Edit Fields',     active: true  },
+    { key: 'edit_fb_link',      label: 'Facebook Link',    group: 'Edit Fields',     active: true  },
+    { key: 'edit_update_date',  label: 'Update Date',      group: 'Edit Fields',     active: true  },
 ];
 
-const FEATURE_GROUPS = ['Listing View', 'Listing Actions', 'Tools', 'Admin', 'Listing Card'];
+const FEATURE_GROUPS = ['Listing View', 'Listing Actions', 'Tools', 'Admin', 'Listing Card', 'Edit Fields'];
 
 const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
     ADMIN: {
@@ -85,6 +93,9 @@ const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
         view_fb_link: true,
         view_col_k: true, view_col_aa: true, view_col_ac: true,
         view_map: true, view_copy: true, view_notes: true,
+        change_status: true, geo_id_click: true,
+        edit_sale_price: true, edit_lease_price: true, edit_notes: true,
+        edit_coordinates: true, edit_fb_link: true, edit_update_date: true,
     },
     EDITOR: {
         add_listing: true, edit_listing: true, delete_listing: false,
@@ -94,6 +105,9 @@ const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
         view_fb_link: true,
         view_col_k: true, view_col_aa: true, view_col_ac: true,
         view_map: true, view_copy: true, view_notes: true,
+        change_status: true, geo_id_click: true,
+        edit_sale_price: true, edit_lease_price: true, edit_notes: true,
+        edit_coordinates: true, edit_fb_link: true, edit_update_date: true,
     },
     BROKER: {
         add_listing: true, edit_listing: true, delete_listing: false,
@@ -103,6 +117,9 @@ const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
         view_fb_link: true,
         view_col_k: true, view_col_aa: true, view_col_ac: true,
         view_map: true, view_copy: true, view_notes: true,
+        change_status: true, geo_id_click: true,
+        edit_sale_price: false, edit_lease_price: false, edit_notes: false,
+        edit_coordinates: true, edit_fb_link: true, edit_update_date: true,
     },
     VIEWER: {
         add_listing: false, edit_listing: false, delete_listing: false,
@@ -112,6 +129,9 @@ const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
         view_fb_link: false,
         view_col_k: false, view_col_aa: true, view_col_ac: true,
         view_map: true, view_copy: false, view_notes: false,
+        change_status: false, geo_id_click: true,
+        edit_sale_price: false, edit_lease_price: false, edit_notes: false,
+        edit_coordinates: false, edit_fb_link: false, edit_update_date: false,
     },
 };
 

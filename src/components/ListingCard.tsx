@@ -150,7 +150,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         <div
             className={`${cardClassName} ${isDisabled && !isSelected ? 'opacity-50' : ''} p-5`}
         >
-            {permissions.edit_listing && onStatusUpdate ? (
+            {permissions.edit_listing && permissions.change_status && onStatusUpdate ? (
                 <StatusDropdown
                     currentStatus={listing.statusAQ || 'Available'}
                     listingId={listing.id}
@@ -220,16 +220,17 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         <span
                             onClick={(e) => {
                                 e.stopPropagation();
+                                if (!permissions.geo_id_click) return;
                                 if (isPopupView && onBack) {
                                     onBack();
                                 } else if (onMapClick) {
                                     onMapClick(listing);
                                 }
                             }}
-                            className={`text-2xl font-bold text-black font-sans cursor-pointer hover:text-blue-600 hover:underline transition-colors tracking-tighter ${isPopupView ? 'underline' : ''}`}
-                            title={isPopupView ? "Back" : "View on Map"}
+                            className={`text-2xl font-bold text-black font-sans transition-colors tracking-tighter ${permissions.geo_id_click ? 'cursor-pointer hover:text-blue-600 hover:underline' : 'cursor-default'} ${isPopupView ? 'underline' : ''}`}
+                            title={permissions.geo_id_click ? (isPopupView ? "Back" : "View on Map") : undefined}
                         >
-                            {permissions.view_geo_id ? listing.id : '••••••'}
+                            {listing.id}
                         </span>
                         {/* Column BC: DATE UPDATED - Below Listing ID (Gray) */}
                         {listing.columnBC && !isPopupView && (

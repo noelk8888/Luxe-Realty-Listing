@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { X, MapPin, Locate } from 'lucide-react';
 import type { Listing } from '../types';
 import { usePermissions } from '../contexts/PermissionsContext';
-import { useAuth } from '../contexts/AuthContext';
 
 interface EditListingModalProps {
     isOpen: boolean;
@@ -33,8 +32,6 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
     const [isGettingLocation, setIsGettingLocation] = useState(false);
     const [locationError, setLocationError] = useState<string | null>(null);
     const { permissions } = usePermissions();
-    const { role } = useAuth();
-    const isBroker = role === 'broker';
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -164,8 +161,8 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="p-6 space-y-5">
-                    {/* Sale Price — hidden for broker */}
-                    {!isBroker && (
+                    {/* Sale Price */}
+                    {permissions.edit_sale_price && (
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1.5">
                             Sale Price (PHP)
@@ -185,8 +182,8 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                     </div>
                     )}
 
-                    {/* Lease Price — hidden for broker */}
-                    {!isBroker && (
+                    {/* Lease Price */}
+                    {permissions.edit_lease_price && (
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1.5">
                             Lease Price (PHP/month)
@@ -206,8 +203,8 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                     </div>
                     )}
 
-                    {/* Notes — hidden for broker */}
-                    {!isBroker && (
+                    {/* Notes */}
+                    {permissions.edit_notes && (
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1.5">
                             Notes
@@ -223,7 +220,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                     )}
 
                     {/* LAT LONG */}
-                    <div>
+                    {permissions.edit_coordinates && <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1.5">
                             Coordinates (Lat, Long)
                         </label>
@@ -259,10 +256,10 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                         {locationError && (
                             <p className="text-xs text-red-500 mt-1">{locationError}</p>
                         )}
-                    </div>
+                    </div>}
 
                     {/* FB Link */}
-                    <div>
+                    {permissions.edit_fb_link && <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1.5">
                             Facebook Link (Col Z)
                         </label>
@@ -273,10 +270,10 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                             placeholder="https://www.facebook.com/..."
                             className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
-                    </div>
+                    </div>}
 
                     {/* Update Date Toggle */}
-                    <div className="flex items-center justify-between py-2 border-t border-gray-100">
+                    {permissions.edit_update_date && <div className="flex items-center justify-between py-2 border-t border-gray-100">
                         <div>
                             <p className="text-sm font-bold text-gray-700">Update Date</p>
                             <p className="text-xs text-gray-400">Set DATE UPDATED to today</p>
@@ -288,7 +285,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                         >
                             <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${updateDate ? 'translate-x-6' : 'translate-x-1'}`} />
                         </button>
-                    </div>
+                    </div>}
 
                     {/* Error Message */}
                     {error && (

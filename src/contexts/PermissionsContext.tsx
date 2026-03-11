@@ -24,7 +24,15 @@ export type Feature =
     | 'view_col_ac'
     | 'view_map'
     | 'view_copy'
-    | 'view_notes';
+    | 'view_notes'
+    | 'change_status'
+    | 'geo_id_click'
+    | 'edit_sale_price'
+    | 'edit_lease_price'
+    | 'edit_notes'
+    | 'edit_coordinates'
+    | 'edit_fb_link'
+    | 'edit_update_date';
 
 const ALL_FEATURES: Feature[] = [
     'add_listing', 'edit_listing', 'delete_listing',
@@ -34,6 +42,9 @@ const ALL_FEATURES: Feature[] = [
     'view_fb_link',
     'view_col_k', 'view_col_aa', 'view_col_ac',
     'view_map', 'view_copy', 'view_notes',
+    'change_status', 'geo_id_click',
+    'edit_sale_price', 'edit_lease_price', 'edit_notes',
+    'edit_coordinates', 'edit_fb_link', 'edit_update_date',
 ];
 
 // ── Role defaults ─────────────────────────────────────────────────────────────
@@ -46,6 +57,9 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'viewer', Record<Fea
         view_fb_link: true,
         view_col_k: true, view_col_aa: true, view_col_ac: true,
         view_map: true, view_copy: true, view_notes: true,
+        change_status: true, geo_id_click: true,
+        edit_sale_price: true, edit_lease_price: true, edit_notes: true,
+        edit_coordinates: true, edit_fb_link: true, edit_update_date: true,
     },
     editor: {
         add_listing: true, edit_listing: true, delete_listing: false,
@@ -55,6 +69,9 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'viewer', Record<Fea
         view_fb_link: true,
         view_col_k: true, view_col_aa: true, view_col_ac: true,
         view_map: true, view_copy: true, view_notes: true,
+        change_status: true, geo_id_click: true,
+        edit_sale_price: true, edit_lease_price: true, edit_notes: true,
+        edit_coordinates: true, edit_fb_link: true, edit_update_date: true,
     },
     broker: {
         add_listing: true, edit_listing: true, delete_listing: false,
@@ -64,6 +81,9 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'viewer', Record<Fea
         view_fb_link: true,
         view_col_k: true, view_col_aa: true, view_col_ac: true,
         view_map: true, view_copy: true, view_notes: true,
+        change_status: true, geo_id_click: true,
+        edit_sale_price: false, edit_lease_price: false, edit_notes: false,
+        edit_coordinates: true, edit_fb_link: true, edit_update_date: true,
     },
     viewer: {
         add_listing: false, edit_listing: false, delete_listing: false,
@@ -73,6 +93,9 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'viewer', Record<Fea
         view_fb_link: false,
         view_col_k: false, view_col_aa: true, view_col_ac: true,
         view_map: true, view_copy: false, view_notes: false,
+        change_status: false, geo_id_click: true,
+        edit_sale_price: false, edit_lease_price: false, edit_notes: false,
+        edit_coordinates: false, edit_fb_link: false, edit_update_date: false,
     },
 };
 
