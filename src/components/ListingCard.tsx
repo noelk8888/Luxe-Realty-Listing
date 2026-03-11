@@ -184,22 +184,20 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
 
                 </div>
                 <div className="flex items-center gap-2">
-                    {fbGroup && permissions.view_fb_link && (() => {
-                        const socmed = groupBranding?.facebookUrl
-                            ? { url: groupBranding.facebookUrl, icon: <Facebook size={18} />, hover: 'hover:bg-[#1877F2]', title: 'Facebook' }
-                            : groupBranding?.messengerUrl
-                            ? { url: groupBranding.messengerUrl, icon: <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.03 2 11c0 2.87 1.43 5.39 3.75 7.03v3.74c0 .8.88 1.28 1.59.87l2.48-1.24c.71.13 1.45.2 2.18.2 5.52 0 10-4.03 10-9S17.52 2 12 2zm1 14.24-2.5-2.73-4.86 2.73 5.35-5.68 2.5 2.73 4.86-2.73-5.35 5.68z" /></svg>, hover: 'hover:bg-blue-500', title: 'Messenger' }
-                            : groupBranding?.instagramUrl
-                            ? { url: groupBranding.instagramUrl, icon: <Instagram size={18} />, hover: 'hover:bg-[#E4405F]', title: 'Instagram' }
-                            : groupBranding?.tiktokUrl
-                            ? { url: groupBranding.tiktokUrl, icon: <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" /></svg>, hover: 'hover:bg-black', title: 'TikTok' }
-                            : groupBranding?.youtubeUrl
-                            ? { url: groupBranding.youtubeUrl, icon: <Youtube size={18} />, hover: 'hover:bg-[#FF0000]', title: 'YouTube' }
-                            : null;
-                        if (!socmed) return null;
+                    {fbGroup && listing.facebookLink && permissions.view_fb_link && (() => {
+                        const url = listing.facebookLink!;
+                        const socmed = url.includes('instagram.com')
+                            ? { icon: <Instagram size={18} />, hover: 'hover:bg-[#E4405F]', title: 'Instagram' }
+                            : url.includes('tiktok.com')
+                            ? { icon: <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" /></svg>, hover: 'hover:bg-black', title: 'TikTok' }
+                            : url.includes('youtube.com') || url.includes('youtu.be')
+                            ? { icon: <Youtube size={18} />, hover: 'hover:bg-[#FF0000]', title: 'YouTube' }
+                            : url.includes('m.me') || url.includes('messenger.com')
+                            ? { icon: <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.03 2 11c0 2.87 1.43 5.39 3.75 7.03v3.74c0 .8.88 1.28 1.59.87l2.48-1.24c.71.13 1.45.2 2.18.2 5.52 0 10-4.03 10-9S17.52 2 12 2zm1 14.24-2.5-2.73-4.86 2.73 5.35-5.68 2.5 2.73 4.86-2.73-5.35 5.68z" /></svg>, hover: 'hover:bg-blue-500', title: 'Messenger' }
+                            : { icon: <Facebook size={18} />, hover: 'hover:bg-[#1877F2]', title: 'Facebook' };
                         return (
                             <a
-                                href={socmed.url}
+                                href={url}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 onClick={(e) => e.stopPropagation()}
