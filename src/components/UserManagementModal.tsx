@@ -74,17 +74,9 @@ const FEATURES: { key: Feature; label: string; group: string; active: boolean }[
     { key: 'geocoding',             label: 'GPS / HERE Button', group: 'Edit Section',  active: true  },
     { key: 'edit_fb_link',          label: 'Facebook Link',     group: 'Edit Section',  active: true  },
     { key: 'edit_update_date',      label: 'Update Date',       group: 'Edit Section',  active: true  },
-    // ── Misc (not yet active) ─────────────────────────────────────────────────
-    { key: 'add_listing',           label: 'Add Listing',       group: 'Misc',          active: false },
-    { key: 'delete_listing',        label: 'Delete Listing',    group: 'Misc',          active: false },
-    { key: 'telegram_send',         label: 'Telegram Send',     group: 'Misc',          active: false },
-    { key: 'batch_review',          label: 'Batch Review',      group: 'Misc',          active: false },
-    { key: 'ai_extract',            label: 'AI Extract',        group: 'Misc',          active: false },
-    { key: 'export_data',           label: 'Export Data',       group: 'Misc',          active: false },
-    { key: 'manage_users',          label: 'Manage Users',      group: 'Misc',          active: false },
 ];
 
-const FEATURE_GROUPS = ['Listing Card', 'Edit Section', 'Misc'];
+const FEATURE_GROUPS = ['Listing Card', 'Edit Section'];
 
 const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
     ADMIN: {
@@ -224,7 +216,6 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
     const [perms, setPerms] = useState<PermState>(buildDefaultPermState());
     const [permsLoading, setPermsLoading] = useState(true);
     const [savingPerm, setSavingPerm] = useState<string | null>(null);
-    const [showAllPerms, setShowAllPerms] = useState(false);
 
     // ── Shared status
     const [error, setError] = useState<string | null>(null);
@@ -922,7 +913,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {FEATURE_GROUPS.filter(g => showAllPerms || g !== 'Misc').map(group => (
+                                        {FEATURE_GROUPS.map(group => (
                                             <React.Fragment key={group}>
                                                 <tr>
                                                     <td colSpan={5} className="px-5 pt-5 pb-2 text-[10px] font-extrabold text-gray-400 uppercase tracking-[0.18em] bg-white">
@@ -974,17 +965,6 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                         <div className="px-5 py-3 border-t border-gray-100 flex items-center gap-4 text-xs text-gray-400 flex-shrink-0">
                             <span><span className="text-amber-500 font-bold">★</span> Overrides code default</span>
                             <span><span className="text-blue-500 font-bold border border-blue-100 bg-blue-50 px-1 rounded">Active</span> = wired up in this app</span>
-                            <button
-                                onClick={() => setShowAllPerms(v => !v)}
-                                className={`ml-auto flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-bold transition-colors ${
-                                    showAllPerms
-                                        ? 'bg-gray-900 text-white border-gray-900'
-                                        : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
-                                }`}
-                            >
-                                <span className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 ${showAllPerms ? 'bg-white border-white' : 'border-gray-400'}`} />
-                                SHOW ALL
-                            </button>
                         </div>
                     </div>
                 )}

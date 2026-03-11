@@ -234,12 +234,6 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                             {listing.id}
                         </span>
                         )}
-                        {/* Column BC: DATE UPDATED - Below Listing ID (Gray) */}
-                        {listing.columnBC && !isPopupView && (
-                            <div className="mt-1 text-xs text-gray-400 text-right">
-                                {formatDate(listing.columnBC)}
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>
@@ -494,6 +488,16 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                     </button>
                 )}
             </div>
+
+            {/* Last Update */}
+            {listing.columnBC && !isPopupView && (() => {
+                const [datePart, userPart] = listing.columnBC.split(' | ');
+                return (
+                    <div className="mt-2 text-[10px] text-gray-400 text-center">
+                        Last Update{datePart ? ` - ${formatDate(datePart)}` : ''}{userPart ? `, by ${userPart}` : ''}
+                    </div>
+                );
+})()}
 
         </div >
     );

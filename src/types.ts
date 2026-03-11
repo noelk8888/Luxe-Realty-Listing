@@ -39,8 +39,8 @@ export interface Listing {
     lng: number; // Col BE
     leasePrice: number; // Col AU
     leasePricePerSqm: number; // Col AV
-    columnBC: string; // Col BC
-    columnBD: string; // Col BD
+    columnBC: string; // Col BC: DATE UPDATED (format: "2025-08-07 | Name")
+    columnBD: string; // Col BD: LISTING OWNERSHIP
     columnAZ: string; // Col AZ
     statusAQ: string; // Col AQ
     isSponsored?: boolean;
