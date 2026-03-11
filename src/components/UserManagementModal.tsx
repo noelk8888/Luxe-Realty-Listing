@@ -58,6 +58,7 @@ const FEATURES: { key: Feature; label: string; group: string; active: boolean }[
     { key: 'view_pricing',          label: 'View Pricing',      group: 'Listing Card',  active: true  },
     { key: 'view_photos',           label: 'Photo Button',      group: 'Listing Card',  active: true  },
     { key: 'view_col_aa',           label: 'Listing Details',   group: 'Listing Card',  active: true  },
+    { key: 'show_all',              label: 'Show All Toggle',   group: 'Listing Card',  active: true  },
     { key: 'view_fb_link',          label: 'FB Link Button',    group: 'Listing Card',  active: true  },
     { key: 'view_map',              label: 'Map Button',        group: 'Listing Card',  active: true  },
     { key: 'view_copy',             label: 'Copy Button',       group: 'Listing Card',  active: true  },
@@ -90,7 +91,7 @@ const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
         // Listing Card
         view_col_k: true, view_listing_ownership: true, view_pricing: true,
         view_photos: true, view_col_aa: true, view_col_ac: true,
-        view_fb_link: true, view_map: true, view_copy: true, view_notes: true,
+        show_all: true, view_fb_link: true, view_map: true, view_copy: true, view_notes: true,
         change_status: true, geo_id_click: true, edit_listing: true,
         // Edit Section
         edit_sale_price: true, edit_lease_price: true, edit_notes: true,
@@ -106,7 +107,7 @@ const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
         // Listing Card
         view_col_k: true, view_listing_ownership: true, view_pricing: true,
         view_photos: true, view_col_aa: true, view_col_ac: true,
-        view_fb_link: true, view_map: true, view_copy: true, view_notes: true,
+        show_all: true, view_fb_link: true, view_map: true, view_copy: true, view_notes: true,
         change_status: true, geo_id_click: true,
         // Edit Section
         edit_sale_price: true, edit_lease_price: true, edit_notes: true,
@@ -120,7 +121,7 @@ const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
         // Listing Card
         view_col_k: true, view_listing_ownership: true, view_pricing: true,
         view_photos: true, view_col_aa: true, view_col_ac: true,
-        view_fb_link: true, view_map: true, view_copy: true, view_notes: true,
+        show_all: true, view_fb_link: true, view_map: true, view_copy: true, view_notes: true,
         change_status: true, geo_id_click: true,
         // Edit Section
         edit_sale_price: false, edit_lease_price: false, edit_notes: false,
@@ -134,7 +135,7 @@ const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
         // Listing Card
         view_col_k: false, view_listing_ownership: false, view_pricing: false,
         view_photos: true, view_col_aa: true, view_col_ac: true,
-        view_fb_link: false, view_map: true, view_copy: false, view_notes: false,
+        show_all: false, view_fb_link: false, view_map: true, view_copy: false, view_notes: false,
         change_status: false, geo_id_click: true,
         // Edit Section
         edit_sale_price: false, edit_lease_price: false, edit_notes: false,

@@ -15,6 +15,7 @@ import { UserManagementModal } from './components/UserManagementModal';
 import Pagination from './components/Pagination';
 import { ScrollToTop } from './components/ScrollToTop';
 import { useAuth } from './contexts/AuthContext';
+import { usePermissions } from './contexts/PermissionsContext';
 import { LoginScreen } from './components/LoginScreen';
 import { AccessDenied } from './components/AccessDenied';
 import { supabase } from './lib/supabase';
@@ -22,6 +23,7 @@ import { clearCache } from './services/listingsCache';
 
 function App() {
   const { user, role, groupBranding, isLoading: authLoading, signInWithGoogle, signOut } = useAuth();
+  const { permissions } = usePermissions();
 
   const [showUserManagement, setShowUserManagement] = useState(false);
 
@@ -1317,6 +1319,7 @@ function App() {
                 </form>
 
                 {/* Show All Toggle (Radio Button Style - Desktop Only) */}
+                {permissions.show_all && (
                 <div
                   className="hidden sm:flex items-center gap-2 bg-white px-4 py-3 rounded-2xl border border-gray-100 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer h-[calc(100%-4px)]"
                   onClick={() => setShowAllListings(!showAllListings)}
@@ -1326,6 +1329,7 @@ function App() {
                   </div>
                   <span className={`text-xs sm:text-sm font-bold uppercase tracking-wide whitespace-nowrap select-none ${showAllListings ? 'text-blue-600' : 'text-gray-400'}`}>SHOW ALL</span>
                 </div>
+                )}
 
                 {/* Refresh Button (Desktop Only) */}
                 <button
@@ -1350,6 +1354,7 @@ function App() {
 
               {/* Mobile Only: Slider Toggle & Refresh */}
               <div className="flex sm:hidden items-center justify-center gap-3 mt-3 w-full pb-2">
+                {permissions.show_all && (<>
                 <span className={`text-xs font-bold ${!showAllListings ? 'text-blue-600' : 'text-gray-400'}`}>AVAILABLE</span>
                 <div
                   className="w-12 h-4 bg-gray-200 rounded-full relative cursor-pointer"
@@ -1358,6 +1363,7 @@ function App() {
                   <div className={`absolute top-1/2 -translate-y-1/2 w-6 h-6 rounded-full shadow-md transition-all duration-300 ${!showAllListings ? 'left-0 bg-blue-600' : 'left-[calc(100%-1.5rem)] bg-blue-600'}`} />
                 </div>
                 <span className={`text-xs font-bold ${showAllListings ? 'text-blue-600' : 'text-gray-400'}`}>SHOW ALL</span>
+                </>)}
 
                 {/* Mobile Refresh Button */}
                 <button
