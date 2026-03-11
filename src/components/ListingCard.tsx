@@ -44,7 +44,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
 
     const [isExpanded, setIsExpanded] = useState(false);
     const { permissions } = usePermissions();
-    const { fbGroup } = useAuth();
+    const { fbGroup, groupBranding } = useAuth();
 
     const formatPrice = (price: number) => {
         const formatted = new Intl.NumberFormat('en-PH', {
@@ -184,9 +184,9 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
 
                 </div>
                 <div className="flex items-center gap-2">
-                    {fbGroup && listing.facebookLink && permissions.view_fb_link && (
+                    {fbGroup && groupBranding?.facebookUrl && permissions.view_fb_link && (
                         <a
-                            href={listing.facebookLink}
+                            href={groupBranding.facebookUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
