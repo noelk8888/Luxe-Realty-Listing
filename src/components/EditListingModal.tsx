@@ -261,7 +261,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                     {/* FB Link */}
                     {permissions.edit_fb_link && <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1.5">
-                            Facebook Link (Col Z)
+                            Social Media Post Link
                         </label>
                         <input
                             type="url"
