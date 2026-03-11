@@ -1105,7 +1105,7 @@ function App() {
                 : role === 'broker' ? 'BROKER'
                 : 'VIEWER'}
             </span>
-            {role === 'superadmin' && (
+            {(role === 'superadmin' || role === 'admin') && (
               <button
                 onClick={() => setShowUserManagement(true)}
                 className="text-xs text-green-700 hover:text-green-900 font-bold transition-colors border border-green-200 hover:border-green-400 px-2 py-0.5 rounded-full"
