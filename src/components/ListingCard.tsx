@@ -180,26 +180,6 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                             {isColumnKCopied ? 'COPIED!' : `${index ? `${index}. ` : ''}${listing.columnK}`}
                         </div>
                     )}
-                    <div className="flex gap-1.5 flex-wrap">
-                        <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${listing.columnAE ? 'bg-blue-50 text-blue-600' : 'bg-gray-50 text-gray-600'}`}>
-                            {listing.columnAE || 'OTHERS'}
-                        </span>
-                        {listing.saleType && (
-                            <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-purple-50 text-purple-600">
-                                {listing.saleType.toUpperCase()}
-                            </span>
-                        )}
-                        {listing.isDirect && (
-                            <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-yellow-100 text-yellow-800">
-                                DIRECT
-                            </span>
-                        )}
-                        {listing.typeDescription && (listing.typeDescription.toUpperCase() !== (listing.columnAE || '').toUpperCase()) && (
-                            <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-green-50 text-green-600">
-                                {listing.typeDescription.toUpperCase()}
-                            </span>
-                        )}
-                    </div>
 
 
                 </div>
