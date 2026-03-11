@@ -52,86 +52,98 @@ const ROLE_TOGGLE_COLORS: Record<AppRole, string> = {
 };
 
 const FEATURES: { key: Feature; label: string; group: string; active: boolean }[] = [
-    { key: 'view_photos',    label: 'View Photos',     group: 'Listing View',    active: true  },
-    { key: 'view_pricing',   label: 'View Pricing',    group: 'Listing View',    active: true  },
-    { key: 'view_geo_id',    label: 'View GEO ID',     group: 'Listing View',    active: true  },
-    { key: 'view_contact',   label: 'View Contact',    group: 'Listing View',    active: false },
-    { key: 'add_listing',    label: 'Add Listing',     group: 'Listing Actions', active: false },
-    { key: 'edit_listing',   label: 'Edit Listing',    group: 'Listing Actions', active: true  },
-    { key: 'delete_listing', label: 'Delete Listing',  group: 'Listing Actions', active: false },
-    { key: 'geocoding',      label: 'GPS / Geocoding', group: 'Tools',           active: true  },
-    { key: 'ai_extract',     label: 'AI Extract',      group: 'Tools',           active: false },
-    { key: 'telegram_send',  label: 'Telegram Send',   group: 'Tools',           active: false },
-    { key: 'batch_review',   label: 'Batch Review',    group: 'Tools',           active: false },
-    { key: 'export_data',    label: 'Export Data',     group: 'Tools',           active: false },
-    { key: 'manage_users',   label: 'Manage Users',    group: 'Admin',           active: false },
-    { key: 'view_fb_link',   label: 'FB Link Button',  group: 'Admin',           active: true  },
-    { key: 'view_col_k',     label: 'Col K',           group: 'Listing Card',    active: true  },
-    { key: 'view_col_aa',    label: 'Col AA (City)',    group: 'Listing Card',    active: true  },
-    { key: 'view_col_ac',    label: 'Col AC (Area)',    group: 'Listing Card',    active: true  },
-    { key: 'view_map',       label: 'Map Button',       group: 'Listing Card',    active: true  },
-    { key: 'view_copy',      label: 'Copy Button',      group: 'Listing Card',    active: true  },
-    { key: 'view_notes',     label: 'Notes Button',     group: 'Listing Card',    active: true  },
-    { key: 'change_status',  label: 'Change Status',    group: 'Listing Card',    active: true  },
-    { key: 'geo_id_click',   label: 'GEO ID Click',     group: 'Listing Card',    active: true  },
-    { key: 'edit_sale_price',   label: 'Sale Price',       group: 'Edit Fields',     active: true  },
-    { key: 'edit_lease_price',  label: 'Lease Price',      group: 'Edit Fields',     active: true  },
-    { key: 'edit_notes',        label: 'Notes',            group: 'Edit Fields',     active: true  },
-    { key: 'edit_coordinates',  label: 'Coordinates',      group: 'Edit Fields',     active: true  },
-    { key: 'edit_fb_link',      label: 'Facebook Link',    group: 'Edit Fields',     active: true  },
-    { key: 'edit_update_date',  label: 'Update Date',      group: 'Edit Fields',     active: true  },
+    // ── Listing Card ──────────────────────────────────────────────────────────
+    { key: 'view_col_k',            label: 'Owner/Cobroker',    group: 'Listing Card',  active: true  },
+    { key: 'view_listing_ownership', label: 'Listing Ownership', group: 'Listing Card', active: true  },
+    { key: 'view_pricing',          label: 'View Pricing',      group: 'Listing Card',  active: true  },
+    { key: 'view_photos',           label: 'Photo Button',      group: 'Listing Card',  active: true  },
+    { key: 'view_col_aa',           label: 'Listing Details',   group: 'Listing Card',  active: true  },
+    { key: 'view_col_ac',           label: 'GEO ID',            group: 'Listing Card',  active: true  },
+    { key: 'view_fb_link',          label: 'FB Link Button',    group: 'Listing Card',  active: true  },
+    { key: 'view_map',              label: 'Map Button',        group: 'Listing Card',  active: true  },
+    { key: 'view_copy',             label: 'Copy Button',       group: 'Listing Card',  active: true  },
+    { key: 'view_notes',            label: 'Notes Button',      group: 'Listing Card',  active: true  },
+    { key: 'change_status',         label: 'Change Status',     group: 'Listing Card',  active: true  },
+    { key: 'geo_id_click',          label: 'GEO ID Click',      group: 'Listing Card',  active: true  },
+    { key: 'edit_listing',          label: 'Edit Button',       group: 'Listing Card',  active: true  },
+    // ── Edit Section ──────────────────────────────────────────────────────────
+    { key: 'edit_sale_price',       label: 'Sale Price',        group: 'Edit Section',  active: true  },
+    { key: 'edit_lease_price',      label: 'Lease Price',       group: 'Edit Section',  active: true  },
+    { key: 'edit_notes',            label: 'Notes',             group: 'Edit Section',  active: true  },
+    { key: 'edit_coordinates',      label: 'Coordinates',       group: 'Edit Section',  active: true  },
+    { key: 'geocoding',             label: 'GPS / HERE Button', group: 'Edit Section',  active: true  },
+    { key: 'edit_fb_link',          label: 'Facebook Link',     group: 'Edit Section',  active: true  },
+    { key: 'edit_update_date',      label: 'Update Date',       group: 'Edit Section',  active: true  },
+    // ── Misc ──────────────────────────────────────────────────────────────────
+    { key: 'add_listing',           label: 'Add Listing',       group: 'Misc',          active: false },
+    { key: 'delete_listing',        label: 'Delete Listing',    group: 'Misc',          active: false },
+    { key: 'telegram_send',         label: 'Telegram Send',     group: 'Misc',          active: false },
+    { key: 'batch_review',          label: 'Batch Review',      group: 'Misc',          active: false },
+    { key: 'ai_extract',            label: 'AI Extract',        group: 'Misc',          active: false },
+    { key: 'export_data',           label: 'Export Data',       group: 'Misc',          active: false },
+    { key: 'manage_users',          label: 'Manage Users',      group: 'Misc',          active: false },
 ];
 
-const FEATURE_GROUPS = ['Listing View', 'Listing Actions', 'Tools', 'Admin', 'Listing Card', 'Edit Fields'];
+const FEATURE_GROUPS = ['Listing Card', 'Edit Section', 'Misc'];
 
 const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
     ADMIN: {
         add_listing: true, edit_listing: true, delete_listing: true,
         telegram_send: true, batch_review: true, ai_extract: true,
-        geocoding: true, view_pricing: true, view_contact: true,
-        view_geo_id: true, view_photos: true, export_data: true, manage_users: true,
-        view_fb_link: true,
-        view_col_k: true, view_col_aa: true, view_col_ac: true,
-        view_map: true, view_copy: true, view_notes: true,
-        change_status: true, geo_id_click: true,
+        // Listing Card
+        view_col_k: true, view_listing_ownership: true, view_pricing: true,
+        view_photos: true, view_col_aa: true, view_col_ac: true,
+        view_fb_link: true, view_map: true, view_copy: true, view_notes: true,
+        change_status: true, geo_id_click: true, edit_listing: true,
+        // Edit Section
         edit_sale_price: true, edit_lease_price: true, edit_notes: true,
-        edit_coordinates: true, edit_fb_link: true, edit_update_date: true,
+        edit_coordinates: true, geocoding: true, edit_fb_link: true, edit_update_date: true,
+        // Misc
+        add_listing: true, delete_listing: true,
+        telegram_send: true, batch_review: true, ai_extract: true,
+        export_data: true, manage_users: true,
     },
     EDITOR: {
         add_listing: true, edit_listing: true, delete_listing: false,
         telegram_send: false, batch_review: true, ai_extract: true,
-        geocoding: true, view_pricing: true, view_contact: true,
-        view_geo_id: true, view_photos: true, export_data: true, manage_users: false,
-        view_fb_link: true,
-        view_col_k: true, view_col_aa: true, view_col_ac: true,
-        view_map: true, view_copy: true, view_notes: true,
+        // Listing Card
+        view_col_k: true, view_listing_ownership: true, view_pricing: true,
+        view_photos: true, view_col_aa: true, view_col_ac: true,
+        view_fb_link: true, view_map: true, view_copy: true, view_notes: true,
         change_status: true, geo_id_click: true,
+        // Edit Section
         edit_sale_price: true, edit_lease_price: true, edit_notes: true,
-        edit_coordinates: true, edit_fb_link: true, edit_update_date: true,
+        edit_coordinates: true, geocoding: true, edit_fb_link: true, edit_update_date: true,
+        // Misc
+        export_data: true, manage_users: false,
     },
     BROKER: {
         add_listing: true, edit_listing: true, delete_listing: false,
         telegram_send: false, batch_review: false, ai_extract: true,
-        geocoding: true, view_pricing: true, view_contact: true,
-        view_geo_id: true, view_photos: true, export_data: false, manage_users: false,
-        view_fb_link: true,
-        view_col_k: true, view_col_aa: true, view_col_ac: true,
-        view_map: true, view_copy: true, view_notes: true,
+        // Listing Card
+        view_col_k: true, view_listing_ownership: true, view_pricing: true,
+        view_photos: true, view_col_aa: true, view_col_ac: true,
+        view_fb_link: true, view_map: true, view_copy: true, view_notes: true,
         change_status: true, geo_id_click: true,
+        // Edit Section
         edit_sale_price: false, edit_lease_price: false, edit_notes: false,
-        edit_coordinates: true, edit_fb_link: true, edit_update_date: true,
+        edit_coordinates: true, geocoding: true, edit_fb_link: true, edit_update_date: true,
+        // Misc
+        export_data: false, manage_users: false,
     },
     VIEWER: {
         add_listing: false, edit_listing: false, delete_listing: false,
         telegram_send: false, batch_review: false, ai_extract: false,
-        geocoding: false, view_pricing: false, view_contact: false,
-        view_geo_id: false, view_photos: true, export_data: false, manage_users: false,
-        view_fb_link: false,
-        view_col_k: false, view_col_aa: true, view_col_ac: true,
-        view_map: true, view_copy: false, view_notes: false,
+        // Listing Card
+        view_col_k: false, view_listing_ownership: false, view_pricing: false,
+        view_photos: true, view_col_aa: true, view_col_ac: true,
+        view_fb_link: false, view_map: true, view_copy: false, view_notes: false,
         change_status: false, geo_id_click: true,
+        // Edit Section
         edit_sale_price: false, edit_lease_price: false, edit_notes: false,
-        edit_coordinates: false, edit_fb_link: false, edit_update_date: false,
+        edit_coordinates: false, geocoding: false, edit_fb_link: false, edit_update_date: false,
+        // Misc
+        export_data: false, manage_users: false,
     },
 };
 

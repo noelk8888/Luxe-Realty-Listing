@@ -13,13 +13,12 @@ export type Feature =
     | 'ai_extract'
     | 'geocoding'
     | 'view_pricing'
-    | 'view_contact'
-    | 'view_geo_id'
     | 'view_photos'
     | 'export_data'
     | 'manage_users'
     | 'view_fb_link'
     | 'view_col_k'
+    | 'view_listing_ownership'
     | 'view_col_aa'
     | 'view_col_ac'
     | 'view_map'
@@ -37,10 +36,10 @@ export type Feature =
 const ALL_FEATURES: Feature[] = [
     'add_listing', 'edit_listing', 'delete_listing',
     'telegram_send', 'batch_review', 'ai_extract',
-    'geocoding', 'view_pricing', 'view_contact',
-    'view_geo_id', 'view_photos', 'export_data', 'manage_users',
+    'geocoding', 'view_pricing',
+    'view_photos', 'export_data', 'manage_users',
     'view_fb_link',
-    'view_col_k', 'view_col_aa', 'view_col_ac',
+    'view_col_k', 'view_listing_ownership', 'view_col_aa', 'view_col_ac',
     'view_map', 'view_copy', 'view_notes',
     'change_status', 'geo_id_click',
     'edit_sale_price', 'edit_lease_price', 'edit_notes',
@@ -52,10 +51,10 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'viewer', Record<Fea
     admin: {
         add_listing: true, edit_listing: true, delete_listing: true,
         telegram_send: true, batch_review: true, ai_extract: true,
-        geocoding: true, view_pricing: true, view_contact: true,
-        view_geo_id: true, view_photos: true, export_data: true, manage_users: true,
+        geocoding: true, view_pricing: true,
+        view_photos: true, export_data: true, manage_users: true,
         view_fb_link: true,
-        view_col_k: true, view_col_aa: true, view_col_ac: true,
+        view_col_k: true, view_listing_ownership: true, view_col_aa: true, view_col_ac: true,
         view_map: true, view_copy: true, view_notes: true,
         change_status: true, geo_id_click: true,
         edit_sale_price: true, edit_lease_price: true, edit_notes: true,
@@ -64,10 +63,10 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'viewer', Record<Fea
     editor: {
         add_listing: true, edit_listing: true, delete_listing: false,
         telegram_send: false, batch_review: true, ai_extract: true,
-        geocoding: true, view_pricing: true, view_contact: true,
-        view_geo_id: true, view_photos: true, export_data: true, manage_users: false,
+        geocoding: true, view_pricing: true,
+        view_photos: true, export_data: true, manage_users: false,
         view_fb_link: true,
-        view_col_k: true, view_col_aa: true, view_col_ac: true,
+        view_col_k: true, view_listing_ownership: true, view_col_aa: true, view_col_ac: true,
         view_map: true, view_copy: true, view_notes: true,
         change_status: true, geo_id_click: true,
         edit_sale_price: true, edit_lease_price: true, edit_notes: true,
@@ -76,10 +75,10 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'viewer', Record<Fea
     broker: {
         add_listing: true, edit_listing: true, delete_listing: false,
         telegram_send: false, batch_review: false, ai_extract: true,
-        geocoding: true, view_pricing: true, view_contact: true,
-        view_geo_id: true, view_photos: true, export_data: false, manage_users: false,
+        geocoding: true, view_pricing: true,
+        view_photos: true, export_data: false, manage_users: false,
         view_fb_link: true,
-        view_col_k: true, view_col_aa: true, view_col_ac: true,
+        view_col_k: true, view_listing_ownership: true, view_col_aa: true, view_col_ac: true,
         view_map: true, view_copy: true, view_notes: true,
         change_status: true, geo_id_click: true,
         edit_sale_price: false, edit_lease_price: false, edit_notes: false,
@@ -88,10 +87,10 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'viewer', Record<Fea
     viewer: {
         add_listing: false, edit_listing: false, delete_listing: false,
         telegram_send: false, batch_review: false, ai_extract: false,
-        geocoding: false, view_pricing: false, view_contact: false,
-        view_geo_id: false, view_photos: true, export_data: false, manage_users: false,
+        geocoding: false, view_pricing: false,
+        view_photos: true, export_data: false, manage_users: false,
         view_fb_link: false,
-        view_col_k: false, view_col_aa: true, view_col_ac: true,
+        view_col_k: false, view_listing_ownership: false, view_col_aa: true, view_col_ac: true,
         view_map: true, view_copy: false, view_notes: false,
         change_status: false, geo_id_click: true,
         edit_sale_price: false, edit_lease_price: false, edit_notes: false,

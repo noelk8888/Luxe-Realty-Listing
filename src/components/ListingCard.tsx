@@ -217,6 +217,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         </a>
                     )}
                     <div className="flex flex-col items-end">
+                        {permissions.view_col_ac && (
                         <span
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -232,6 +233,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         >
                             {listing.id}
                         </span>
+                        )}
                         {/* Column BC: DATE UPDATED - Below Listing ID (Gray) */}
                         {listing.columnBC && !isPopupView && (
                             <div className="mt-1 text-xs text-gray-400 text-right">
@@ -251,7 +253,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                 )}
                 {permissions.view_pricing && <>
                     {/* Column BD: Top of Price, Light Green Theme */}
-                    {listing.columnBD && (
+                    {permissions.view_listing_ownership && listing.columnBD && (
                         <div
                             onClick={handleCopyColumnBD}
                             className={`mb-0.5 text-xs font-bold px-1.5 py-0.5 rounded border shadow-sm w-fit cursor-pointer transition-colors
@@ -320,7 +322,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                 </>}
                 </div>
                 {/* Column BD removed from here */}
-                {listing.displaySummary && (
+                {permissions.view_col_aa && listing.displaySummary && (
                     <div className="relative">
                         <div
                             className={`text-sm font-medium text-black mt-1 leading-relaxed whitespace-pre-line
@@ -347,19 +349,17 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             </div>
 
             <div className="space-y-2 text-sm text-gray-500">
-                {permissions.view_col_aa && (
-                    <div
-                        className={`flex items-center gap-2 ${listing.photoLink ? 'cursor-pointer' : ''}`}
-                        onClick={listing.photoLink ? handleCopyPhotoLink : undefined}
-                        title={listing.photoLink ? 'Click to copy photo link' : undefined}
-                    >
-                        <MapPin className={`w-4 h-4 ${isPhotoLinkCopied ? 'text-green-500' : ''}`} />
-                        <span className={`truncate transition-colors ${isPhotoLinkCopied ? 'text-green-600 font-semibold' : listing.photoLink ? 'hover:text-blue-600' : ''}`}>
-                            {isPhotoLinkCopied ? 'Photo link copied!' : `${listing.city}, ${listing.province}`}
-                        </span>
-                    </div>
-                )}
-                {permissions.view_col_ac && (listing.building || listing.area || listing.barangay) && (
+                <div
+                    className={`flex items-center gap-2 ${listing.photoLink ? 'cursor-pointer' : ''}`}
+                    onClick={listing.photoLink ? handleCopyPhotoLink : undefined}
+                    title={listing.photoLink ? 'Click to copy photo link' : undefined}
+                >
+                    <MapPin className={`w-4 h-4 ${isPhotoLinkCopied ? 'text-green-500' : ''}`} />
+                    <span className={`truncate transition-colors ${isPhotoLinkCopied ? 'text-green-600 font-semibold' : listing.photoLink ? 'hover:text-blue-600' : ''}`}>
+                        {isPhotoLinkCopied ? 'Photo link copied!' : `${listing.city}, ${listing.province}`}
+                    </span>
+                </div>
+                {(listing.building || listing.area || listing.barangay) && (
                     <div className="flex items-center gap-2">
                         <Building className="w-4 h-4" />
                         <span className="truncate">{listing.building || listing.area || listing.barangay}</span>
