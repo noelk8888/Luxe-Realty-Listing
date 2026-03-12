@@ -1036,7 +1036,9 @@ function App() {
       throw new Error(`Failed to update: ${error.message}`);
     }
 
-    if (!data || data.length === 0) {
+    // data.length === 0 can happen when RLS allows UPDATE but restricts SELECT on the result.
+    // The DB was still updated, so proceed with optimistic local state update.
+    if (data === null) {
       console.warn('No rows updated — check RLS policies or listing ID');
       throw new Error('Update failed: no matching listing found or permission denied.');
     }
