@@ -1083,7 +1083,17 @@ function App() {
             record: { 'GEO ID': listingId, [socmedCol]: updates.fbLink || null },
             old_record: {},
           },
-        }).catch(err => console.warn('Direct GSheet sync failed:', err));
+        }).then(({ data, error }) => {
+          if (error) {
+            console.error('GSheet sync error:', error);
+            alert(`GSheet sync error: ${JSON.stringify(error)}`);
+          } else {
+            console.log('GSheet sync result:', data);
+          }
+        }).catch(err => {
+          console.error('GSheet sync network error:', err);
+          alert(`GSheet sync network error: ${err?.message}`);
+        });
       }
     }
 
