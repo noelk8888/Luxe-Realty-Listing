@@ -17,7 +17,7 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
     selectedListings,
     initialSuggestedEdit = '',
 }) => {
-    const { fbGroup } = useAuth();
+    const { fbGroup, groupBranding } = useAuth();
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -31,7 +31,7 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
         if (isOpen) {
             setFormData(prev => ({
                 ...prev,
-                name: fbGroup ?? prev.name,
+                name: groupBranding?.brandName ?? fbGroup ?? prev.name,
                 additionalQuestions: initialSuggestedEdit
             }));
         }
