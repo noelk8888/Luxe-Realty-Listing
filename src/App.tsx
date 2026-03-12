@@ -1068,8 +1068,8 @@ function App() {
     setResults(prev => prev.map(updateListing));
 
     // For non-Kiu groups, the DB webhook only watches FB LINK so BP-BU changes won't trigger it.
-    // Call the edge function directly to ensure GSheet sync for all groups.
-    if (fbGroup && fbGroup !== 'Kiu') {
+    // Call the edge function directly with only the changed socmed column to avoid overwriting other cells.
+    if (fbGroup && fbGroup !== 'Kiu' && updates.fbLink !== undefined) {
       const socmedCol = fbGroup === 'Luxe' ? 'BP'
         : fbGroup === 'Nexia' ? 'BQ'
         : fbGroup === 'Adolf' ? 'BR'
@@ -1077,22 +1077,14 @@ function App() {
         : fbGroup === 'SLoo' ? 'BT'
         : fbGroup === 'Taoke' ? 'BU'
         : null;
-      const syncRecord: Record<string, unknown> = {
-        'GEO ID': listingId,
-        'Extracted Sale Price': updates.salePrice || null,
-        'Sale Price/Sqm': salePricePerSqm || null,
-        'Extracted Lease Price': updates.leasePrice || null,
-        'Lease Price/Sqm': leasePricePerSqm || null,
-        'COMMENTS': updates.notes || null,
-        ...(updates.updateDate && { 'DATE UPDATED': `${dateStr} | ${fbGroup !== 'Luxe' ? fbGroup : (user?.user_metadata?.full_name || user?.email || '')} | LISTING` }),
-        ...(updates.latLong && { 'LAT LONG': updates.latLong }),
-        ...(parsedLat !== null && { 'LAT': parsedLat.toString() }),
-        ...(parsedLng !== null && { 'LONG': parsedLng.toString() }),
-        ...(socmedCol && updates.fbLink !== undefined && { [socmedCol]: updates.fbLink || null }),
-      };
-      supabase.functions.invoke('sync-listing-edits', {
-        body: { record: syncRecord, old_record: {} },
-      }).catch(err => console.warn('Direct GSheet sync failed:', err));
+      if (socmedCol) {
+        supabase.functions.invoke('sync-listing-edits', {
+          body: {
+            record: { 'GEO ID': listingId, [socmedCol]: updates.fbLink || null },
+            old_record: {},
+          },
+        }).catch(err => console.warn('Direct GSheet sync failed:', err));
+      }
     }
 
     // Invalidate cache so next reload reflects the change
