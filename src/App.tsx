@@ -924,7 +924,7 @@ function App() {
 
     const today = new Date();
     const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    const authorName = fbGroup && fbGroup !== 'LUXE REALTY' ? fbGroup : (user?.user_metadata?.full_name || user?.email || '');
+    const authorName = fbGroup && fbGroup !== 'Luxe' ? fbGroup : (user?.user_metadata?.full_name || user?.email || '');
     const dateUpdated = `${dateStr} | ${authorName} | STATUS`.trim();
 
     const { data, error } = await supabase
@@ -1012,17 +1012,17 @@ function App() {
         'Extracted Lease Price': updates.leasePrice || null,
         'Lease Price/Sqm': leasePricePerSqm || null,
         'COMMENTS': updates.notes || null,
-        ...(updates.updateDate && { 'DATE UPDATED': `${dateStr} | ${fbGroup && fbGroup !== 'LUXE REALTY' ? fbGroup : (user?.user_metadata?.full_name || user?.email || '')} | LISTING` }),
+        ...(updates.updateDate && { 'DATE UPDATED': `${dateStr} | ${fbGroup && fbGroup !== 'Luxe' ? fbGroup : (user?.user_metadata?.full_name || user?.email || '')} | LISTING` }),
         ...(updates.latLong && { 'LAT LONG': updates.latLong }),
         ...(parsedLat !== null && { 'LAT': parsedLat.toString() }),
         ...(parsedLng !== null && { 'LONG': parsedLng.toString() }),
         ...(updates.fbLink !== undefined && {
-          [fbGroup === 'NEXIA' ? 'BQ'
-            : fbGroup === 'ADOLF' ? 'BR'
+          [fbGroup === 'Nexia' ? 'BQ'
+            : fbGroup === 'Adolf' ? 'BR'
             : fbGroup === 'PCO' ? 'BS'
-            : fbGroup === 'SLOO' ? 'BT'
-            : fbGroup === 'TAOKE' ? 'BU'
-            : fbGroup === 'LUXE REALTY' ? 'BP'
+            : fbGroup === 'SLoo' ? 'BT'
+            : fbGroup === 'Taoke' ? 'BU'
+            : fbGroup === 'Luxe' ? 'BP'
             : 'FB LINK']: updates.fbLink || null,
         }),
       })
@@ -1050,16 +1050,16 @@ function App() {
         leasePrice: updates.leasePrice,
         leasePricePerSqm: leasePricePerSqm,
         columnV: updates.notes,
-        ...(updates.updateDate && { columnBC: `${dateStr} | ${fbGroup && fbGroup !== 'LUXE REALTY' ? fbGroup : (user?.user_metadata?.full_name || user?.email || '')} | LISTING` }),
+        ...(updates.updateDate && { columnBC: `${dateStr} | ${fbGroup && fbGroup !== 'Luxe' ? fbGroup : (user?.user_metadata?.full_name || user?.email || '')} | LISTING` }),
         ...(parsedLat !== null && { lat: parsedLat }),
         ...(parsedLng !== null && { lng: parsedLng }),
-        facebookLink: fbGroup === 'KIU REALTY PH' || !fbGroup ? (updates.fbLink || l.facebookLink) : l.facebookLink,
-        postLinkLuxe: fbGroup === 'LUXE REALTY' ? (updates.fbLink || l.postLinkLuxe) : l.postLinkLuxe,
-        postLinkNexia: fbGroup === 'NEXIA' ? (updates.fbLink || l.postLinkNexia) : l.postLinkNexia,
-        postLinkAdolf: fbGroup === 'ADOLF' ? (updates.fbLink || l.postLinkAdolf) : l.postLinkAdolf,
+        facebookLink: fbGroup === 'Kiu' || !fbGroup ? (updates.fbLink || l.facebookLink) : l.facebookLink,
+        postLinkLuxe: fbGroup === 'Luxe' ? (updates.fbLink || l.postLinkLuxe) : l.postLinkLuxe,
+        postLinkNexia: fbGroup === 'Nexia' ? (updates.fbLink || l.postLinkNexia) : l.postLinkNexia,
+        postLinkAdolf: fbGroup === 'Adolf' ? (updates.fbLink || l.postLinkAdolf) : l.postLinkAdolf,
         postLinkPco: fbGroup === 'PCO' ? (updates.fbLink || l.postLinkPco) : l.postLinkPco,
-        postLinkSloo: fbGroup === 'SLOO' ? (updates.fbLink || l.postLinkSloo) : l.postLinkSloo,
-        postLinkTaoke: fbGroup === 'TAOKE' ? (updates.fbLink || l.postLinkTaoke) : l.postLinkTaoke,
+        postLinkSloo: fbGroup === 'SLoo' ? (updates.fbLink || l.postLinkSloo) : l.postLinkSloo,
+        postLinkTaoke: fbGroup === 'Taoke' ? (updates.fbLink || l.postLinkTaoke) : l.postLinkTaoke,
       } : l;
 
     setAllListings(prev => prev.map(updateListing));

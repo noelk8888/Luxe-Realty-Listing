@@ -46,13 +46,13 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
             setUpdateDate(false);
             setLatLong(listing.lat && listing.lng ? `${listing.lat}, ${listing.lng}` : '');
             const groupPostLink: Record<string, string | undefined> = {
-                'LUXE REALTY': listing.postLinkLuxe,
-                'NEXIA': listing.postLinkNexia,
-                'ADOLF': listing.postLinkAdolf,
+                'Luxe': listing.postLinkLuxe,
+                'Nexia': listing.postLinkNexia,
+                'Adolf': listing.postLinkAdolf,
                 'PCO': listing.postLinkPco,
-                'SLOO': listing.postLinkSloo,
-                'TAOKE': listing.postLinkTaoke,
-                'KIU REALTY PH': listing.facebookLink,
+                'SLoo': listing.postLinkSloo,
+                'Taoke': listing.postLinkTaoke,
+                'Kiu': listing.facebookLink,
             };
             setFbLink((fbGroup ? groupPostLink[fbGroup] : listing.facebookLink) || '');
             setLocationError(null);

@@ -186,13 +186,13 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                 <div className="flex items-center gap-2">
                     {fbGroup && permissions.view_fb_link && (() => {
                         const groupPostLink: Record<string, string | undefined> = {
-                            'LUXE REALTY': listing.postLinkLuxe,
-                            'NEXIA': listing.postLinkNexia,
-                            'ADOLF': listing.postLinkAdolf,
+                            'Luxe': listing.postLinkLuxe,
+                            'Nexia': listing.postLinkNexia,
+                            'Adolf': listing.postLinkAdolf,
                             'PCO': listing.postLinkPco,
-                            'SLOO': listing.postLinkSloo,
-                            'TAOKE': listing.postLinkTaoke,
-                            'KIU REALTY PH': listing.facebookLink,
+                            'SLoo': listing.postLinkSloo,
+                            'Taoke': listing.postLinkTaoke,
+                            'Kiu': listing.facebookLink,
                         };
                         const url = (fbGroup && groupPostLink[fbGroup]) || listing.facebookLink || '';
                         if (!url) return null;
