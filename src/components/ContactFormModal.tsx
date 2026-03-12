@@ -194,20 +194,14 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
                                 </div>
                             )}
 
-                            {/* Name */}
+                            {/* Your Group */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Name <span className="text-red-600">*</span>
+                                    Your Group
                                 </label>
-                                <input
-                                    type="text"
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    placeholder="Your Full Name"
-                                    disabled={isSubmitting}
-                                />
-                                {errors.name && <p className="text-red-600 text-xs mt-1">{errors.name}</p>}
+                                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                    <p className="text-sm text-gray-600">{formData.name}</p>
+                                </div>
                             </div>
 
 
