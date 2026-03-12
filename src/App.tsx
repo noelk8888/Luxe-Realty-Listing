@@ -1055,13 +1055,13 @@ function App() {
         ...(updates.updateDate && { columnBC: `${dateStr} | ${fbGroup && fbGroup !== 'Luxe' ? fbGroup : (user?.user_metadata?.full_name || user?.email || '')} | LISTING` }),
         ...(parsedLat !== null && { lat: parsedLat }),
         ...(parsedLng !== null && { lng: parsedLng }),
-        facebookLink: fbGroup === 'Kiu' || !fbGroup ? (updates.fbLink || l.facebookLink) : l.facebookLink,
-        postLinkLuxe: fbGroup === 'Luxe' ? (updates.fbLink || l.postLinkLuxe) : l.postLinkLuxe,
-        postLinkNexia: fbGroup === 'Nexia' ? (updates.fbLink || l.postLinkNexia) : l.postLinkNexia,
-        postLinkAdolf: fbGroup === 'Adolf' ? (updates.fbLink || l.postLinkAdolf) : l.postLinkAdolf,
-        postLinkPco: fbGroup === 'PCO' ? (updates.fbLink || l.postLinkPco) : l.postLinkPco,
-        postLinkSloo: fbGroup === 'SLoo' ? (updates.fbLink || l.postLinkSloo) : l.postLinkSloo,
-        postLinkTaoke: fbGroup === 'Taoke' ? (updates.fbLink || l.postLinkTaoke) : l.postLinkTaoke,
+        facebookLink: fbGroup === 'Kiu' || !fbGroup ? updates.fbLink : l.facebookLink,
+        postLinkLuxe: fbGroup === 'Luxe' ? updates.fbLink : l.postLinkLuxe,
+        postLinkNexia: fbGroup === 'Nexia' ? updates.fbLink : l.postLinkNexia,
+        postLinkAdolf: fbGroup === 'Adolf' ? updates.fbLink : l.postLinkAdolf,
+        postLinkPco: fbGroup === 'PCO' ? updates.fbLink : l.postLinkPco,
+        postLinkSloo: fbGroup === 'SLoo' ? updates.fbLink : l.postLinkSloo,
+        postLinkTaoke: fbGroup === 'Taoke' ? updates.fbLink : l.postLinkTaoke,
       } : l;
 
     setAllListings(prev => prev.map(updateListing));
