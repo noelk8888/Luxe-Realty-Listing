@@ -61,7 +61,7 @@ const FEATURES: { key: Feature; label: string; group: string; active: boolean }[
     { key: 'view_col_aa',           label: 'Listing Details',   group: 'Listing Card',  active: true  },
     { key: 'show_all',              label: 'Show All Toggle',   group: 'Listing Card',  active: true  },
     { key: 'view_fb_link',          label: 'FB Link Button',    group: 'Listing Card',  active: true  },
-    { key: 'view_map',              label: 'Map Button',        group: 'Listing Card',  active: true  },
+    { key: 'view_map',              label: 'G-Map Button',      group: 'Listing Card',  active: true  },
     { key: 'view_copy',             label: 'Copy Button',       group: 'Listing Card',  active: true  },
     { key: 'view_notes',            label: 'Notes Button',      group: 'Listing Card',  active: true  },
     { key: 'change_status',         label: 'Change Status',     group: 'Listing Card',  active: true  },
