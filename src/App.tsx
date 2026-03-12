@@ -1067,35 +1067,7 @@ function App() {
     setAllListings(prev => prev.map(updateListing));
     setResults(prev => prev.map(updateListing));
 
-    // For non-Kiu groups, the DB webhook only watches FB LINK so BP-BU changes won't trigger it.
-    // Call the edge function directly with only the changed socmed column to avoid overwriting other cells.
-    if (fbGroup && fbGroup !== 'Kiu' && updates.fbLink !== undefined) {
-      const socmedCol = fbGroup === 'Luxe' ? 'BP'
-        : fbGroup === 'Nexia' ? 'BQ'
-        : fbGroup === 'Adolf' ? 'BR'
-        : fbGroup === 'PCO' ? 'BS'
-        : fbGroup === 'SLoo' ? 'BT'
-        : fbGroup === 'Taoke' ? 'BU'
-        : null;
-      if (socmedCol) {
-        supabase.functions.invoke('sync-listing-edits', {
-          body: {
-            record: { 'GEO ID': listingId, [socmedCol]: updates.fbLink || null },
-            old_record: {},
-          },
-        }).then(({ data, error }) => {
-          if (error) {
-            console.error('GSheet sync error:', error);
-            alert(`GSheet sync error: ${JSON.stringify(error)}`);
-          } else {
-            console.log('GSheet sync result:', data);
-          }
-        }).catch(err => {
-          console.error('GSheet sync network error:', err);
-          alert(`GSheet sync network error: ${err?.message}`);
-        });
-      }
-    }
+    // GSheet sync is handled by the Supabase DB webhook → sync-listing-edits edge function.
 
     // Invalidate cache so next reload reflects the change
     // Don't await — IndexedDB can hang on iOS Safari
