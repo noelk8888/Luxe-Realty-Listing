@@ -1067,7 +1067,25 @@ function App() {
     setAllListings(prev => prev.map(updateListing));
     setResults(prev => prev.map(updateListing));
 
-    // GSheet sync is handled by the Supabase DB webhook → sync-listing-edits edge function.
+    // Also call edge function directly as a backup — webhook handles Kiu/Col Z but direct call
+    // ensures BP-BU sync for non-Kiu groups. Function deployed with --no-verify-jwt.
+    if (fbGroup && fbGroup !== 'Kiu' && updates.fbLink !== undefined) {
+      const socmedCol = fbGroup === 'Luxe' ? 'BP'
+        : fbGroup === 'Nexia' ? 'BQ'
+        : fbGroup === 'Adolf' ? 'BR'
+        : fbGroup === 'PCO' ? 'BS'
+        : fbGroup === 'SLoo' ? 'BT'
+        : fbGroup === 'Taoke' ? 'BU'
+        : null;
+      if (socmedCol) {
+        supabase.functions.invoke('sync-listing-edits', {
+          body: {
+            record: { 'GEO ID': listingId, [socmedCol]: updates.fbLink || null },
+            old_record: {},
+          },
+        }).catch(err => console.warn('GSheet direct sync failed:', err));
+      }
+    }
 
     // Invalidate cache so next reload reflects the change
     // Don't await — IndexedDB can hang on iOS Safari
