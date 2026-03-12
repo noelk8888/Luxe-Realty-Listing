@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 const SPREADSHEET_ID = "1OYk_LGiLYb_ayGoVJ-tistDias2VdETdR60SP5ALBlo";
+const SPREADSHEET_ID_BACKUP = "1jK5Sv4OO-6RHZhXITQd-S_kQxthZDiBzGcCZPelNGOw";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -125,9 +126,10 @@ async function getAccessToken(
 
 async function sheetsGet(
   token: string,
+  spreadsheetId: string,
   range: string
 ): Promise<string[][]> {
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}`;
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`;
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -141,9 +143,10 @@ async function sheetsGet(
 
 async function sheetsBatchUpdate(
   token: string,
+  spreadsheetId: string,
   updates: { range: string; values: (string | number)[][] }[]
 ): Promise<void> {
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values:batchUpdate`;
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchUpdate`;
   const res = await fetch(url, {
     method: "POST",
     headers: {
@@ -247,7 +250,7 @@ serve(async (req) => {
 
       // Read the GEO ID column to find the row
       const geoRange = `${tab.name}!${tab.geoIdCol}:${tab.geoIdCol}`;
-      const rows = await sheetsGet(token, geoRange);
+      const rows = await sheetsGet(token, SPREADSHEET_ID, geoRange);
 
       // Find the row index (1-based in Sheets)
       let rowIndex = -1;
@@ -359,8 +362,36 @@ serve(async (req) => {
 
       if (updates.length > 0) {
         console.log(`Updating ${updates.length} cells in ${tab.name}`);
-        await sheetsBatchUpdate(token, updates);
+        await sheetsBatchUpdate(token, SPREADSHEET_ID, updates);
         console.log(`Updated ${tab.name} successfully`);
+
+        // Mirror Sheet1 updates to the backup spreadsheet
+        if (tab.name === "Sheet1") {
+          try {
+            const backupGeoRange = `Sheet1!${tab.geoIdCol}:${tab.geoIdCol}`;
+            const backupRows = await sheetsGet(token, SPREADSHEET_ID_BACKUP, backupGeoRange);
+            let backupRowIndex = -1;
+            for (let i = 0; i < backupRows.length; i++) {
+              if (backupRows[i]?.[0]?.toString().trim() === geoId.toString().trim()) {
+                backupRowIndex = i + 1;
+                break;
+              }
+            }
+            if (backupRowIndex !== -1) {
+              // Remap ranges from primary row to backup row (row number may differ)
+              const backupUpdates = updates.map((u) => ({
+                ...u,
+                range: u.range.replace(/(\d+)$/, backupRowIndex.toString()),
+              }));
+              await sheetsBatchUpdate(token, SPREADSHEET_ID_BACKUP, backupUpdates);
+              console.log(`Mirrored Sheet1 updates to backup spreadsheet (row ${backupRowIndex})`);
+            } else {
+              console.log(`GEO ID ${geoId} not found in backup Sheet1, skipping backup sync`);
+            }
+          } catch (backupErr) {
+            console.warn("Backup spreadsheet sync failed (non-fatal):", backupErr.message);
+          }
+        }
       }
     }
 
