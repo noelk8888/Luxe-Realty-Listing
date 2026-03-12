@@ -20,6 +20,12 @@ const TABS = [
       lat: "BF",
       long: "BG",
       fbLink: "Z",
+      postLinkLuxe: "BP",
+      postLinkNexia: "BQ",
+      postLinkAdolf: "BR",
+      postLinkPco: "BS",
+      postLinkSloo: "BT",
+      postLinkTaoke: "BU",
     },
   },
   {
@@ -189,6 +195,12 @@ serve(async (req) => {
       { db: "LAT", key: "lat" },
       { db: "LONG", key: "long" },
       { db: "FB LINK", key: "fbLink" },
+      { db: "BP", key: "postLinkLuxe" },
+      { db: "BQ", key: "postLinkNexia" },
+      { db: "BR", key: "postLinkAdolf" },
+      { db: "BS", key: "postLinkPco" },
+      { db: "BT", key: "postLinkSloo" },
+      { db: "BU", key: "postLinkTaoke" },
     ];
 
     for (const field of fieldMappings) {
@@ -314,6 +326,25 @@ serve(async (req) => {
           range: `${tab.name}!${tab.columns.fbLink}${rowIndex}`,
           values: [[record["FB LINK"] ?? ""]],
         });
+      }
+
+      if (changedFields.includes("postLinkLuxe") && tab.columns.postLinkLuxe) {
+        updates.push({ range: `${tab.name}!${tab.columns.postLinkLuxe}${rowIndex}`, values: [[record["BP"] ?? ""]] });
+      }
+      if (changedFields.includes("postLinkNexia") && tab.columns.postLinkNexia) {
+        updates.push({ range: `${tab.name}!${tab.columns.postLinkNexia}${rowIndex}`, values: [[record["BQ"] ?? ""]] });
+      }
+      if (changedFields.includes("postLinkAdolf") && tab.columns.postLinkAdolf) {
+        updates.push({ range: `${tab.name}!${tab.columns.postLinkAdolf}${rowIndex}`, values: [[record["BR"] ?? ""]] });
+      }
+      if (changedFields.includes("postLinkPco") && tab.columns.postLinkPco) {
+        updates.push({ range: `${tab.name}!${tab.columns.postLinkPco}${rowIndex}`, values: [[record["BS"] ?? ""]] });
+      }
+      if (changedFields.includes("postLinkSloo") && tab.columns.postLinkSloo) {
+        updates.push({ range: `${tab.name}!${tab.columns.postLinkSloo}${rowIndex}`, values: [[record["BT"] ?? ""]] });
+      }
+      if (changedFields.includes("postLinkTaoke") && tab.columns.postLinkTaoke) {
+        updates.push({ range: `${tab.name}!${tab.columns.postLinkTaoke}${rowIndex}`, values: [[record["BU"] ?? ""]] });
       }
 
       if (updates.length > 0) {
