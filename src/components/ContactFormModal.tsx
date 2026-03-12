@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, MapPin, Locate } from 'lucide-react';
 import { usePermissions } from '../contexts/PermissionsContext';
+import { useAuth } from '../contexts/AuthContext';
 
 
 interface ContactFormModalProps {
@@ -16,6 +17,7 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
     selectedListings,
     initialSuggestedEdit = '',
 }) => {
+    const { fbGroup } = useAuth();
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -24,15 +26,16 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
         additionalQuestions: '',
     });
 
-    // Initialize additionalQuestions with initialSuggestedEdit when modal opens
+    // Initialize name with group name and additionalQuestions with initialSuggestedEdit when modal opens
     useEffect(() => {
         if (isOpen) {
             setFormData(prev => ({
                 ...prev,
+                name: fbGroup ?? prev.name,
                 additionalQuestions: initialSuggestedEdit
             }));
         }
-    }, [isOpen, initialSuggestedEdit]);
+    }, [isOpen, initialSuggestedEdit, fbGroup]);
 
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);

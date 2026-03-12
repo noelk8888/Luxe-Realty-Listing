@@ -494,7 +494,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             {/* Last Update */}
             {permissions.view_last_update && listing.columnBC && !isPopupView && (() => {
                 const [datePart, userPart, typePart] = listing.columnBC.split(' | ');
-                const label = typePart === 'STATUS' ? 'Status Update' : 'Listing Update';
+                const label = typePart === 'STATUS' ? 'Status Update' : typePart === 'PRICE' ? 'Price Update' : 'Listing Update';
                 return (
                     <div className="mt-2 text-xs text-black text-center">
                         {label}{datePart ? ` - ${formatDate(datePart)}` : ''}{userPart ? `, by ${userPart}` : ''}
