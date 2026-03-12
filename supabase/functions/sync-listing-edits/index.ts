@@ -172,7 +172,7 @@ serve(async (req) => {
   try {
     // Only accept POST
     if (req.method !== "POST") {
-      return new Response("Method not allowed", { status: 405 });
+      return new Response("Method not allowed", { status: 405, headers: corsHeaders });
     }
 
     const body = await req.json();
@@ -188,7 +188,7 @@ serve(async (req) => {
       console.log("Missing GEO ID in payload");
       return new Response(
         JSON.stringify({ error: "Missing GEO ID" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -223,7 +223,7 @@ serve(async (req) => {
       console.log("No relevant fields changed, skipping");
       return new Response(
         JSON.stringify({ message: "No relevant fields changed" }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
