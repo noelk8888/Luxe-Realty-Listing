@@ -44,7 +44,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
 
     const [isExpanded, setIsExpanded] = useState(false);
     const { permissions } = usePermissions();
-    const { fbGroup, groupBranding } = useAuth();
+    const { fbGroup } = useAuth();
 
     const formatPrice = (price: number) => {
         const formatted = new Intl.NumberFormat('en-PH', {
@@ -184,8 +184,18 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
 
                 </div>
                 <div className="flex items-center gap-2">
-                    {fbGroup && listing.facebookLink && permissions.view_fb_link && (() => {
-                        const url = listing.facebookLink!;
+                    {fbGroup && permissions.view_fb_link && (() => {
+                        const groupPostLink: Record<string, string | undefined> = {
+                            'LUXE REALTY': listing.postLinkLuxe,
+                            'NEXIA': listing.postLinkNexia,
+                            'ADOLF': listing.postLinkAdolf,
+                            'PCO': listing.postLinkPco,
+                            'SLOO': listing.postLinkSloo,
+                            'TAOKE': listing.postLinkTaoke,
+                            'KIU REALTY PH': listing.facebookLink,
+                        };
+                        const url = (fbGroup && groupPostLink[fbGroup]) || listing.facebookLink || '';
+                        if (!url) return null;
                         const socmed = url.includes('instagram.com')
                             ? { icon: <Instagram size={18} />, hover: 'hover:bg-[#E4405F]', title: 'Instagram' }
                             : url.includes('tiktok.com')

@@ -51,6 +51,12 @@ export interface DbListing {
     'amenities': string | null;
     'corner': string | null;
     'compound': string | null;
+    'BP': string | null; // LUXE REALTY post link
+    'BQ': string | null; // NEXIA post link
+    'BR': string | null; // ADOLF post link
+    'BS': string | null; // PCO post link
+    'BT': string | null; // SLOO post link
+    'BU': string | null; // TAOKE post link
 }
 
 /**
@@ -357,6 +363,12 @@ export const normalizeDbListing = (row: DbListing): Listing => {
 
         category: category,
         facebookLink: row['FB LINK'] || '',
+        postLinkLuxe: row['BP'] || '',
+        postLinkNexia: row['BQ'] || '',
+        postLinkAdolf: row['BR'] || '',
+        postLinkPco: row['BS'] || '',
+        postLinkSloo: row['BT'] || '',
+        postLinkTaoke: row['BU'] || '',
         photoLink: row['PHOTO'] || '',
         mapLink: row['MAP LINK'] || '',
         columnV: row['COMMENTS'] || '',

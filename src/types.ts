@@ -26,7 +26,13 @@ export interface Listing {
     columnN: string; // Col N
     columnP: string; // Col P
     category: string; // Column B
-    facebookLink?: string; // Col R
+    facebookLink?: string; // Col FB LINK (KIU REALTY PH)
+    postLinkLuxe?: string; // Col BP: LUXE REALTY
+    postLinkNexia?: string; // Col BQ: NEXIA
+    postLinkAdolf?: string; // Col BR: ADOLF
+    postLinkPco?: string; // Col BS: PCO
+    postLinkSloo?: string; // Col BT: SLOO
+    postLinkTaoke?: string; // Col BU: TAOKE
     photoLink?: string; // Col AB
     mapLink?: string; // Col U
     columnV?: string; // Col V

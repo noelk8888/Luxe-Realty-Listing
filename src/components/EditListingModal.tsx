@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, MapPin, Locate } from 'lucide-react';
 import type { Listing } from '../types';
 import { usePermissions } from '../contexts/PermissionsContext';
+import { useAuth } from '../contexts/AuthContext';
 
 interface EditListingModalProps {
     isOpen: boolean;
@@ -32,6 +33,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
     const [isGettingLocation, setIsGettingLocation] = useState(false);
     const [locationError, setLocationError] = useState<string | null>(null);
     const { permissions } = usePermissions();
+    const { fbGroup } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -43,7 +45,16 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
             setNotes(listing.columnV || '');
             setUpdateDate(false);
             setLatLong(listing.lat && listing.lng ? `${listing.lat}, ${listing.lng}` : '');
-            setFbLink(listing.facebookLink || '');
+            const groupPostLink: Record<string, string | undefined> = {
+                'LUXE REALTY': listing.postLinkLuxe,
+                'NEXIA': listing.postLinkNexia,
+                'ADOLF': listing.postLinkAdolf,
+                'PCO': listing.postLinkPco,
+                'SLOO': listing.postLinkSloo,
+                'TAOKE': listing.postLinkTaoke,
+                'KIU REALTY PH': listing.facebookLink,
+            };
+            setFbLink((fbGroup ? groupPostLink[fbGroup] : listing.facebookLink) || '');
             setLocationError(null);
             setError(null);
         }

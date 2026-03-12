@@ -1016,7 +1016,15 @@ function App() {
         ...(updates.latLong && { 'LAT LONG': updates.latLong }),
         ...(parsedLat !== null && { 'LAT': parsedLat.toString() }),
         ...(parsedLng !== null && { 'LONG': parsedLng.toString() }),
-        'FB LINK': updates.fbLink || null,
+        ...(updates.fbLink !== undefined && {
+          [fbGroup === 'NEXIA' ? 'BQ'
+            : fbGroup === 'ADOLF' ? 'BR'
+            : fbGroup === 'PCO' ? 'BS'
+            : fbGroup === 'SLOO' ? 'BT'
+            : fbGroup === 'TAOKE' ? 'BU'
+            : fbGroup === 'LUXE REALTY' ? 'BP'
+            : 'FB LINK']: updates.fbLink || null,
+        }),
       })
       .eq('"GEO ID"', listingId)
       .select('"GEO ID"');
@@ -1045,7 +1053,13 @@ function App() {
         ...(updates.updateDate && { columnBC: `${dateStr} | ${fbGroup && fbGroup !== 'LUXE REALTY' ? fbGroup : (user?.user_metadata?.full_name || user?.email || '')} | LISTING` }),
         ...(parsedLat !== null && { lat: parsedLat }),
         ...(parsedLng !== null && { lng: parsedLng }),
-        facebookLink: updates.fbLink || l.facebookLink,
+        facebookLink: fbGroup === 'KIU REALTY PH' || !fbGroup ? (updates.fbLink || l.facebookLink) : l.facebookLink,
+        postLinkLuxe: fbGroup === 'LUXE REALTY' ? (updates.fbLink || l.postLinkLuxe) : l.postLinkLuxe,
+        postLinkNexia: fbGroup === 'NEXIA' ? (updates.fbLink || l.postLinkNexia) : l.postLinkNexia,
+        postLinkAdolf: fbGroup === 'ADOLF' ? (updates.fbLink || l.postLinkAdolf) : l.postLinkAdolf,
+        postLinkPco: fbGroup === 'PCO' ? (updates.fbLink || l.postLinkPco) : l.postLinkPco,
+        postLinkSloo: fbGroup === 'SLOO' ? (updates.fbLink || l.postLinkSloo) : l.postLinkSloo,
+        postLinkTaoke: fbGroup === 'TAOKE' ? (updates.fbLink || l.postLinkTaoke) : l.postLinkTaoke,
       } : l;
 
     setAllListings(prev => prev.map(updateListing));
