@@ -194,7 +194,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                             'Taoke': listing.postLinkTaoke,
                             'Kiu': listing.facebookLink,
                         };
-                        const url = (fbGroup && groupPostLink[fbGroup]) || listing.facebookLink || '';
+                        const url = (fbGroup && groupPostLink[fbGroup]) || '';
                         if (!url) return null;
                         const socmed = url.includes('instagram.com')
                             ? { icon: <Instagram size={18} />, hover: 'hover:bg-[#E4405F]', title: 'Instagram' }
