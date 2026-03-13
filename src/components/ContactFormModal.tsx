@@ -181,26 +181,18 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
                             )}
 
                             {/* Your Group */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Your Group
-                                </label>
-                                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                            <div className="flex items-center gap-3">
+                                <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Your Group</label>
+                                <div className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
                                     <p className="text-sm text-gray-600">{formData.name}</p>
                                 </div>
                             </div>
 
-
-
                             {/* Selected Listings */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Selected Property
-                                </label>
-                                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                                    <p className="text-sm text-gray-600">
-                                        {selectedListings.join(', ')}
-                                    </p>
+                            <div className="flex items-center gap-3">
+                                <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Selected Property</label>
+                                <div className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                                    <p className="text-sm text-gray-600">{selectedListings.join(', ')}</p>
                                 </div>
                             </div>
 
