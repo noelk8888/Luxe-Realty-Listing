@@ -37,7 +37,6 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
         }
     }, [isOpen, initialSuggestedEdit, fbGroup]);
 
-    const [errors, setErrors] = useState<Record<string, string>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const [isGettingLocation, setIsGettingLocation] = useState(false);
@@ -52,19 +51,7 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
     }, [isOpen]);
 
     const validateForm = (): boolean => {
-        const newErrors: Record<string, string> = {};
-
-        // Name validation
-        if (!formData.name.trim()) {
-            newErrors.name = 'Name is required';
-        }
-
-
-
-
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+        return true;
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -122,7 +109,6 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
             buyerType: 'Direct Buyer',
             additionalQuestions: '',
         });
-        setErrors({});
         setSubmitStatus('idle');
     };
 
