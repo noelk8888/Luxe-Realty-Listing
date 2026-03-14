@@ -969,7 +969,7 @@ function App() {
     salePrice: number;
     leasePrice: number;
     notes: string;
-    updateDate: boolean;
+    updateDate: string | null;
     latLong: string;
     fbLink: string;
   }) => {
@@ -985,9 +985,6 @@ function App() {
     const leaseArea = listing.floorArea > 0 ? listing.floorArea : listing.lotArea;
     const salePricePerSqm = saleArea > 0 && updates.salePrice > 0 ? Math.round(updates.salePrice / saleArea) : 0;
     const leasePricePerSqm = leaseArea > 0 && updates.leasePrice > 0 ? Math.round(updates.leasePrice / leaseArea) : 0;
-
-    const today = new Date();
-    const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
     // Parse lat/long from "lat, long" string
     let parsedLat: number | null = null;
@@ -1012,7 +1009,7 @@ function App() {
         'Extracted Lease Price': updates.leasePrice || null,
         'Lease Price/Sqm': leasePricePerSqm || null,
         'COMMENTS': updates.notes || null,
-        ...(updates.updateDate && { 'DATE UPDATED': `${dateStr} | ${fbGroup && fbGroup !== 'Luxe' ? fbGroup : (user?.user_metadata?.full_name || user?.email || '')} | ${(updates.salePrice !== listing.price || updates.leasePrice !== listing.leasePrice) ? 'PRICE' : 'LISTING'}` }),
+        ...(updates.updateDate && { 'DATE UPDATED': `${updates.updateDate} | ${fbGroup && fbGroup !== 'Luxe' ? fbGroup : (user?.user_metadata?.full_name || user?.email || '')} | ${(updates.salePrice !== listing.price || updates.leasePrice !== listing.leasePrice) ? 'PRICE' : 'LISTING'}` }),
         ...(updates.latLong && { 'LAT LONG': updates.latLong }),
         ...(parsedLat !== null && { 'LAT': parsedLat.toString() }),
         ...(parsedLng !== null && { 'LONG': parsedLng.toString() }),
@@ -1052,7 +1049,7 @@ function App() {
         leasePrice: updates.leasePrice,
         leasePricePerSqm: leasePricePerSqm,
         columnV: updates.notes,
-        ...(updates.updateDate && { columnBC: `${dateStr} | ${fbGroup && fbGroup !== 'Luxe' ? fbGroup : (user?.user_metadata?.full_name || user?.email || '')} | ${(updates.salePrice !== listing.price || updates.leasePrice !== listing.leasePrice) ? 'PRICE' : 'LISTING'}` }),
+        ...(updates.updateDate && { columnBC: `${updates.updateDate} | ${fbGroup && fbGroup !== 'Luxe' ? fbGroup : (user?.user_metadata?.full_name || user?.email || '')} | ${(updates.salePrice !== listing.price || updates.leasePrice !== listing.leasePrice) ? 'PRICE' : 'LISTING'}` }),
         ...(parsedLat !== null && { lat: parsedLat }),
         ...(parsedLng !== null && { lng: parsedLng }),
         facebookLink: fbGroup === 'Kiu' || !fbGroup ? updates.fbLink : l.facebookLink,

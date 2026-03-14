@@ -12,7 +12,7 @@ interface EditListingModalProps {
         salePrice: number;
         leasePrice: number;
         notes: string;
-        updateDate: boolean;
+        updateDate: string | null;
         latLong: string;
         fbLink: string;
     }) => Promise<void>;
@@ -28,6 +28,11 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
     const [leasePrice, setLeasePrice] = useState('');
     const [notes, setNotes] = useState('');
     const [updateDate, setUpdateDate] = useState(false);
+    const todayStr = () => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
+    const [customDate, setCustomDate] = useState(todayStr);
     const [latLong, setLatLong] = useState('');
     const [fbLink, setFbLink] = useState('');
     const [isGettingLocation, setIsGettingLocation] = useState(false);
@@ -44,6 +49,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
             setLeasePrice(listing.leasePrice > 0 ? listing.leasePrice.toString() : '');
             setNotes(listing.columnV || '');
             setUpdateDate(false);
+            setCustomDate(todayStr());
             setLatLong(listing.lat && listing.lng ? `${listing.lat}, ${listing.lng}` : '');
             const groupPostLink: Record<string, string | undefined> = {
                 'Luxe': listing.postLinkLuxe,
@@ -141,7 +147,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                 salePrice: salePriceNum,
                 leasePrice: leasePriceNum,
                 notes: notes.trim(),
-                updateDate,
+                updateDate: updateDate ? customDate : null,
                 latLong: latLong.trim(),
                 fbLink: fbLink.trim(),
             });
@@ -284,18 +290,28 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                     </div>}
 
                     {/* Update Date Toggle */}
-                    {permissions.edit_update_date && <div className="flex items-center justify-between py-2 border-t border-gray-100">
-                        <div>
-                            <p className="text-sm font-bold text-gray-700">Update Date</p>
-                            <p className="text-xs text-gray-400">Set DATE UPDATED to today</p>
+                    {permissions.edit_update_date && <div className="py-2 border-t border-gray-100">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-bold text-gray-700">Update Date</p>
+                                <p className="text-xs text-gray-400">Set DATE UPDATED</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setUpdateDate(prev => !prev)}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${updateDate ? 'bg-blue-600' : 'bg-gray-300'}`}
+                            >
+                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${updateDate ? 'translate-x-6' : 'translate-x-1'}`} />
+                            </button>
                         </div>
-                        <button
-                            type="button"
-                            onClick={() => setUpdateDate(prev => !prev)}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${updateDate ? 'bg-blue-600' : 'bg-gray-300'}`}
-                        >
-                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${updateDate ? 'translate-x-6' : 'translate-x-1'}`} />
-                        </button>
+                        {updateDate && (
+                            <input
+                                type="date"
+                                value={customDate}
+                                onChange={(e) => setCustomDate(e.target.value)}
+                                className="mt-2 w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                        )}
                     </div>}
 
                     {/* Error Message */}
