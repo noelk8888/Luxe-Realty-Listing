@@ -346,12 +346,12 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
 
             <div className="space-y-2 text-sm text-gray-500">
                 <div
-                    className={`flex items-center gap-2 ${listing.photoLink ? 'cursor-pointer' : ''}`}
-                    onClick={listing.photoLink ? handleCopyPhotoLink : undefined}
-                    title={listing.photoLink ? 'Click to copy photo link' : undefined}
+                    className={`flex items-center gap-2 ${listing.photoLink && permissions.copy_photo_link ? 'cursor-pointer' : ''}`}
+                    onClick={listing.photoLink && permissions.copy_photo_link ? handleCopyPhotoLink : undefined}
+                    title={listing.photoLink && permissions.copy_photo_link ? 'Click to copy photo link' : undefined}
                 >
                     <MapPin className={`w-4 h-4 ${isPhotoLinkCopied ? 'text-green-500' : ''}`} />
-                    <span className={`truncate transition-colors ${isPhotoLinkCopied ? 'text-green-600 font-semibold' : listing.photoLink ? 'hover:text-blue-600' : ''}`}>
+                    <span className={`truncate transition-colors ${isPhotoLinkCopied ? 'text-green-600 font-semibold' : listing.photoLink && permissions.copy_photo_link ? 'hover:text-blue-600' : ''}`}>
                         {isPhotoLinkCopied ? 'Photo link copied!' : `${listing.city}, ${listing.province}`}
                     </span>
                 </div>
