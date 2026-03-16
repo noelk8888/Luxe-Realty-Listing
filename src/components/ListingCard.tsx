@@ -69,8 +69,20 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     const handleCopy = (e: React.MouseEvent) => {
         e.stopPropagation();
         if (listing.summary) {
-            const mapsLink = listing.mapLink || (listing.lat && listing.lng ? `https://www.google.com/maps?q=${listing.lat},${listing.lng}` : '');
-            const copyText = mapsLink ? `${listing.summary}\n${mapsLink}` : listing.summary;
+            // Split notes out of summary (summary = mainBody + '\n\n' + columnV)
+            const notes = listing.columnV?.trim() || '';
+            const mainBody = notes && listing.summary.endsWith('\n\n' + notes)
+                ? listing.summary.slice(0, -(notes.length + 2))
+                : listing.summary;
+
+            const mapsLink = listing.mapLink || (listing.lat && listing.lng
+                ? `https://www.google.com/maps/search/?api=1&query=${listing.lat},${listing.lng}`
+                : '');
+
+            let copyText = mainBody;
+            if (mapsLink) copyText += `\nGoogle Map: ${mapsLink}`;
+            if (notes) copyText += `\n\nNOTES: ${notes}`;
+
             navigator.clipboard.writeText(copyText);
             setIsCopied(true);
         }
