@@ -11,6 +11,7 @@ interface EditListingModalProps {
     onSave: (listingId: string, updates: {
         salePrice: number;
         leasePrice: number;
+        monthlyDues: number;
         notes: string;
         updateDate: string | null;
         latLong: string;
@@ -26,6 +27,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
 }) => {
     const [salePrice, setSalePrice] = useState('');
     const [leasePrice, setLeasePrice] = useState('');
+    const [monthlyDues, setMonthlyDues] = useState('');
     const [notes, setNotes] = useState('');
     const [updateDate, setUpdateDate] = useState(false);
     const todayStr = () => {
@@ -47,6 +49,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
         if (listing) {
             setSalePrice(listing.price > 0 ? listing.price.toString() : '');
             setLeasePrice(listing.leasePrice > 0 ? listing.leasePrice.toString() : '');
+            setMonthlyDues(listing.monthlyDues > 0 ? listing.monthlyDues.toString() : '');
             setNotes(listing.columnV || '');
             setUpdateDate(false);
             setCustomDate(todayStr());
@@ -146,6 +149,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
             await onSave(listing.id, {
                 salePrice: salePriceNum,
                 leasePrice: leasePriceNum,
+                monthlyDues: parseNumber(monthlyDues),
                 notes: notes.trim(),
                 updateDate: updateDate ? customDate : null,
                 latLong: latLong.trim(),
@@ -217,6 +221,22 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                                 = P{leasePricePerSqm.toLocaleString()}/sqm
                             </p>
                         )}
+                    </div>
+                    )}
+
+                    {/* Monthly Dues */}
+                    {permissions.view_monthly_dues && (
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                            Monthly Dues (PHP)
+                        </label>
+                        <input
+                            type="text"
+                            value={monthlyDues ? formatNumberInput(monthlyDues) : ''}
+                            onChange={(e) => setMonthlyDues(e.target.value.replace(/,/g, ''))}
+                            placeholder="e.g. 2,682"
+                            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-lg font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
                     </div>
                     )}
 

@@ -968,6 +968,7 @@ function App() {
   const handleListingEdit = async (listingId: string, updates: {
     salePrice: number;
     leasePrice: number;
+    monthlyDues: number;
     notes: string;
     updateDate: string | null;
     latLong: string;
@@ -1008,6 +1009,7 @@ function App() {
         'Sale Price/Sqm': salePricePerSqm || null,
         'Extracted Lease Price': updates.leasePrice || null,
         'Lease Price/Sqm': leasePricePerSqm || null,
+        'MONTHLY DUES': updates.monthlyDues || null,
         'COMMENTS': updates.notes || null,
         ...(updates.updateDate && { 'DATE UPDATED': `${updates.updateDate} | ${fbGroup && fbGroup !== 'Luxe' ? fbGroup : (user?.user_metadata?.full_name || user?.email || '')} | ${(updates.salePrice !== listing.price || updates.leasePrice !== listing.leasePrice) ? 'PRICE' : 'LISTING'}` }),
         ...(updates.latLong && { 'LAT LONG': updates.latLong }),
@@ -1048,6 +1050,7 @@ function App() {
         pricePerSqm: salePricePerSqm,
         leasePrice: updates.leasePrice,
         leasePricePerSqm: leasePricePerSqm,
+        monthlyDues: updates.monthlyDues,
         columnV: updates.notes,
         ...(updates.updateDate && { columnBC: `${updates.updateDate} | ${fbGroup && fbGroup !== 'Luxe' ? fbGroup : (user?.user_metadata?.full_name || user?.email || '')} | ${(updates.salePrice !== listing.price || updates.leasePrice !== listing.leasePrice) ? 'PRICE' : 'LISTING'}` }),
         ...(parsedLat !== null && { lat: parsedLat }),
