@@ -225,7 +225,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                     )}
 
                     {/* Monthly Dues */}
-                    {permissions.view_monthly_dues && (
+                    {permissions.edit_monthly_dues && (
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1.5">
                             Monthly Dues (PHP)
