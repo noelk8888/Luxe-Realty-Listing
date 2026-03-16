@@ -373,7 +373,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         <span>{listing.parking} Parking Slot{listing.parking > 1 ? 's' : ''}</span>
                     </div>
                 )}
-                {listing.monthlyDues > 0 && (
+                {permissions.view_monthly_dues && listing.monthlyDues > 0 && (
                     <div className="flex items-center gap-2">
                         <Receipt className="w-4 h-4" />
                         <span>P{listing.monthlyDues.toLocaleString()} Monthly Dues</span>
