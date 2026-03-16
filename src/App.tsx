@@ -1435,7 +1435,7 @@ function App() {
                     }}
                     className={`relative w-full px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1
                             ${(sortConfig?.key === 'price' || priceRange !== null || (useExactPrice && manualPrice !== ''))
-                        ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
+                        ? 'bg-blue-600 text-white shadow-sm z-10'
                         : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
                       }
                         `}
@@ -1562,7 +1562,7 @@ function App() {
                     }}
                     className={`relative w-full px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1
                         ${(sortConfig?.key === 'pricePerSqm' || pricePerSqmRange !== null || (useExactPricePerSqm && manualPricePerSqm !== ''))
-                        ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
+                        ? 'bg-blue-600 text-white shadow-sm z-10'
                         : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
                       }
                     `}
@@ -1683,7 +1683,7 @@ function App() {
                     }}
                     className={`relative w-full px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1
                         ${(sortConfig?.key === 'lotArea' || lotAreaRange !== null || (useExactLotArea && manualLotArea !== ''))
-                        ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
+                        ? 'bg-blue-600 text-white shadow-sm z-10'
                         : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
                       }
                     `}
@@ -1796,7 +1796,7 @@ function App() {
                     }}
                     className={`relative w-full px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1
                         ${(sortConfig?.key === 'floorArea' || floorAreaRange !== null || (useExactFloorArea && manualFloorArea !== ''))
-                        ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
+                        ? 'bg-blue-600 text-white shadow-sm z-10'
                         : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
                       }
                     `}
@@ -1904,7 +1904,7 @@ function App() {
                     onClick={() => setIsTypeFilterOpen(!isTypeFilterOpen)}
                     className={`relative w-full px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1
                             ${selectedPropertyTypes.length > 0
-                        ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
+                        ? 'bg-blue-600 text-white shadow-sm z-10'
                         : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
                       }
                         `}
@@ -1965,7 +1965,7 @@ function App() {
                     }}
                     className={`relative w-full px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1
                             ${sortConfig?.key === 'bedrooms' || selectedBedrooms.length > 0
-                        ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
+                        ? 'bg-blue-600 text-white shadow-sm z-10'
                         : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
                       }
                         `}
@@ -2037,7 +2037,7 @@ function App() {
                     }}
                     className={`relative w-full px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1
                             ${sortConfig?.key === 'parking' || selectedParking.length > 0
-                        ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5 z-10'
+                        ? 'bg-blue-600 text-white shadow-sm z-10'
                         : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
                       }
                         `}
