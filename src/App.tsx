@@ -739,7 +739,7 @@ function App() {
       const matchesType = selectedPropertyTypes.some(type => {
         if (type === 'TOWNHOUSE') return itemType.includes('TOWNHOUSE') || itemType.includes('TOWN HOUSE');
         if (type === 'WAREHOUSE') return itemType.includes('WAREHOUSE');
-        if (type === 'VACANT LOT') return itemType.includes('VACANT LOT') || itemType.includes('LOT');
+        if (type === 'VACANT LOT') return itemType.includes('VACANT LOT');
         if (type === 'HOUSE AND LOT') return itemType.includes('HOUSE AND LOT') || itemType.includes('HOUSE & LOT');
         if (type === 'CONDO') return itemType.includes('CONDO');
         if (type === 'OFFICE/COMMERCIAL') return itemType.includes('OFFICE') || itemType.includes('COMMERCIAL');
