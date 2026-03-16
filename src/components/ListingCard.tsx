@@ -69,7 +69,9 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     const handleCopy = (e: React.MouseEvent) => {
         e.stopPropagation();
         if (listing.summary) {
-            navigator.clipboard.writeText(listing.summary);
+            const mapsLink = listing.mapLink || (listing.lat && listing.lng ? `https://www.google.com/maps?q=${listing.lat},${listing.lng}` : '');
+            const copyText = mapsLink ? `${listing.summary}\n${mapsLink}` : listing.summary;
+            navigator.clipboard.writeText(copyText);
             setIsCopied(true);
         }
     };
