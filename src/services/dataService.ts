@@ -391,6 +391,6 @@ export const normalizeDbListing = (row: DbListing): Listing => {
         bedrooms: bedrooms,
         parking: parking,
         typeDescription: row['TYPE'] || '',
-        monthlyDues: row['MONTHLY DUES'] ? Number(row['MONTHLY DUES']) : 0,
+        monthlyDues: row['MONTHLY DUES'] ? (parseFloat(String(row['MONTHLY DUES']).replace(/[^0-9.]/g, '')) || 0) : 0,
     };
 };
