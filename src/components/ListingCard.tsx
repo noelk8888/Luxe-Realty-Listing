@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Listing } from '../types';
-import { MapPin, Building, Maximize, ChevronDown, ChevronUp, Bed, Car, Facebook, Instagram, Youtube } from 'lucide-react';
+import { MapPin, Building, Maximize, ChevronDown, ChevronUp, Bed, Car, Facebook, Instagram, Youtube, Receipt } from 'lucide-react';
 import { StatusDropdown } from './StatusDropdown';
 import { usePermissions } from '../contexts/PermissionsContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -371,6 +371,12 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                     <div className="flex items-center gap-2">
                         <Car className="w-4 h-4" />
                         <span>{listing.parking} Parking Slot{listing.parking > 1 ? 's' : ''}</span>
+                    </div>
+                )}
+                {listing.monthlyDues > 0 && (
+                    <div className="flex items-center gap-2">
+                        <Receipt className="w-4 h-4" />
+                        <span>P{listing.monthlyDues.toLocaleString()} Monthly Dues</span>
                     </div>
                 )}
                 <div className="flex items-center gap-2">

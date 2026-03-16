@@ -57,6 +57,7 @@ export interface DbListing {
     'BS': string | null; // PCO post link
     'BT': string | null; // SLOO post link
     'BU': string | null; // TAOKE post link
+    'MONTHLY DUES': number | string | null;
 }
 
 /**
@@ -389,6 +390,7 @@ export const normalizeDbListing = (row: DbListing): Listing => {
         sponsoredUntil: sponsoredUntilDate,
         bedrooms: bedrooms,
         parking: parking,
-        typeDescription: row['TYPE'] || ''
+        typeDescription: row['TYPE'] || '',
+        monthlyDues: row['MONTHLY DUES'] ? Number(row['MONTHLY DUES']) : 0,
     };
 };
