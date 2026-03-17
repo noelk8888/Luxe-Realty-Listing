@@ -54,7 +54,7 @@ export interface Listing {
     bedrooms: number;
     parking: number;
     typeDescription: string;
-    monthlyDues: number;
+    monthlyDues: string;
 }
 
 export interface RawListing {

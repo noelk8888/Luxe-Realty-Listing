@@ -38,7 +38,7 @@ function App() {
   const [selectedType, setSelectedType] = useState<string | null>(null); // Default null (No filter)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null); // 'Residential' | 'Commercial' | 'Industrial' | 'Agricultural' | null
   const [selectedDirect, setSelectedDirect] = useState<boolean>(false);
-  const [showAllListings, setShowAllListings] = useState<boolean>(false);
+  const [showAllListings, setShowAllListings] = useState<boolean>(true);
 
   // Area Filter State
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
@@ -968,7 +968,7 @@ function App() {
   const handleListingEdit = async (listingId: string, updates: {
     salePrice: number;
     leasePrice: number;
-    monthlyDues: number;
+    monthlyDues: string;
     notes: string;
     updateDate: string | null;
     latLong: string;

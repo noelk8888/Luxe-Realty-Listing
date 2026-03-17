@@ -11,7 +11,7 @@ interface EditListingModalProps {
     onSave: (listingId: string, updates: {
         salePrice: number;
         leasePrice: number;
-        monthlyDues: number;
+        monthlyDues: string;
         notes: string;
         updateDate: string | null;
         latLong: string;
@@ -49,7 +49,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
         if (listing) {
             setSalePrice(listing.price > 0 ? listing.price.toString() : '');
             setLeasePrice(listing.leasePrice > 0 ? listing.leasePrice.toString() : '');
-            setMonthlyDues(listing.monthlyDues > 0 ? listing.monthlyDues.toString() : '');
+            setMonthlyDues(listing.monthlyDues || '');
             setNotes(listing.columnV || '');
             setUpdateDate(false);
             setCustomDate(todayStr());
@@ -149,7 +149,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
             await onSave(listing.id, {
                 salePrice: salePriceNum,
                 leasePrice: leasePriceNum,
-                monthlyDues: parseNumber(monthlyDues),
+                monthlyDues: monthlyDues.trim(),
                 notes: notes.trim(),
                 updateDate: updateDate ? customDate : null,
                 latLong: latLong.trim(),
@@ -169,7 +169,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-100">
                     <div>
-                        <h2 className="text-xl font-bold text-gray-900">Edit Listing</h2>
+                        <h2 className="text-xl font-bold text-gray-900">Update Listing</h2>
                         <p className="text-sm text-gray-500 mt-1">{listing.id} - {listing.columnK || listing.building || listing.city}</p>
                     </div>
                     <button
@@ -232,9 +232,9 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                         </label>
                         <input
                             type="text"
-                            value={monthlyDues ? formatNumberInput(monthlyDues) : ''}
-                            onChange={(e) => setMonthlyDues(e.target.value.replace(/,/g, ''))}
-                            placeholder="e.g. 2,682"
+                            value={monthlyDues}
+                            onChange={(e) => setMonthlyDues(e.target.value)}
+                            placeholder="e.g. 2,681.92/month"
                             className="w-full px-4 py-3 border border-gray-200 rounded-xl text-lg font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                     </div>
