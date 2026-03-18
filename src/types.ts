@@ -55,6 +55,7 @@ export interface Listing {
     parking: number;
     typeDescription: string;
     monthlyDues: string;
+    sourceTab: string;
 }
 
 export interface RawListing {

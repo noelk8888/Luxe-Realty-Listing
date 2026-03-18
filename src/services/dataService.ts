@@ -58,6 +58,7 @@ export interface DbListing {
     'BT': string | null; // SLOO post link
     'BU': string | null; // TAOKE post link
     'MONTHLY DUES': number | string | null;
+    'SOURCE_TAB': string | null;
 }
 
 /**
@@ -392,5 +393,6 @@ export const normalizeDbListing = (row: DbListing): Listing => {
         parking: parking,
         typeDescription: row['TYPE'] || '',
         monthlyDues: row['MONTHLY DUES'] ? String(row['MONTHLY DUES']).trim() : '',
+        sourceTab: row['SOURCE_TAB'] || 'Sheet1',
     };
 };

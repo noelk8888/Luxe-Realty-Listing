@@ -486,6 +486,9 @@ function App() {
 
   // Re-run filter and sort when filters change
   const baseFilteredResults = results.filter(item => {
+    // 0a. Sheet2 visibility — only superadmin can see Sheet2 listings
+    if (item.sourceTab === 'Sheet2' && role !== 'superadmin') return false;
+
     // 0. Base Filter (Show All)
     // console.log(`Filtering item: ${item.id}, status: ${item.statusAQ}, showAll: ${showAllListings}`);
     // If showAllListings is false, only show AVAILABLE items
