@@ -1011,7 +1011,16 @@ function App() {
         'Lease Price/Sqm': leasePricePerSqm || null,
         'MONTHLY DUES': updates.monthlyDues || null,
         'COMMENTS': updates.notes || null,
-        ...(updates.updateDate && { 'DATE UPDATED': `${updates.updateDate} | ${fbGroup && fbGroup !== 'Luxe' ? fbGroup : (user?.user_metadata?.full_name || user?.email || '')} | ${(updates.salePrice !== listing.price || updates.leasePrice !== listing.leasePrice) ? 'PRICE' : 'LISTING'}` }),
+        ...(updates.updateDate && (() => {
+          const changeTypes: string[] = [];
+          if (updates.salePrice !== listing.price || updates.leasePrice !== listing.leasePrice) changeTypes.push('PRICE');
+          if (updates.notes.trim() !== (listing.columnV || '').trim()) changeTypes.push('COMMENTS');
+          const locationChanged = !!updates.latLong && parsedLat !== null && parsedLng !== null && (parsedLat !== listing.lat || parsedLng !== listing.lng);
+          if (locationChanged) changeTypes.push('LOCATION');
+          if (changeTypes.length === 0) changeTypes.push('LISTING');
+          const author = fbGroup && fbGroup !== 'Luxe' ? fbGroup : (user?.user_metadata?.full_name || user?.email || '');
+          return { 'DATE UPDATED': `${updates.updateDate} | ${author} | ${changeTypes.join('/')}` };
+        })()),
         ...(updates.latLong && { 'LAT LONG': updates.latLong }),
         ...(parsedLat !== null && { 'LAT': parsedLat.toString() }),
         ...(parsedLng !== null && { 'LONG': parsedLng.toString() }),
