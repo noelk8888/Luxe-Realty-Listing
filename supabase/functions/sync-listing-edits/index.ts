@@ -60,25 +60,6 @@ const TABS = [
       postLinkTaoke: "BU",
     },
   },
-  {
-    name: "SUPABASE",
-    geoIdCol: "D",
-    columns: {
-      salePrice: "T",
-      salePricePerSqm: "U",
-      leasePrice: "V",
-      leasePricePerSqm: "W",
-      monthlyDues: "BB",
-      notes: "X",
-      lotArea: "P",
-      floorArea: "Q",
-      dateUpdated: "BC",
-      latLong: "AF",
-      lat: "AG",
-      long: "AH",
-      fbLink: "A",
-    },
-  },
 ];
 
 // --- Google Auth (Service Account JWT → Access Token) ---

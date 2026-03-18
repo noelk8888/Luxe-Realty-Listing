@@ -6,7 +6,6 @@ const SPREADSHEET_ID = "12Z8X3RmYRBMiihsxf-J0f650Ifj2irxRQsYC64Cgbw0";
 const TABS = [
   { name: "Sheet1", geoIdCol: "AC", statusCol: "AQ" },
   { name: "Sheet2", geoIdCol: "AC", statusCol: "AQ" },
-  { name: "SUPABASE", geoIdCol: "D", statusCol: "R" },
 ];
 
 // --- Google Auth (Service Account JWT → Access Token) ---
