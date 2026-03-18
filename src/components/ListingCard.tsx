@@ -390,7 +390,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                 {listing.monthlyDues && (
                     <div className="flex items-center gap-2">
                         <Receipt className="w-4 h-4" />
-                        <span>P{listing.monthlyDues} Monthly Dues</span>
+                        <span>Monthly Dues: {listing.monthlyDues}</span>
                     </div>
                 )}
                 <div className="flex items-center gap-2">
