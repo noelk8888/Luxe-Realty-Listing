@@ -182,45 +182,63 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="p-6 space-y-5">
+                    {/* Quick action buttons at top */}
+                    <div className="flex gap-3 pb-3 border-b border-gray-100">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex-1 py-2 px-3 bg-gray-100 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-200 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="flex-1 py-2 px-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isSubmitting ? 'Saving...' : 'Save Changes'}
+                        </button>
+                    </div>
+
                     {/* Sale Price */}
                     {permissions.edit_sale_price && (
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                    <div className="flex items-start gap-3">
+                        <label className="text-sm font-bold text-gray-700 whitespace-nowrap pt-3 w-36 shrink-0">
                             Sale Price (PHP)
                         </label>
-                        <input
-                            type="text"
-                            value={salePrice ? formatNumberInput(salePrice) : ''}
-                            onChange={(e) => setSalePrice(e.target.value.replace(/,/g, ''))}
-                            placeholder="e.g. 5,000,000"
-                            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-lg font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                        {salePricePerSqm > 0 && (
-                            <p className="text-xs text-gray-500 mt-1">
-                                = P{salePricePerSqm.toLocaleString()}/sqm
-                            </p>
-                        )}
+                        <div className="flex-1">
+                            <input
+                                type="text"
+                                value={salePrice ? formatNumberInput(salePrice) : ''}
+                                onChange={(e) => setSalePrice(e.target.value.replace(/,/g, ''))}
+                                placeholder="e.g. 5,000,000"
+                                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-lg font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                            {salePricePerSqm > 0 && (
+                                <p className="text-xs text-gray-500 mt-1">= P{salePricePerSqm.toLocaleString()}/sqm</p>
+                            )}
+                        </div>
                     </div>
                     )}
 
                     {/* Lease Price */}
                     {permissions.edit_lease_price && (
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                    <div className="flex items-start gap-3">
+                        <label className="text-sm font-bold text-gray-700 whitespace-nowrap pt-3 w-36 shrink-0">
                             Lease Price (PHP/month)
                         </label>
-                        <input
-                            type="text"
-                            value={leasePrice ? formatNumberInput(leasePrice) : ''}
-                            onChange={(e) => setLeasePrice(e.target.value.replace(/,/g, ''))}
-                            placeholder="e.g. 50,000"
-                            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-lg font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                        {leasePricePerSqm > 0 && (
-                            <p className="text-xs text-gray-500 mt-1">
-                                = P{leasePricePerSqm.toLocaleString()}/sqm
-                            </p>
-                        )}
+                        <div className="flex-1">
+                            <input
+                                type="text"
+                                value={leasePrice ? formatNumberInput(leasePrice) : ''}
+                                onChange={(e) => setLeasePrice(e.target.value.replace(/,/g, ''))}
+                                placeholder="e.g. 50,000"
+                                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-lg font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                            {leasePricePerSqm > 0 && (
+                                <p className="text-xs text-gray-500 mt-1">= P{leasePricePerSqm.toLocaleString()}/sqm</p>
+                            )}
+                        </div>
                     </div>
                     )}
 

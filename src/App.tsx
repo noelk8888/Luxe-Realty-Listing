@@ -1005,6 +1005,35 @@ function App() {
       }
     }
 
+    // Always compute change type annotation
+    const changeTypes: string[] = [];
+    if (updates.salePrice !== listing.price || updates.leasePrice !== listing.leasePrice) changeTypes.push('PRICE');
+    if (updates.notes.trim() !== (listing.columnV || '').trim()) changeTypes.push('COMMENTS');
+    const locationChanged = !!updates.latLong && parsedLat !== null && parsedLng !== null && (parsedLat !== listing.lat || parsedLng !== listing.lng);
+    if (locationChanged) changeTypes.push('LOCATION');
+    if (changeTypes.length === 0) changeTypes.push('LISTING');
+    const author = fbGroup || (user?.user_metadata?.full_name || user?.email || '');
+
+    // Date: use custom date if toggle is ON, else keep existing date from stamp
+    let datePart = '';
+    if (updates.updateDate) {
+      const d = new Date(updates.updateDate + 'T00:00:00');
+      datePart = `${d.toLocaleString('en-US', { month: 'short' })} ${String(d.getDate()).padStart(2, '0')}, ${d.getFullYear()}`;
+    } else if (listing.columnBC) {
+      const existingParts = listing.columnBC.split(' | ');
+      const isOldFmt = /^\d{4}-\d{2}-\d{2}$/.test(existingParts[0]);
+      if (isOldFmt) {
+        const [y, m, dStr] = existingParts[0].split('-').map(Number);
+        const date = new Date(y, m - 1, dStr);
+        datePart = `${date.toLocaleString('en-US', { month: 'short' })} ${String(date.getDate()).padStart(2, '0')}, ${date.getFullYear()}`;
+      } else {
+        datePart = existingParts[0];
+      }
+    }
+    const newStamp = datePart
+      ? `${datePart} | ${changeTypes.join('/')} | ${author}`
+      : `${changeTypes.join('/')} | ${author}`;
+
     const { data, error } = await supabase
       .from('KIU Properties')
       .update({
@@ -1014,18 +1043,7 @@ function App() {
         'Lease Price/Sqm': leasePricePerSqm || null,
         'MONTHLY DUES': updates.monthlyDues || null,
         'COMMENTS': updates.notes || null,
-        ...(updates.updateDate && (() => {
-          const changeTypes: string[] = [];
-          if (updates.salePrice !== listing.price || updates.leasePrice !== listing.leasePrice) changeTypes.push('PRICE');
-          if (updates.notes.trim() !== (listing.columnV || '').trim()) changeTypes.push('COMMENTS');
-          const locationChanged = !!updates.latLong && parsedLat !== null && parsedLng !== null && (parsedLat !== listing.lat || parsedLng !== listing.lng);
-          if (locationChanged) changeTypes.push('LOCATION');
-          if (changeTypes.length === 0) changeTypes.push('LISTING');
-          const author = fbGroup || (user?.user_metadata?.full_name || user?.email || '');
-          const d = new Date(updates.updateDate + 'T00:00:00');
-          const formattedDate = `${d.toLocaleString('en-US', { month: 'short' })} ${String(d.getDate()).padStart(2, '0')}, ${d.getFullYear()}`;
-          return { 'DATE UPDATED': `${formattedDate} | ${changeTypes.join('/')} | ${author}` };
-        })()),
+        'DATE UPDATED': newStamp,
         ...(updates.latLong && { 'LAT LONG': updates.latLong }),
         ...(parsedLat !== null && { 'LAT': parsedLat.toString() }),
         ...(parsedLng !== null && { 'LONG': parsedLng.toString() }),
@@ -1066,18 +1084,7 @@ function App() {
         leasePricePerSqm: leasePricePerSqm,
         monthlyDues: updates.monthlyDues,
         columnV: updates.notes,
-        ...(updates.updateDate && (() => {
-          const changeTypes: string[] = [];
-          if (updates.salePrice !== listing.price || updates.leasePrice !== listing.leasePrice) changeTypes.push('PRICE');
-          if (updates.notes.trim() !== (listing.columnV || '').trim()) changeTypes.push('COMMENTS');
-          const locationChanged = !!updates.latLong && parsedLat !== null && parsedLng !== null && (parsedLat !== listing.lat || parsedLng !== listing.lng);
-          if (locationChanged) changeTypes.push('LOCATION');
-          if (changeTypes.length === 0) changeTypes.push('LISTING');
-          const author = fbGroup || (user?.user_metadata?.full_name || user?.email || '');
-          const d = new Date(updates.updateDate + 'T00:00:00');
-          const formattedDate = `${d.toLocaleString('en-US', { month: 'short' })} ${String(d.getDate()).padStart(2, '0')}, ${d.getFullYear()}`;
-          return { columnBC: `${formattedDate} | ${changeTypes.join('/')} | ${author}` };
-        })()),
+        columnBC: newStamp,
         ...(parsedLat !== null && { lat: parsedLat }),
         ...(parsedLng !== null && { lng: parsedLng }),
         facebookLink: fbGroup === 'Kiu' || !fbGroup ? updates.fbLink : l.facebookLink,
