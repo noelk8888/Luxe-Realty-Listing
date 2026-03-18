@@ -5,6 +5,7 @@ const SPREADSHEET_ID = "1OYk_LGiLYb_ayGoVJ-tistDias2VdETdR60SP5ALBlo";
 // Tab configs: where GEO ID and STATUS live in each tab
 const TABS = [
   { name: "Sheet1", geoIdCol: "AC", statusCol: "AQ" },
+  { name: "Sheet2", geoIdCol: "AC", statusCol: "AQ" },
   { name: "SUPABASE", geoIdCol: "D", statusCol: "R" },
 ];
 
