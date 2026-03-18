@@ -924,7 +924,7 @@ function App() {
 
     const today = new Date();
     const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    const authorName = fbGroup && fbGroup !== 'Luxe' ? fbGroup : (user?.user_metadata?.full_name || user?.email || '');
+    const authorName = fbGroup || (user?.user_metadata?.full_name || user?.email || '');
     const dateUpdated = `${dateStr} | ${authorName} | STATUS`.trim();
 
     const { data, error } = await supabase
@@ -1018,7 +1018,7 @@ function App() {
           const locationChanged = !!updates.latLong && parsedLat !== null && parsedLng !== null && (parsedLat !== listing.lat || parsedLng !== listing.lng);
           if (locationChanged) changeTypes.push('LOCATION');
           if (changeTypes.length === 0) changeTypes.push('LISTING');
-          const author = fbGroup && fbGroup !== 'Luxe' ? fbGroup : (user?.user_metadata?.full_name || user?.email || '');
+          const author = fbGroup || (user?.user_metadata?.full_name || user?.email || '');
           const d = new Date(updates.updateDate + 'T00:00:00');
           const formattedDate = `${d.toLocaleString('en-US', { month: 'short' })} ${String(d.getDate()).padStart(2, '0')}, ${d.getFullYear()}`;
           return { 'DATE UPDATED': `${formattedDate} | ${changeTypes.join('/')} | ${author}` };
@@ -1070,7 +1070,7 @@ function App() {
           const locationChanged = !!updates.latLong && parsedLat !== null && parsedLng !== null && (parsedLat !== listing.lat || parsedLng !== listing.lng);
           if (locationChanged) changeTypes.push('LOCATION');
           if (changeTypes.length === 0) changeTypes.push('LISTING');
-          const author = fbGroup && fbGroup !== 'Luxe' ? fbGroup : (user?.user_metadata?.full_name || user?.email || '');
+          const author = fbGroup || (user?.user_metadata?.full_name || user?.email || '');
           const d = new Date(updates.updateDate + 'T00:00:00');
           const formattedDate = `${d.toLocaleString('en-US', { month: 'short' })} ${String(d.getDate()).padStart(2, '0')}, ${d.getFullYear()}`;
           return { columnBC: `${formattedDate} | ${changeTypes.join('/')} | ${author}` };
