@@ -25,6 +25,7 @@ const TABS = [
       latLong: "BE",
       lat: "BF",
       long: "BG",
+      monthlyDues: "BB",
       fbLink: "Z",
       postLinkLuxe: "BP",
       postLinkNexia: "BQ",
@@ -49,6 +50,7 @@ const TABS = [
       latLong: "BE",
       lat: "BF",
       long: "BG",
+      monthlyDues: "BB",
       fbLink: "Z",
       postLinkLuxe: "BP",
       postLinkNexia: "BQ",
@@ -66,10 +68,11 @@ const TABS = [
       salePricePerSqm: "U",
       leasePrice: "V",
       leasePricePerSqm: "W",
+      monthlyDues: "BB",
       notes: "X",
       lotArea: "P",
       floorArea: "Q",
-      dateUpdated: "AD",
+      dateUpdated: "BC",
       latLong: "AF",
       lat: "AG",
       long: "AH",
@@ -231,6 +234,7 @@ serve(async (req) => {
       { db: "LAT LONG", key: "latLong" },
       { db: "LAT", key: "lat" },
       { db: "LONG", key: "long" },
+      { db: "MONTHLY DUES", key: "monthlyDues" },
       { db: "FB LINK", key: "fbLink" },
       { db: "BP", key: "postLinkLuxe" },
       { db: "BQ", key: "postLinkNexia" },
@@ -355,6 +359,13 @@ serve(async (req) => {
         updates.push({
           range: `${tab.name}!${tab.columns.long}${rowIndex}`,
           values: [[record["LONG"] ?? ""]],
+        });
+      }
+
+      if (changedFields.includes("monthlyDues") && tab.columns.monthlyDues) {
+        updates.push({
+          range: `${tab.name}!${tab.columns.monthlyDues}${rowIndex}`,
+          values: [[record["MONTHLY DUES"] ?? ""]],
         });
       }
 
