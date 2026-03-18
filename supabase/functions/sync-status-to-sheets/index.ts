@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
-const SPREADSHEET_ID = "1OYk_LGiLYb_ayGoVJ-tistDias2VdETdR60SP5ALBlo";
+const SPREADSHEET_ID = "12Z8X3RmYRBMiihsxf-J0f650Ifj2irxRQsYC64Cgbw0";
 
 // Tab configs: where GEO ID and STATUS live in each tab
 const TABS = [
