@@ -323,6 +323,14 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                         {mapVerified ? (
                             <p className="text-xs text-green-600 font-medium mt-1">
                                 {(() => {
+                                    if (mapVerified.includes('Location Verified by')) {
+                                        const match = mapVerified.match(/Location Verified by (.*?) on (.*)/);
+                                        if (match) {
+                                            const group = match[1];
+                                            const date = match[2].split('T')[0];
+                                            return `Verified by ${group} on ${date}`;
+                                        }
+                                    }
                                     const parts = mapVerified.split(' | ');
                                     const date = parts[0];
                                     const group = parts[1] || 'System';

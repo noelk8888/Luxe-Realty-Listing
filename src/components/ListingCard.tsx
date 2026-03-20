@@ -448,7 +448,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                             onClick={(e) => e.stopPropagation()}
                             className="flex-1 text-center py-2 bg-blue-50 text-blue-600 rounded-lg text-[10px] sm:text-xs font-bold hover:bg-blue-100 transition-colors uppercase tracking-wider"
                         >
-                            G-MAP
+                            {listing.mapVerified ? 'MAP (V)' : 'MAP'}
                         </a>
                     ) : (
                         <button
@@ -458,7 +458,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                             }}
                             className="flex-1 text-center py-2 bg-gray-100 text-gray-400 rounded-lg text-[10px] sm:text-xs font-bold cursor-not-allowed uppercase tracking-wider"
                         >
-                            G-MAP
+                            {listing.mapVerified ? 'MAP (V)' : 'MAP'}
                         </button>
                     )
                 ) : null}
