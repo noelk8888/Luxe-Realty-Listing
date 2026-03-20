@@ -1061,9 +1061,10 @@ function App() {
         'MONTHLY DUES': updates.monthlyDues || null,
         'COMMENTS': updates.notes || null,
         'DATE UPDATED': newStamp,
-        ...(updates.latLong && { 'LAT LONG': updates.latLong }),
-        ...(parsedLat !== null && { 'LAT': parsedLat.toString() }),
-        ...(parsedLng !== null && { 'LONG': parsedLng.toString() }),
+        'LAT LONG': updates.latLong || listing.latLong || null,
+        'LAT': parsedLat !== null ? parsedLat.toString() : (listing.lat?.toString() || null),
+        'LONG': parsedLng !== null ? parsedLng.toString() : (listing.lng?.toString() || null),
+        'MAP VERIFIED': updates.mapVerified !== undefined ? (updates.mapVerified || null) : (listing.mapVerified || null),
         ...(updates.fbLink !== undefined && {
           [fbGroup === 'Nexia' ? 'BQ'
             : fbGroup === 'Adolf' ? 'BR'
@@ -1073,7 +1074,6 @@ function App() {
             : fbGroup === 'Luxe' ? 'BP'
             : 'FB LINK']: updates.fbLink || null,
         }),
-        ...(updates.mapVerified !== undefined && { 'MAP VERIFIED': updates.mapVerified || null }),
       })
       .eq('"GEO ID"', listingId)
       .select('"GEO ID"');
@@ -1087,9 +1087,8 @@ function App() {
 
     // data.length === 0 can happen when RLS allows UPDATE but restricts SELECT on the result.
     // The DB was still updated, so proceed with optimistic local state update.
-    if (data === null) {
-      console.warn('No rows updated — check RLS policies or listing ID');
-      throw new Error('Update failed: no matching listing found or permission denied.');
+    if (error === null && !data) {
+       console.warn('No data returned from update, but no error reported.');
     }
 
     // Update local state
