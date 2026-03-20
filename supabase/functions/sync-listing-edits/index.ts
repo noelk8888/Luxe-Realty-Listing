@@ -411,6 +411,13 @@ serve(async (req) => {
           range: `${tab.name}!${tab.columns.mapVerified}${rowIndex}`, 
           values: [[getColValue(record, "MAP VERIFIED") ?? ""]] 
         });
+      } else if (tab.columns.mapVerified && changedFields.length > 0) {
+        // DIAGNOSTIC: If MAP VERIFIED is missing from the payload, try to write a test value
+        // to see if the column is reachable at all.
+        const testVal = getColValue(record, "MAP VERIFIED");
+        if (testVal === undefined) {
+           console.log(`Diagnostic: MAP VERIFIED missing from payload, Column ${tab.columns.mapVerified} would be skipped.`);
+        }
       }
 
       if (updates.length > 0) {

@@ -1061,7 +1061,7 @@ function App() {
         'MONTHLY DUES': updates.monthlyDues || null,
         'COMMENTS': updates.notes || null,
         'DATE UPDATED': newStamp,
-        'LAT LONG': updates.latLong || (listing.lat && listing.lng ? `${listing.lat}, ${listing.lng}` : null),
+        'LAT LONG': updates.latLong || listing.latLong || null,
         'LAT': parsedLat !== null ? parsedLat.toString() : (listing.lat?.toString() || null),
         'LONG': parsedLng !== null ? parsedLng.toString() : (listing.lng?.toString() || null),
         'MAP VERIFIED': updates.mapVerified !== undefined ? (updates.mapVerified || null) : (listing.mapVerified || null),

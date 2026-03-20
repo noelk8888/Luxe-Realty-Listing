@@ -57,6 +57,7 @@ export interface Listing {
     monthlyDues: string;
     sourceTab: string;
     mapVerified?: string;
+    latLong?: string;
 }
 
 export interface RawListing {
