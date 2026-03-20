@@ -195,15 +195,18 @@ serve(async (req) => {
     const record = body.record ?? body;
     const oldRecord = body.old_record ?? {};
 
-    console.log("Record keys:", Object.keys(record).join(", "));
-    console.log("Old record keys:", Object.keys(oldRecord).join(", "));
-
     const getColValue = (obj: any, colName: string) => {
+      if (obj === null || obj === undefined) return undefined;
       if (obj[colName] !== undefined) return obj[colName];
-      // Fallback to lowercase/underscore variants
-      const normalized = colName.toLowerCase().replace(/\s+/g, '_');
-      const normalizedSpace = colName.toLowerCase();
-      return obj[normalized] !== undefined ? obj[normalized] : obj[normalizedSpace];
+      
+      // Fallback: Case-insensitive search across all keys
+      const searchKey = colName.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
+      const actualKey = Object.keys(obj).find(k => 
+        k.toLowerCase().replace(/\s+/g, '').replace(/_/g, '') === searchKey
+      );
+      
+      if (actualKey) return obj[actualKey];
+      return undefined;
     };
 
     const geoId = getColValue(record, "GEO ID");
@@ -394,8 +397,10 @@ serve(async (req) => {
         updates.push({ range: `${tab.name}!${tab.columns.postLinkTaoke}${rowIndex}`, values: [[record["BU"] ?? ""]] });
       }
       if (changedFields.includes("mapVerified") && tab.columns.mapVerified) {
-        const val = getColValue(record, "MAP VERIFIED");
-        updates.push({ range: `${tab.name}!${tab.columns.mapVerified}${rowIndex}`, values: [[val ?? ""]] });
+        updates.push({ 
+          range: `${tab.name}!${tab.columns.mapVerified}${rowIndex}`, 
+          values: [[getColValue(record, "MAP VERIFIED") ?? ""]] 
+        });
       }
 
       if (updates.length > 0) {
