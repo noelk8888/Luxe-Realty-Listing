@@ -195,6 +195,13 @@ serve(async (req) => {
     const record = body.record ?? body;
     const oldRecord = body.old_record ?? {};
 
+    // Exhaustive logging
+    console.log("--- START PAYLOAD DIAGNOSTIC ---");
+    Object.keys(record).forEach(key => {
+      console.log(`Key: [${key}] Value: [${record[key]}]`);
+    });
+    console.log("--- END PAYLOAD DIAGNOSTIC ---");
+
     const getColValue = (obj: any, colName: string) => {
       if (obj === null || obj === undefined) return undefined;
       if (obj[colName] !== undefined) return obj[colName];
@@ -205,7 +212,10 @@ serve(async (req) => {
         k.toLowerCase().replace(/\s+/g, '').replace(/_/g, '') === searchKey
       );
       
-      if (actualKey) return obj[actualKey];
+      if (actualKey) {
+        console.log(`Found match for ${colName} using key: [${actualKey}]`);
+        return obj[actualKey];
+      }
       return undefined;
     };
 
