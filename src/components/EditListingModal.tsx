@@ -122,6 +122,25 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
         return null;
     })();
 
+    // Auto-clear verification if coordinates change
+    useEffect(() => {
+        if (!listing) return;
+        
+        const currentCoords = latLong.trim().split(',').map(s => s.trim()).filter(Boolean);
+        if (currentCoords.length === 2) {
+            const originalLat = listing.lat?.toString().trim();
+            const originalLng = listing.lng?.toString().trim();
+            
+            // Compare normalized strings
+            const latChanged = currentCoords[0] !== originalLat && parseFloat(currentCoords[0]) !== parseFloat(originalLat || '');
+            const lngChanged = currentCoords[1] !== originalLng && parseFloat(currentCoords[1]) !== parseFloat(originalLng || '');
+            
+            if (latChanged || lngChanged) {
+                setMapVerified('');
+            }
+        }
+    }, [latLong, listing]);
+
     const handleGetLocation = () => {
         if (!navigator.geolocation) {
             setLocationError('Geolocation not supported by this browser');
