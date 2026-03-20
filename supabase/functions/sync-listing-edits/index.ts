@@ -195,7 +195,18 @@ serve(async (req) => {
     const record = body.record ?? body;
     const oldRecord = body.old_record ?? {};
 
-    const geoId = record["GEO ID"];
+    console.log("Record keys:", Object.keys(record).join(", "));
+    console.log("Old record keys:", Object.keys(oldRecord).join(", "));
+
+    const getColValue = (obj: any, colName: string) => {
+      if (obj[colName] !== undefined) return obj[colName];
+      // Fallback to lowercase/underscore variants
+      const normalized = colName.toLowerCase().replace(/\s+/g, '_');
+      const normalizedSpace = colName.toLowerCase();
+      return obj[normalized] !== undefined ? obj[normalized] : obj[normalizedSpace];
+    };
+
+    const geoId = getColValue(record, "GEO ID");
 
     if (!geoId) {
       console.log("Missing GEO ID in payload");
@@ -229,10 +240,11 @@ serve(async (req) => {
     ];
 
     for (const field of fieldMappings) {
-      const newVal = record[field.db] !== undefined ? record[field.db] : (field.db === "MAP VERIFIED" ? record["map_verified"] : undefined);
-      const oldVal = oldRecord[field.db] !== undefined ? oldRecord[field.db] : (field.db === "MAP VERIFIED" ? oldRecord["map_verified"] : undefined);
+      const newVal = getColValue(record, field.db);
+      const oldVal = getColValue(oldRecord, field.db);
       
       if (newVal !== oldVal) {
+        console.log(`Field changed: ${field.db} (${oldVal} -> ${newVal})`);
         changedFields.push(field.key);
       }
     }
@@ -324,47 +336,47 @@ serve(async (req) => {
       if (changedFields.includes("dateUpdated")) {
         updates.push({
           range: `${tab.name}!${tab.columns.dateUpdated}${rowIndex}`,
-          values: [[record["DATE UPDATED"] ?? ""]],
+          values: [[getColValue(record, "DATE UPDATED") ?? ""]],
         });
       }
 
       if (changedFields.includes("latLong")) {
         updates.push({
           range: `${tab.name}!${tab.columns.latLong}${rowIndex}`,
-          values: [[record["LAT LONG"] ?? ""]],
+          values: [[getColValue(record, "LAT LONG") ?? ""]],
         });
       }
 
       if (changedFields.includes("lat")) {
         updates.push({
           range: `${tab.name}!${tab.columns.lat}${rowIndex}`,
-          values: [[record["LAT"] ?? ""]],
+          values: [[getColValue(record, "LAT") ?? ""]],
         });
       }
 
       if (changedFields.includes("long")) {
         updates.push({
           range: `${tab.name}!${tab.columns.long}${rowIndex}`,
-          values: [[record["LONG"] ?? ""]],
+          values: [[getColValue(record, "LONG") ?? ""]],
         });
       }
 
       if (changedFields.includes("monthlyDues") && tab.columns.monthlyDues) {
         updates.push({
           range: `${tab.name}!${tab.columns.monthlyDues}${rowIndex}`,
-          values: [[record["MONTHLY DUES"] ?? ""]],
+          values: [[getColValue(record, "MONTHLY DUES") ?? ""]],
         });
       }
 
       if (changedFields.includes("fbLink")) {
         updates.push({
           range: `${tab.name}!${tab.columns.fbLink}${rowIndex}`,
-          values: [[record["FB LINK"] ?? ""]],
+          values: [[getColValue(record, "FB LINK") ?? ""]],
         });
       }
 
       if (changedFields.includes("postLinkLuxe") && tab.columns.postLinkLuxe) {
-        updates.push({ range: `${tab.name}!${tab.columns.postLinkLuxe}${rowIndex}`, values: [[record["BP"] ?? ""]] });
+        updates.push({ range: `${tab.name}!${tab.columns.postLinkLuxe}${rowIndex}`, values: [[getColValue(record, "BP") ?? ""]] });
       }
       if (changedFields.includes("postLinkNexia") && tab.columns.postLinkNexia) {
         updates.push({ range: `${tab.name}!${tab.columns.postLinkNexia}${rowIndex}`, values: [[record["BQ"] ?? ""]] });
@@ -382,7 +394,7 @@ serve(async (req) => {
         updates.push({ range: `${tab.name}!${tab.columns.postLinkTaoke}${rowIndex}`, values: [[record["BU"] ?? ""]] });
       }
       if (changedFields.includes("mapVerified") && tab.columns.mapVerified) {
-        const val = record["MAP VERIFIED"] !== undefined ? record["MAP VERIFIED"] : record["map_verified"];
+        const val = getColValue(record, "MAP VERIFIED");
         updates.push({ range: `${tab.name}!${tab.columns.mapVerified}${rowIndex}`, values: [[val ?? ""]] });
       }
 
