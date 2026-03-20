@@ -284,6 +284,37 @@ serve(async (req) => {
     const token = await getAccessToken(email, privateKey);
     console.log("Got Google access token");
 
+    // Read MAP VERIFIED directly from Supabase (webhook may not include it)
+    let mapVerifiedValue = getColValue(record, "MAP VERIFIED");
+    if (mapVerifiedValue === undefined) {
+      try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+        const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+        const dbRes = await fetch(
+          `${supabaseUrl}/rest/v1/KIU%20Properties?select=%22MAP%20VERIFIED%22&%22GEO%20ID%22=eq.${encodeURIComponent(geoId)}`,
+          {
+            headers: {
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`,
+            },
+          }
+        );
+        if (dbRes.ok) {
+          const rows = await dbRes.json();
+          if (rows.length > 0) {
+            mapVerifiedValue = rows[0]["MAP VERIFIED"] ?? "";
+            console.log(`Read MAP VERIFIED from Supabase: [${mapVerifiedValue}]`);
+          }
+        } else {
+          console.warn("Failed to read MAP VERIFIED from Supabase:", await dbRes.text());
+        }
+      } catch (e) {
+        console.warn("Error reading MAP VERIFIED from Supabase:", e);
+      }
+    } else {
+      console.log(`MAP VERIFIED from webhook payload: [${mapVerifiedValue}]`);
+    }
+
     // Update each tab
     for (const tab of TABS) {
       console.log(`Processing tab: ${tab.name}`);
@@ -406,11 +437,12 @@ serve(async (req) => {
       if (changedFields.includes("postLinkTaoke") && tab.columns.postLinkTaoke) {
         updates.push({ range: `${tab.name}!${tab.columns.postLinkTaoke}${rowIndex}`, values: [[record["BU"] ?? ""]] });
       }
-      // ALWAYS SYNC VERIFICATION: If any field changed, sync Column BV to match Supabase
+      // ALWAYS SYNC VERIFICATION: Use the value fetched from Supabase DB
       if (tab.columns.mapVerified && changedFields.length > 0) {
+        console.log(`Writing MAP VERIFIED to ${tab.name}!${tab.columns.mapVerified}${rowIndex}: [${mapVerifiedValue ?? ""}]`);
         updates.push({ 
           range: `${tab.name}!${tab.columns.mapVerified}${rowIndex}`, 
-          values: [[getColValue(record, "MAP VERIFIED") ?? ""]] 
+          values: [[mapVerifiedValue ?? ""]] 
         });
       }
 
