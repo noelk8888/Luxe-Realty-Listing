@@ -286,27 +286,35 @@ serve(async (req) => {
 
     // Read MAP VERIFIED directly from Supabase (webhook may not include it)
     let mapVerifiedValue = getColValue(record, "MAP VERIFIED");
-    if (mapVerifiedValue === undefined) {
+    console.log(`MAP VERIFIED from webhook: [${mapVerifiedValue}] (type: ${typeof mapVerifiedValue})`);
+    if (mapVerifiedValue === undefined || mapVerifiedValue === null) {
       try {
         const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
         const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+        console.log(`Supabase URL: [${supabaseUrl ? "SET" : "EMPTY"}], Key: [${supabaseKey ? "SET" : "EMPTY"}]`);
+        const queryUrl = `${supabaseUrl}/rest/v1/KIU Properties?select=MAP VERIFIED&GEO ID=eq.${geoId}`;
+        console.log(`Fetching MAP VERIFIED from DB for GEO ID: ${geoId}`);
         const dbRes = await fetch(
-          `${supabaseUrl}/rest/v1/KIU%20Properties?select=%22MAP%20VERIFIED%22&%22GEO%20ID%22=eq.${encodeURIComponent(geoId)}`,
+          queryUrl,
           {
             headers: {
               "apikey": supabaseKey,
               "Authorization": `Bearer ${supabaseKey}`,
+              "Accept": "application/json",
             },
           }
         );
+        console.log(`DB response status: ${dbRes.status}`);
         if (dbRes.ok) {
           const rows = await dbRes.json();
+          console.log(`DB rows returned: ${rows.length}, data: ${JSON.stringify(rows)}`);
           if (rows.length > 0) {
             mapVerifiedValue = rows[0]["MAP VERIFIED"] ?? "";
-            console.log(`Read MAP VERIFIED from Supabase: [${mapVerifiedValue}]`);
+            console.log(`Read MAP VERIFIED from Supabase DB: [${mapVerifiedValue}]`);
           }
         } else {
-          console.warn("Failed to read MAP VERIFIED from Supabase:", await dbRes.text());
+          const errText = await dbRes.text();
+          console.warn(`Failed to read MAP VERIFIED from Supabase (${dbRes.status}): ${errText}`);
         }
       } catch (e) {
         console.warn("Error reading MAP VERIFIED from Supabase:", e);
