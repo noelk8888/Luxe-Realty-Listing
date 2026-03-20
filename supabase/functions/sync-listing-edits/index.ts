@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
-const SPREADSHEET_ID = "12Z8X3RmYRBMiihsxf-J0f650Ifj2irxRQsYC64Cgbw0";
-const SPREADSHEET_ID_BACKUP = "1jK5Sv4OO-6RHZhXITQd-S_kQxthZDiBzGcCZPelNGOw";
+const SPREADSHEET_ID = Deno.env.get("SPREADSHEET_ID") || "12Z8X3RmYRBMiihsxf-J0f650Ifj2irxRQsYC64Cgbw0";
+const SPREADSHEET_ID_BACKUP = Deno.env.get("BACKUP_SPREADSHEET_ID") || "1jK5Sv4OO-6RHZhXITQd-S_kQxthZDiBzGcCZPelNGOw";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
