@@ -56,6 +56,7 @@ export interface Listing {
     typeDescription: string;
     monthlyDues: string;
     sourceTab: string;
+    mapVerified?: string;
 }
 
 export interface RawListing {

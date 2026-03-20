@@ -16,6 +16,8 @@ interface EditListingModalProps {
         updateDate: string | null;
         latLong: string;
         fbLink: string;
+        mapVerified: string;
+        sourceTab?: string;
     }) => Promise<void>;
 }
 
@@ -39,8 +41,9 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
     const [fbLink, setFbLink] = useState('');
     const [isGettingLocation, setIsGettingLocation] = useState(false);
     const [locationError, setLocationError] = useState<string | null>(null);
+    const [mapVerified, setMapVerified] = useState('');
     const { permissions } = usePermissions();
-    const { fbGroup } = useAuth();
+    const { fbGroup, user } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -64,6 +67,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                 'Kiu': listing.facebookLink,
             };
             setFbLink((fbGroup ? groupPostLink[fbGroup] : listing.facebookLink) || '');
+            setMapVerified(listing.mapVerified || '');
             setLocationError(null);
             setError(null);
         }
@@ -154,6 +158,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                 updateDate: updateDate ? customDate : null,
                 latLong: latLong.trim(),
                 fbLink: fbLink.trim(),
+                mapVerified: mapVerified.trim(),
             });
             onClose();
         } catch (err) {
@@ -302,12 +307,33 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                                 HERE
                             </button>
                             )}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const dateStr = todayStr();
+                                    const author = fbGroup || (user?.user_metadata?.full_name || user?.email || 'System');
+                                    setMapVerified(`${dateStr} | ${author}`);
+                                }}
+                                className="px-4 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors whitespace-nowrap"
+                                title="Mark coordinates as verified"
+                            >
+                                VERIFIED
+                            </button>
                         </div>
-                        {parsedCoords && (
+                        {mapVerified ? (
+                            <p className="text-xs text-green-600 font-medium mt-1">
+                                {(() => {
+                                    const parts = mapVerified.split(' | ');
+                                    const date = parts[0];
+                                    const group = parts[1] || 'System';
+                                    return `Verified by ${group} on ${date}`;
+                                })()}
+                            </p>
+                        ) : parsedCoords ? (
                             <p className="text-xs text-gray-500 mt-1">
                                 LAT: {parsedCoords.lat} &nbsp;|&nbsp; LONG: {parsedCoords.lng}
                             </p>
-                        )}
+                        ) : null}
                         {locationError && (
                             <p className="text-xs text-red-500 mt-1">{locationError}</p>
                         )}

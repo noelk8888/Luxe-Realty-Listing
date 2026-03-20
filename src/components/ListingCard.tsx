@@ -57,10 +57,11 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         if (!dateString) return '';
         try {
             const date = new Date(dateString);
+            if (isNaN(date.getTime())) return dateString;
             const year = date.getFullYear();
             const month = date.toLocaleString('en-US', { month: 'short' });
             const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
+            return `${month} ${day}, ${year}`;
         } catch {
             return dateString;
         }
@@ -515,14 +516,50 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             {permissions.view_last_update && listing.columnBC && !isPopupView && (() => {
                 const parts = listing.columnBC.split(' | ');
                 const isOldFormat = /^\d{4}-\d{2}-\d{2}$/.test(parts[0]);
-                const [datePart, typePart, userPart] = isOldFormat
-                    ? [parts[0], parts[2], parts[1]]
-                    : [parts[0], parts[1], parts[2]];
-                const displayDate = isOldFormat ? formatDate(datePart) : datePart;
-                const label = typePart?.includes('STATUS') ? 'Status Update'
-                    : typePart?.includes('PRICE') ? 'Price Update'
-                    : typePart?.includes('COMMENTS') ? 'Comments Update'
-                    : typePart?.includes('LOCATION') ? 'Location Update'
+                
+                // Robust part extraction
+                let datePart = parts[0] || '';
+                let typePart = '';
+                let userPart = '';
+                
+                if (isOldFormat) {
+                    // Old: YYYY-MM-DD | User | Type (usually STATUS)
+                    typePart = parts[2] || '';
+                    userPart = parts[1] || '';
+                } else {
+                    // New: MMM DD, YYYY | Type/Type | User
+                    // Or: Type/Type | User (if date failed to generate)
+                    if (parts.length === 3) {
+                        typePart = parts[1];
+                        userPart = parts[2];
+                    } else if (parts.length === 2) {
+                        // Check if first part looks like a date
+                        const hasMonth = /Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/i.test(parts[0]);
+                        if (hasMonth) {
+                            typePart = parts[1];
+                        } else {
+                            // Format: Type/Type | User
+                            typePart = parts[0];
+                            userPart = parts[1];
+                            datePart = '';
+                        }
+                    } else if (parts.length === 1) {
+                        typePart = parts[0];
+                    }
+                }
+
+                const displayDate = formatDate(datePart);
+                const labels: string[] = [];
+                const upperType = typePart?.toUpperCase() || '';
+                
+                if (upperType.includes('STATUS')) labels.push('Status');
+                if (upperType.includes('PRICE')) labels.push('Price');
+                if (upperType.includes('LOCATION')) labels.push('Location');
+                if (upperType.includes('COMMENTS')) labels.push('Comments');
+                if (upperType.includes('LISTING')) labels.push('Listing');
+
+                const label = labels.length > 0
+                    ? `${labels.join('/')} Update`
                     : 'Listing Update';
                 return (
                     <div className="mt-2 text-xs text-black text-center">

@@ -59,6 +59,7 @@ export interface DbListing {
     'BU': string | null; // TAOKE post link
     'MONTHLY DUES': number | string | null;
     'SOURCE_TAB': string | null;
+    'MAP VERIFIED': string | null;
 }
 
 /**
@@ -394,5 +395,6 @@ export const normalizeDbListing = (row: DbListing): Listing => {
         typeDescription: row['TYPE'] || '',
         monthlyDues: row['MONTHLY DUES'] ? String(row['MONTHLY DUES']).trim() : '',
         sourceTab: row['SOURCE_TAB'] || 'Sheet1',
+        mapVerified: row['MAP VERIFIED'] || '',
     };
 };

@@ -33,6 +33,7 @@ const TABS = [
       postLinkPco: "BS",
       postLinkSloo: "BT",
       postLinkTaoke: "BU",
+      mapVerified: "BV",
     },
   },
   {
@@ -58,6 +59,7 @@ const TABS = [
       postLinkPco: "BS",
       postLinkSloo: "BT",
       postLinkTaoke: "BU",
+      mapVerified: "BV",
     },
   },
 ];
@@ -223,6 +225,7 @@ serve(async (req) => {
       { db: "BS", key: "postLinkPco" },
       { db: "BT", key: "postLinkSloo" },
       { db: "BU", key: "postLinkTaoke" },
+      { db: "MAP VERIFIED", key: "mapVerified" },
     ];
 
     for (const field of fieldMappings) {
@@ -374,6 +377,9 @@ serve(async (req) => {
       }
       if (changedFields.includes("postLinkTaoke") && tab.columns.postLinkTaoke) {
         updates.push({ range: `${tab.name}!${tab.columns.postLinkTaoke}${rowIndex}`, values: [[record["BU"] ?? ""]] });
+      }
+      if (changedFields.includes("mapVerified") && tab.columns.mapVerified) {
+        updates.push({ range: `${tab.name}!${tab.columns.mapVerified}${rowIndex}`, values: [[record["MAP VERIFIED"] ?? ""]] });
       }
 
       if (updates.length > 0) {

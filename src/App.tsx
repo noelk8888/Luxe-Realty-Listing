@@ -976,6 +976,8 @@ function App() {
     updateDate: string | null;
     latLong: string;
     fbLink: string;
+    mapVerified: string;
+    sourceTab?: string;
   }) => {
     console.log('Editing listing:', { listingId, updates });
 
@@ -1007,25 +1009,40 @@ function App() {
 
     // Always compute change type annotation
     const changeTypes: string[] = [];
-    if (updates.salePrice !== listing.price || updates.leasePrice !== listing.leasePrice) changeTypes.push('PRICE');
+    const oldPrice = Math.round(listing.price || 0);
+    const newPrice = Math.round(updates.salePrice || 0);
+    const oldLease = Math.round(listing.leasePrice || 0);
+    const newLease = Math.round(updates.leasePrice || 0);
+
+    if (oldPrice !== newPrice || oldLease !== newLease) changeTypes.push('PRICE');
     if (updates.notes.trim() !== (listing.columnV || '').trim()) changeTypes.push('COMMENTS');
-    const locationChanged = !!updates.latLong && parsedLat !== null && parsedLng !== null && (parsedLat !== listing.lat || parsedLng !== listing.lng);
-    if (locationChanged) changeTypes.push('LOCATION');
+    
+    // Improved location change detection - use small epsilon for float comparison
+    const oldLat = listing.lat || 0;
+    const oldLng = listing.lng || 0;
+    const hasNewCoords = updates.latLong && parsedLat !== null && parsedLng !== null;
+    const coordsActuallyChanged = hasNewCoords && (Math.abs(parsedLat! - oldLat) > 0.000001 || Math.abs(parsedLng! - oldLng) > 0.000001);
+    
+    if (coordsActuallyChanged) changeTypes.push('LOCATION');
     if (changeTypes.length === 0) changeTypes.push('LISTING');
-    const author = fbGroup || (user?.user_metadata?.full_name || user?.email || '');
+    
+    // Detect if we are adding a NEW listing (no existing listing ID)
+    const author = fbGroup || (user?.user_metadata?.full_name || user?.email || 'System');
+
 
     // Date: use custom date if toggle is ON, else keep existing date from stamp
     let datePart = '';
+    const formatDateStamp = (d: Date) => {
+      return `${d.toLocaleString('en-US', { month: 'short' })} ${String(d.getDate()).padStart(2, '0')}, ${d.getFullYear()}`;
+    };
+
     if (updates.updateDate) {
-      const d = new Date(updates.updateDate + 'T00:00:00');
-      datePart = `${d.toLocaleString('en-US', { month: 'short' })} ${String(d.getDate()).padStart(2, '0')}, ${d.getFullYear()}`;
+      datePart = formatDateStamp(new Date(updates.updateDate + 'T00:00:00'));
     } else if (listing.columnBC) {
       const existingParts = listing.columnBC.split(' | ');
-      const isOldFmt = /^\d{4}-\d{2}-\d{2}$/.test(existingParts[0]);
-      if (isOldFmt) {
-        const [y, m, dStr] = existingParts[0].split('-').map(Number);
-        const date = new Date(y, m - 1, dStr);
-        datePart = `${date.toLocaleString('en-US', { month: 'short' })} ${String(date.getDate()).padStart(2, '0')}, ${date.getFullYear()}`;
+      const date = new Date(existingParts[0]);
+      if (!isNaN(date.getTime())) {
+        datePart = formatDateStamp(date);
       } else {
         datePart = existingParts[0];
       }
@@ -1056,6 +1073,7 @@ function App() {
             : fbGroup === 'Luxe' ? 'BP'
             : 'FB LINK']: updates.fbLink || null,
         }),
+        ...(updates.mapVerified !== undefined && { 'MAP VERIFIED': updates.mapVerified || null }),
       })
       .eq('"GEO ID"', listingId)
       .select('"GEO ID"');
@@ -1094,6 +1112,7 @@ function App() {
         postLinkPco: fbGroup === 'PCO' ? updates.fbLink : l.postLinkPco,
         postLinkSloo: fbGroup === 'SLoo' ? updates.fbLink : l.postLinkSloo,
         postLinkTaoke: fbGroup === 'Taoke' ? updates.fbLink : l.postLinkTaoke,
+        mapVerified: updates.mapVerified,
       } : l;
 
     setAllListings(prev => prev.map(updateListing));
