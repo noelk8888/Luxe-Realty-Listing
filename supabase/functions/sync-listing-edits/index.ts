@@ -229,7 +229,10 @@ serve(async (req) => {
     ];
 
     for (const field of fieldMappings) {
-      if (record[field.db] !== oldRecord[field.db]) {
+      const newVal = record[field.db] !== undefined ? record[field.db] : (field.db === "MAP VERIFIED" ? record["map_verified"] : undefined);
+      const oldVal = oldRecord[field.db] !== undefined ? oldRecord[field.db] : (field.db === "MAP VERIFIED" ? oldRecord["map_verified"] : undefined);
+      
+      if (newVal !== oldVal) {
         changedFields.push(field.key);
       }
     }
@@ -379,7 +382,8 @@ serve(async (req) => {
         updates.push({ range: `${tab.name}!${tab.columns.postLinkTaoke}${rowIndex}`, values: [[record["BU"] ?? ""]] });
       }
       if (changedFields.includes("mapVerified") && tab.columns.mapVerified) {
-        updates.push({ range: `${tab.name}!${tab.columns.mapVerified}${rowIndex}`, values: [[record["MAP VERIFIED"] ?? ""]] });
+        const val = record["MAP VERIFIED"] !== undefined ? record["MAP VERIFIED"] : record["map_verified"];
+        updates.push({ range: `${tab.name}!${tab.columns.mapVerified}${rowIndex}`, values: [[val ?? ""]] });
       }
 
       if (updates.length > 0) {
