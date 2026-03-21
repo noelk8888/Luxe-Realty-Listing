@@ -175,12 +175,14 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
             // This forces Supabase to see a "change" and send the webhook to GSheet
             let finalMapVerified = mapVerified.trim();
             if (finalMapVerified) {
-                const today = new Date().toLocaleDateString('en-US', { 
+                const now = new Date();
+                const today = now.toLocaleDateString('en-US', { 
                     month: 'short', 
                     day: 'numeric', 
                     year: 'numeric' 
                 });
-                finalMapVerified = `Location Verified by ${groupName} on ${today}`;
+                const time = now.toLocaleTimeString('en-US', { hour12: false });
+                finalMapVerified = `Location Verified by ${groupName} on ${today} (${time})`;
             }
 
             console.log('Saving listing with MAP VERIFIED:', finalMapVerified);

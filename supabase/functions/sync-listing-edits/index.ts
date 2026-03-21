@@ -256,8 +256,14 @@ serve(async (req) => {
       const newVal = getColValue(record, field.db);
       const oldVal = getColValue(oldRecord, field.db);
       
-      if (newVal !== oldVal) {
-        console.log(`Field changed: ${field.db} (${oldVal} -> ${newVal})`);
+      // Force mapVerified to always be in changedFields if it's present in the record
+      // to ensure Column BV is always refreshed in the sheet
+      if (newVal !== oldVal || (field.key === "mapVerified" && newVal !== undefined)) {
+        if (newVal !== oldVal) {
+          console.log(`Field changed: ${field.db} (${oldVal} -> ${newVal})`);
+        } else {
+          console.log(`Forcing sync for: ${field.db} (always-refresh)`);
+        }
         changedFields.push(field.key);
       }
     }
