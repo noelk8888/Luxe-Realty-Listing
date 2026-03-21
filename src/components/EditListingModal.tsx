@@ -174,7 +174,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
             // Generate a fresh verification stamp if verified (matches Dashboard behavior)
             // This forces Supabase to see a "change" and send the webhook to GSheet
             let finalMapVerified = mapVerified.trim();
-            if (finalMapVerified && finalMapVerified.includes('Location Verified by')) {
+            if (finalMapVerified) {
                 const today = new Date().toLocaleDateString('en-US', { 
                     month: 'short', 
                     day: 'numeric', 
@@ -183,6 +183,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                 finalMapVerified = `Location Verified by ${groupName} on ${today}`;
             }
 
+            console.log('Saving listing with MAP VERIFIED:', finalMapVerified);
             await onSave(listing.id, {
                 salePrice: salePriceNum,
                 leasePrice: leasePriceNum,
