@@ -87,6 +87,8 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
     const [showAllInMap, setShowAllInMap] = useState(false);
     const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<string[]>([]);
     const [showFilters, setShowFilters] = useState(false);
+    const [usePriceFilter, setUsePriceFilter] = useState(true);
+    const [useLotSizeFilter, setUseLotSizeFilter] = useState(true);
 
     // Filter Helpers
     const matchesPropertyType = (item: Listing): boolean => {
@@ -129,42 +131,47 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
         const dist = calculateDistance(centerListing.lat, centerListing.lng, item.lat, item.lng);
         if (dist > similarRadius) return false;
 
-        // 2. Price check (within ±10% of featured listing's price)
-        // Use the primary price (sale price if available, otherwise lease price)
-        const featuredPrice = centerListing.price > 0 ? centerListing.price : centerListing.leasePrice;
-        const itemPrice = item.price > 0 ? item.price : item.leasePrice;
+        // 2. Price check (if enabled)
+        if (usePriceFilter) {
+            const featuredPrice = centerListing.price > 0 ? centerListing.price : centerListing.leasePrice;
+            const itemPrice = item.price > 0 ? item.price : item.leasePrice;
 
-        if (featuredPrice > 0 && itemPrice > 0) {
-            const minPrice = featuredPrice * 0.9;
-            const maxPrice = featuredPrice * 1.1;
-            if (itemPrice < minPrice || itemPrice > maxPrice) return false;
-        } else {
-            // If either has no price, not similar
-            return false;
-        }
-
-        // 3. Area check (at least ONE must match within ±20%)
-        let areaMatch = false;
-
-        // Check Lot Area
-        if (centerListing.lotArea > 0 && item.lotArea > 0) {
-            const minLot = centerListing.lotArea * 0.8;
-            const maxLot = centerListing.lotArea * 1.2;
-            if (item.lotArea >= minLot && item.lotArea <= maxLot) {
-                areaMatch = true;
+            if (featuredPrice > 0 && itemPrice > 0) {
+                const minPrice = featuredPrice * 0.9;
+                const maxPrice = featuredPrice * 1.1;
+                if (itemPrice < minPrice || itemPrice > maxPrice) return false;
+            } else {
+                // If either has no price, not similar when filter is ON
+                return false;
             }
         }
 
-        // Check Floor Area (if lot area didn't match)
-        if (!areaMatch && centerListing.floorArea > 0 && item.floorArea > 0) {
-            const minFloor = centerListing.floorArea * 0.8;
-            const maxFloor = centerListing.floorArea * 1.2;
-            if (item.floorArea >= minFloor && item.floorArea <= maxFloor) {
-                areaMatch = true;
+        // 3. Area check (if enabled, at least ONE must match within ±20%)
+        if (useLotSizeFilter) {
+            let areaMatch = false;
+
+            // Check Lot Area
+            if (centerListing.lotArea > 0 && item.lotArea > 0) {
+                const minLot = centerListing.lotArea * 0.8;
+                const maxLot = centerListing.lotArea * 1.2;
+                if (item.lotArea >= minLot && item.lotArea <= maxLot) {
+                    areaMatch = true;
+                }
             }
+
+            // Check Floor Area (if lot area didn't match)
+            if (!areaMatch && centerListing.floorArea > 0 && item.floorArea > 0) {
+                const minFloor = centerListing.floorArea * 0.8;
+                const maxFloor = centerListing.floorArea * 1.2;
+                if (item.floorArea >= minFloor && item.floorArea <= maxFloor) {
+                    areaMatch = true;
+                }
+            }
+
+            if (!areaMatch) return false;
         }
 
-        return areaMatch;
+        return true;
     };
 
     // Find neighbors within selected radius
@@ -517,12 +524,47 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
                                         </div>
                                     </button>
                                 </div>
+
+                                <div className="flex items-center justify-between pt-4 mt-2 border-t border-gray-50">
+                                    <div className="flex flex-col">
+                                        <span className="text-xs font-bold text-gray-800 uppercase tracking-wider">Similarity Criteria</span>
+                                        <span className="text-[10px] text-gray-400">Apply price/area restrictions</span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        {/* Price Filter Toggle */}
+                                        <button 
+                                            onClick={() => setUsePriceFilter(!usePriceFilter)}
+                                            className={`flex items-center justify-center px-3 py-2 rounded-xl text-[9px] font-bold transition-all border ${
+                                                usePriceFilter
+                                                    ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                                                    : 'bg-white border-gray-200 text-gray-400'
+                                            } uppercase tracking-tight`}
+                                            title="Filter by Price Similarity"
+                                        >
+                                            PRICE
+                                        </button>
+                                        {/* Lot Size Filter Toggle */}
+                                        <button 
+                                            onClick={() => setUseLotSizeFilter(!useLotSizeFilter)}
+                                            className={`flex items-center justify-center px-3 py-2 rounded-xl text-[9px] font-bold transition-all border ${
+                                                useLotSizeFilter
+                                                    ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                                                    : 'bg-white border-gray-200 text-gray-400'
+                                            } uppercase tracking-tight`}
+                                            title="Filter by Lot/Floor Area Similarity"
+                                        >
+                                            LOT SIZE
+                                        </button>
+                                    </div>
+                                </div>
                                 
                                 <div className="mt-4 flex gap-2">
                                     <button 
                                         onClick={() => {
                                             setSelectedPropertyTypes([]);
                                             setShowAllInMap(false);
+                                            setUsePriceFilter(true);
+                                            setUseLotSizeFilter(true);
                                         }}
                                         className="flex-1 py-2 rounded-xl text-[11px] font-bold text-gray-400 hover:bg-gray-50 transition-colors"
                                     >
