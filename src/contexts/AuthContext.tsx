@@ -31,51 +31,65 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Hardcoded list of users who are always superadmins (as secondary fallback)
+const SUPERADMIN_EMAILS = [
+    'noelkiu@gmail.com',
+    'lesliekiudmd@yahoo.com',
+    'leslie@luxerealtyph.com'
+];
+
+// Mapping for what to SHOW in the UI for certain users
+const MASKED_ROLES: Record<string, Role> = {
+    'noelkiu@gmail.com': 'admin',
+    'lesliekiudmd@yahoo.com': 'broker',
+    'leslie@luxerealtyph.com': 'broker',
+};
+
 async function fetchUserProfile(email: string): Promise<{ role: Role; displayRole: Role; fbLink: string | null; fbGroup: string | null }> {
     console.log('Auth: fetching profile for', email);
-
-    // Check SUPERADMIN env var first (bypasses DB, same as LUXE Edit)
-    const saEmails = (import.meta.env.VITE_SUPERADMIN_EMAILS || '')
-        .split(',')
-        .map((e: string) => e.trim().toLowerCase())
-        .filter(Boolean);
-    if (saEmails.includes(email.toLowerCase())) {
-        const { data: saData } = await supabase
-            .from('luxe_listing_users')
-            .select('role, fb_link, fb_group')
-            .eq('email', email.toLowerCase())
-            .maybeSingle();
-        const d = saData as { role?: string; fb_link?: string | null; fb_group?: string | null } | null;
-        
-        let displayRole: Role = 'admin';
-        if (d?.role) {
-            const dr = d.role.toUpperCase();
-            if (dr === 'ADMIN') displayRole = 'admin';
-            else if (dr === 'EDITOR') displayRole = 'editor';
-            else if (dr === 'BROKER') displayRole = 'broker';
-            else if (dr === 'VIEWER') displayRole = 'viewer';
-        }
-        
-        return { role: 'superadmin', displayRole, fbLink: d?.fb_link ?? null, fbGroup: d?.fb_group ?? null };
-    }
+    const lowEmail = email.toLowerCase();
 
     const { data, error } = await supabase
         .from('luxe_listing_users')
         .select('role, fb_link, fb_group')
-        .eq('email', email)
+        .eq('email', lowEmail)
         .maybeSingle();
 
     console.log('Auth: fetchUserProfile response', { data, error });
     if (error || !data) return { role: null, displayRole: null, fbLink: null, fbGroup: null };
 
-    const r = (data.role as string).toUpperCase();
+    const dbRole = (data.role as string).toUpperCase();
+    
+    // Calculate Internal Role
     let role: Role = 'viewer';
-    if (r === 'ADMIN')  role = 'admin';
-    else if (r === 'SUPERADMIN') role = 'superadmin';
-    else if (r === 'EDITOR') role = 'editor';
-    else if (r === 'BROKER') role = 'broker';
+    if (dbRole === 'ADMIN') role = 'admin';
+    else if (dbRole === 'SUPERADMIN') role = 'superadmin';
+    else if (dbRole === 'EDITOR') role = 'editor';
+    else if (dbRole === 'BROKER') role = 'broker';
 
-    return { role, displayRole: role, fbLink: data.fb_link ?? null, fbGroup: data.fb_group ?? null };
+    // Elevation via hardcoded list or env var
+    const saEmailsEnv = (import.meta.env.VITE_SUPERADMIN_EMAILS || '')
+        .split(',')
+        .map((e: string) => e.trim().toLowerCase())
+        .filter(Boolean);
+    
+    if (SUPERADMIN_EMAILS.includes(lowEmail) || saEmailsEnv.includes(lowEmail)) {
+        role = 'superadmin';
+    }
+
+    // Calculate Display Role (Masking)
+    let displayRole = role;
+    if (MASKED_ROLES[lowEmail]) {
+        displayRole = MASKED_ROLES[lowEmail];
+    } else if (role === 'superadmin' && dbRole !== 'SUPERADMIN') {
+        // If they are superadmin via list but DB says something else, show the DB role
+        if (dbRole === 'ADMIN') displayRole = 'admin';
+        else if (dbRole === 'EDITOR') displayRole = 'editor';
+        else if (dbRole === 'BROKER') displayRole = 'broker';
+        else if (dbRole === 'VIEWER') displayRole = 'viewer';
+    }
+
+    return { role, displayRole, fbLink: data.fb_link ?? null, fbGroup: data.fb_group ?? null };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
