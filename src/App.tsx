@@ -2280,6 +2280,7 @@ function App() {
         filteredListingsIds={new Set(displayedResults.map(l => l.id))}
         onNotesClick={handleSendForm}
         onShowNote={handleShowNote}
+        fullScreen={role === 'superadmin' || permissions.full_screen_map}
       />
 
       <NoteModal

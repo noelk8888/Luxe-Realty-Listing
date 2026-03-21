@@ -69,13 +69,14 @@ interface MapModalProps {
     filteredListingsIds: Set<string>;
     onNotesClick?: (id: string) => void;
     onShowNote?: (note: string, id: string) => void;
+    fullScreen?: boolean;
 }
 
 
 
 
 
-export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListing, allListings, filteredListingsIds: _filteredListingsIds, onNotesClick, onShowNote }) => {
+export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListing, allListings, filteredListingsIds: _filteredListingsIds, onNotesClick, onShowNote, fullScreen }) => {
     const [focusedListing, setFocusedListing] = useState<Listing | null>(null);
     const [groupedViewListings, setGroupedViewListings] = useState<Listing[] | null>(null);
 
@@ -236,8 +237,8 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
     };
 
     return (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl w-full max-w-4xl h-[70vh] overflow-hidden flex flex-col relative shadow-2xl border border-gray-100">
+        <div className={`fixed inset-0 z-[99999] flex items-center justify-center ${fullScreen ? '' : 'p-4 bg-black/60 backdrop-blur-sm'}`}>
+            <div className={`bg-white overflow-hidden flex flex-col relative ${fullScreen ? 'w-full h-full' : 'rounded-2xl w-full max-w-4xl h-[70vh] shadow-2xl border border-gray-100'}`}>
                 {/* Header */}
                 <div className="p-3 border-b border-gray-50 flex justify-between items-center bg-white z-[1001] relative">
                     <div>

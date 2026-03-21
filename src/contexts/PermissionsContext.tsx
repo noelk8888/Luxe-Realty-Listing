@@ -35,7 +35,8 @@ export type Feature =
     | 'show_all'
     | 'view_last_update'
     | 'edit_monthly_dues'
-    | 'copy_photo_link';
+    | 'copy_photo_link'
+    | 'full_screen_map';
 
 const ALL_FEATURES: Feature[] = [
     'add_listing', 'edit_listing', 'delete_listing',
@@ -49,6 +50,7 @@ const ALL_FEATURES: Feature[] = [
     'edit_sale_price', 'edit_lease_price', 'edit_notes',
     'edit_coordinates', 'edit_fb_link', 'edit_update_date',
     'show_all', 'view_last_update', 'edit_monthly_dues', 'copy_photo_link',
+    'full_screen_map',
 ];
 
 // ── Role defaults ─────────────────────────────────────────────────────────────
@@ -65,6 +67,7 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'viewer', Record<Fea
         edit_sale_price: true, edit_lease_price: true, edit_notes: true,
         edit_coordinates: true, edit_fb_link: true, edit_update_date: true,
         show_all: true, view_last_update: true, edit_monthly_dues: true, copy_photo_link: false,
+        full_screen_map: true,
     },
     editor: {
         add_listing: true, edit_listing: true, delete_listing: false,
@@ -78,6 +81,7 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'viewer', Record<Fea
         edit_sale_price: true, edit_lease_price: true, edit_notes: true,
         edit_coordinates: true, edit_fb_link: true, edit_update_date: true,
         show_all: true, view_last_update: true, edit_monthly_dues: true, copy_photo_link: false,
+        full_screen_map: false,
     },
     broker: {
         add_listing: true, edit_listing: true, delete_listing: false,
@@ -91,6 +95,7 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'viewer', Record<Fea
         edit_sale_price: false, edit_lease_price: false, edit_notes: false,
         edit_coordinates: true, edit_fb_link: true, edit_update_date: true,
         show_all: true, view_last_update: true, edit_monthly_dues: false, copy_photo_link: false,
+        full_screen_map: false,
     },
     viewer: {
         add_listing: false, edit_listing: false, delete_listing: false,
@@ -104,6 +109,7 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'viewer', Record<Fea
         edit_sale_price: false, edit_lease_price: false, edit_notes: false,
         edit_coordinates: false, edit_fb_link: false, edit_update_date: false,
         show_all: false, view_last_update: true, edit_monthly_dues: false, copy_photo_link: false,
+        full_screen_map: false,
     },
 };
 
