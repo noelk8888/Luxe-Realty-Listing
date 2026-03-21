@@ -92,7 +92,11 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     const handleCopyColumnK = (e: React.MouseEvent) => {
         e.stopPropagation();
         if (listing.columnK) {
-            navigator.clipboard.writeText(listing.columnK);
+            let copyText = listing.columnK;
+            if (listing.columnBD) {
+                copyText = `${listing.columnBD}\n${copyText}`;
+            }
+            navigator.clipboard.writeText(copyText);
             setIsColumnKCopied(true);
         }
     };
