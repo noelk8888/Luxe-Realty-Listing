@@ -2297,6 +2297,7 @@ function App() {
           setEditingListing(null);
         }}
         onSave={handleListingEdit}
+        groupName={groupBranding?.brandName || undefined}
       />
 
       <UserManagementModal

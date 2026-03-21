@@ -19,6 +19,7 @@ interface EditListingModalProps {
         mapVerified: string;
         sourceTab?: string;
     }) => Promise<void>;
+    groupName?: string;
 }
 
 export const EditListingModal: React.FC<EditListingModalProps> = ({
@@ -26,6 +27,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
     listing,
     onClose,
     onSave,
+    groupName = 'Kiu'
 }) => {
     const [salePrice, setSalePrice] = useState('');
     const [leasePrice, setLeasePrice] = useState('');
@@ -169,6 +171,18 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
         setIsSubmitting(true);
 
         try {
+            // Generate a fresh verification stamp if verified (matches Dashboard behavior)
+            // This forces Supabase to see a "change" and send the webhook to GSheet
+            let finalMapVerified = mapVerified.trim();
+            if (finalMapVerified && finalMapVerified.includes('Location Verified by')) {
+                const today = new Date().toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                });
+                finalMapVerified = `Location Verified by ${groupName} on ${today}`;
+            }
+
             await onSave(listing.id, {
                 salePrice: salePriceNum,
                 leasePrice: leasePriceNum,
@@ -177,7 +191,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                 updateDate: updateDate ? customDate : null,
                 latLong: latLong.trim(),
                 fbLink: fbLink.trim(),
-                mapVerified: mapVerified.trim(),
+                mapVerified: finalMapVerified,
             });
             onClose();
         } catch (err) {
