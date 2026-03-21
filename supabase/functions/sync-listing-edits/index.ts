@@ -229,6 +229,36 @@ serve(async (req) => {
       );
     }
 
+    // --- RECOVERY LOGIC: Fetch current metadata from Supabase ---
+    // Sometimes webhooks omit columns that Supabase thinks haven't changed.
+    // We fetch them here to ensure they always sync if a sync is triggered.
+    let mapVerifiedValue = getColValue(record, "MAP VERIFIED");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+
+    if (mapVerifiedValue === undefined || mapVerifiedValue === null) {
+      try {
+        console.log(`Fetching missing MAP VERIFIED from DB for GEO ID: ${geoId}`);
+        const queryUrl = `${supabaseUrl}/rest/v1/${encodeURIComponent("KIU Properties")}?select=${encodeURIComponent("MAP VERIFIED")}&${encodeURIComponent("GEO ID")}=eq.${encodeURIComponent(geoId)}`;
+        const dbRes = await fetch(queryUrl, {
+          headers: {
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`,
+            "Accept": "application/json",
+          },
+        });
+        if (dbRes.ok) {
+          const rows = await dbRes.json();
+          if (rows.length > 0) {
+            mapVerifiedValue = rows[0]["MAP VERIFIED"] ?? "";
+            console.log(`Successfully recovered MAP VERIFIED from DB: [${mapVerifiedValue}]`);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch recovery data:", err);
+      }
+    }
+
     // Check which fields changed
     const changedFields: string[] = [];
     const fieldMappings = [
@@ -253,17 +283,12 @@ serve(async (req) => {
     ];
 
     for (const field of fieldMappings) {
-      const newVal = getColValue(record, field.db);
+      const newVal = field.key === "mapVerified" ? mapVerifiedValue : getColValue(record, field.db);
       const oldVal = getColValue(oldRecord, field.db);
       
-      // Force mapVerified to always be in changedFields if it's present in the record
-      // to ensure Column BV is always refreshed in the sheet
-      if (newVal !== oldVal || (field.key === "mapVerified" && newVal !== undefined)) {
-        if (newVal !== oldVal) {
-          console.log(`Field changed: ${field.db} (${oldVal} -> ${newVal})`);
-        } else {
-          console.log(`Forcing sync for: ${field.db} (always-refresh)`);
-        }
+      // If mapVerified is present (either in webhook or recovered from DB), always sync it if it's non-empty
+      if (newVal !== oldVal || (field.key === "mapVerified" && newVal)) {
+        console.log(`Field to sync: ${field.db} = [${newVal}]`);
         changedFields.push(field.key);
       }
     }
@@ -276,7 +301,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Syncing fields for GEO ID ${geoId}:`, changedFields);
+    console.log(`Syncing ${changedFields.length} fields for GEO ID ${geoId}:`, changedFields);
 
     // Get Google credentials from Supabase secrets
     const email = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_EMAIL");
@@ -286,48 +311,9 @@ serve(async (req) => {
       throw new Error("Missing GOOGLE_SERVICE_ACCOUNT_EMAIL or GOOGLE_PRIVATE_KEY secrets");
     }
 
-    // Get access token
+    // Get Access Token
     const token = await getAccessToken(email, privateKey);
     console.log("Got Google access token");
-
-    // Read MAP VERIFIED directly from Supabase (webhook may not include it)
-    let mapVerifiedValue = getColValue(record, "MAP VERIFIED");
-    console.log(`MAP VERIFIED from webhook: [${mapVerifiedValue}] (type: ${typeof mapVerifiedValue})`);
-    if (mapVerifiedValue === undefined || mapVerifiedValue === null) {
-      try {
-        const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-        const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-        console.log(`Supabase URL: [${supabaseUrl ? "SET" : "EMPTY"}], Key: [${supabaseKey ? "SET" : "EMPTY"}]`);
-        const queryUrl = `${supabaseUrl}/rest/v1/${encodeURIComponent("KIU Properties")}?select=${encodeURIComponent("MAP VERIFIED")}&${encodeURIComponent("GEO ID")}=eq.${encodeURIComponent(geoId)}`;
-        console.log(`Fetching MAP VERIFIED from DB for GEO ID: ${geoId}`);
-        const dbRes = await fetch(
-          queryUrl,
-          {
-            headers: {
-              "apikey": supabaseKey,
-              "Authorization": `Bearer ${supabaseKey}`,
-              "Accept": "application/json",
-            },
-          }
-        );
-        console.log(`DB response status: ${dbRes.status}`);
-        if (dbRes.ok) {
-          const rows = await dbRes.json();
-          console.log(`DB rows returned: ${rows.length}, data: ${JSON.stringify(rows)}`);
-          if (rows.length > 0) {
-            mapVerifiedValue = rows[0]["MAP VERIFIED"] ?? "";
-            console.log(`Read MAP VERIFIED from Supabase DB: [${mapVerifiedValue}]`);
-          }
-        } else {
-          const errText = await dbRes.text();
-          console.warn(`Failed to read MAP VERIFIED from Supabase (${dbRes.status}): ${errText}`);
-        }
-      } catch (e) {
-        console.warn("Error reading MAP VERIFIED from Supabase:", e);
-      }
-    } else {
-      console.log(`MAP VERIFIED from webhook payload: [${mapVerifiedValue}]`);
-    }
 
     // Update each tab
     for (const tab of TABS) {
@@ -343,6 +329,8 @@ serve(async (req) => {
         const cellValue = rows[i]?.[0]?.toString().trim();
         if (cellValue === geoId.toString().trim()) {
           rowIndex = i + 1; // Sheets rows are 1-based
+          console.log(`[SYNC-DEBUG] Found row ${rowIndex} for GEO ID [${geoId}] in tab [${tab.name}]`);
+          console.log(`[SYNC-DEBUG] Match found for GEO ID [${geoId}] at rowIndex [${rowIndex}] in tab [${tab.name}]`);
           break;
         }
       }
@@ -437,30 +425,31 @@ serve(async (req) => {
         updates.push({ range: `${tab.name}!${tab.columns.postLinkLuxe}${rowIndex}`, values: [[getColValue(record, "BP") ?? ""]] });
       }
       if (changedFields.includes("postLinkNexia") && tab.columns.postLinkNexia) {
-        updates.push({ range: `${tab.name}!${tab.columns.postLinkNexia}${rowIndex}`, values: [[record["BQ"] ?? ""]] });
+        updates.push({ range: `${tab.name}!${tab.columns.postLinkNexia}${rowIndex}`, values: [[getColValue(record, "BQ") ?? ""]] });
       }
       if (changedFields.includes("postLinkAdolf") && tab.columns.postLinkAdolf) {
-        updates.push({ range: `${tab.name}!${tab.columns.postLinkAdolf}${rowIndex}`, values: [[record["BR"] ?? ""]] });
+        updates.push({ range: `${tab.name}!${tab.columns.postLinkAdolf}${rowIndex}`, values: [[getColValue(record, "BR") ?? ""]] });
       }
       if (changedFields.includes("postLinkPco") && tab.columns.postLinkPco) {
-        updates.push({ range: `${tab.name}!${tab.columns.postLinkPco}${rowIndex}`, values: [[record["BS"] ?? ""]] });
+        updates.push({ range: `${tab.name}!${tab.columns.postLinkPco}${rowIndex}`, values: [[getColValue(record, "BS") ?? ""]] });
       }
       if (changedFields.includes("postLinkSloo") && tab.columns.postLinkSloo) {
-        updates.push({ range: `${tab.name}!${tab.columns.postLinkSloo}${rowIndex}`, values: [[record["BT"] ?? ""]] });
+        updates.push({ range: `${tab.name}!${tab.columns.postLinkSloo}${rowIndex}`, values: [[getColValue(record, "BT") ?? ""]] });
       }
       if (changedFields.includes("postLinkTaoke") && tab.columns.postLinkTaoke) {
-        updates.push({ range: `${tab.name}!${tab.columns.postLinkTaoke}${rowIndex}`, values: [[record["BU"] ?? ""]] });
+        updates.push({ range: `${tab.name}!${tab.columns.postLinkTaoke}${rowIndex}`, values: [[getColValue(record, "BU") ?? ""]] });
       }
-      // ALWAYS SYNC VERIFICATION: Use the value fetched from Supabase DB
-      if (tab.columns.mapVerified && changedFields.length > 0) {
-        console.log(`Writing MAP VERIFIED to ${tab.name}!${tab.columns.mapVerified}${rowIndex}: [${mapVerifiedValue ?? ""}]`);
-        updates.push({ 
-          range: `${tab.name}!${tab.columns.mapVerified}${rowIndex}`, 
-          values: [[mapVerifiedValue ?? ""]] 
+      if (changedFields.includes("mapVerified") && tab.columns.mapVerified) {
+        const val = mapVerifiedValue;
+        console.log(`Writing MAP VERIFIED to ${tab.name}!${tab.columns.mapVerified}${rowIndex}: [${val ?? ""}]`);
+        updates.push({
+          range: `${tab.name}!${tab.columns.mapVerified}${rowIndex}`,
+          values: [[val ?? ""]],
         });
       }
 
       if (updates.length > 0) {
+        console.log(`[SYNC-DEBUG] Sending ${updates.length} updates for [${geoId}] to [${tab.name}]:`, JSON.stringify(updates));
         console.log(`Updating ${updates.length} cells in ${tab.name}`);
         await sheetsBatchUpdate(token, SPREADSHEET_ID, updates);
         console.log(`Updated ${tab.name} successfully`);
