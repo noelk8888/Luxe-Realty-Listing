@@ -292,7 +292,7 @@ serve(async (req) => {
         const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
         const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
         console.log(`Supabase URL: [${supabaseUrl ? "SET" : "EMPTY"}], Key: [${supabaseKey ? "SET" : "EMPTY"}]`);
-        const queryUrl = `${supabaseUrl}/rest/v1/KIU Properties?select=MAP VERIFIED&GEO ID=eq.${geoId}`;
+        const queryUrl = `${supabaseUrl}/rest/v1/${encodeURIComponent("KIU Properties")}?select=${encodeURIComponent("MAP VERIFIED")}&${encodeURIComponent("GEO ID")}=eq.${encodeURIComponent(geoId)}`;
         console.log(`Fetching MAP VERIFIED from DB for GEO ID: ${geoId}`);
         const dbRes = await fetch(
           queryUrl,
