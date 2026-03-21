@@ -92,9 +92,12 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     const handleCopyColumnK = (e: React.MouseEvent) => {
         e.stopPropagation();
         if (listing.columnK) {
-            let copyText = listing.columnK;
+            // Strip "Owner - " prefix if present
+            const ownerName = listing.columnK.replace(/^Owner\s*-\s*/i, '');
+            let copyText = ownerName;
             if (listing.columnBD) {
-                copyText = `${listing.columnBD}\n${copyText}`;
+                // Swap order: Owner first, then Ownership
+                copyText = `${ownerName}\n${listing.columnBD}`;
             }
             navigator.clipboard.writeText(copyText);
             setIsColumnKCopied(true);

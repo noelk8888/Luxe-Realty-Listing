@@ -36,7 +36,9 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
     const [updateDate, setUpdateDate] = useState(false);
     const todayStr = () => {
         const d = new Date();
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
+        return `${date} ${time}`;
     };
     const [customDate, setCustomDate] = useState(todayStr);
     const [latLong, setLatLong] = useState('');
@@ -48,6 +50,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
     const { fbGroup, user } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const isInitialLoad = React.useRef(true);
 
     // Reset form when listing changes
     useEffect(() => {
@@ -72,13 +75,20 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
             setMapVerified(listing.mapVerified || '');
             setLocationError(null);
             setError(null);
+            isInitialLoad.current = true; // Mark as initial load
         }
-    }, [listing]);
+    }, [listing?.id]); // Trigger on actual listing change
 
     // Auto-clear verification if coordinates change
     useEffect(() => {
         if (!listing) return;
         
+        // Skip check on initial load to avoid precision-mismatch false positives
+        if (isInitialLoad.current) {
+            isInitialLoad.current = false;
+            return;
+        }
+
         const currentCoords = latLong.trim().split(',').map(s => s.trim()).filter(Boolean);
         if (currentCoords.length === 2) {
             const originalLat = listing.lat?.toString().trim();
@@ -92,7 +102,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                 setMapVerified('');
             }
         }
-    }, [latLong, listing]);
+    }, [latLong, listing?.id]);
 
     if (!isOpen || !listing) return null;
 

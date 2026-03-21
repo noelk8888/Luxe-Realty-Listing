@@ -238,20 +238,55 @@ serve(async (req) => {
 
     if (mapVerifiedValue === undefined || mapVerifiedValue === null) {
       try {
-        console.log(`Fetching missing MAP VERIFIED from DB for GEO ID: ${geoId}`);
-        const queryUrl = `${supabaseUrl}/rest/v1/${encodeURIComponent("KIU Properties")}?select=${encodeURIComponent("MAP VERIFIED")}&${encodeURIComponent("GEO ID")}=eq.${encodeURIComponent(geoId)}`;
-        const dbRes = await fetch(queryUrl, {
-          headers: {
-            "apikey": supabaseKey,
-            "Authorization": `Bearer ${supabaseKey}`,
-            "Accept": "application/json",
-          },
-        });
-        if (dbRes.ok) {
-          const rows = await dbRes.json();
-          if (rows.length > 0) {
-            mapVerifiedValue = rows[0]["MAP VERIFIED"] ?? "";
-            console.log(`Successfully recovered MAP VERIFIED from DB: [${mapVerifiedValue}]`);
+        // [RECOVERY LOGIC] If MAP VERIFIED or SOCMED fields are missing, fetch from DB
+        // Vital fields that we must preserve
+        const vitalFields = [
+          { key: "fbLink", db: "FB LINK" },
+          { key: "postLinkLuxe", db: "BP" },
+          { key: "postLinkNexia", db: "BQ" },
+          { key: "postLinkAdolf", db: "BR" },
+          { key: "postLinkPco", db: "BS" },
+          { key: "postLinkSloo", db: "BT" },
+          { key: "postLinkTaoke", db: "BU" },
+        ];
+        const isVitalMissing = vitalFields.some(f => record[f.key] === undefined || record[f.key] === null);
+
+        if (mapVerifiedValue === undefined || mapVerifiedValue === null || isVitalMissing) {
+          console.log(`[SYNC-DEBUG] Missing vital fields (MapVerified: ${mapVerifiedValue}, VitalMissing: ${isVitalMissing}). Recovering from DB for GEO ID: ${geoId}`);
+          
+          const selectFields = ["MAP VERIFIED", "FB LINK", "BP", "BQ", "BR", "BS", "BT", "BU"];
+          const queryUrl = `${supabaseUrl}/rest/v1/${encodeURIComponent("KIU Properties")}?select=${encodeURIComponent(selectFields.join(","))}&${encodeURIComponent("GEO ID")}=eq.${encodeURIComponent(geoId)}`;
+          console.log(`[SYNC-DEBUG] Recovery Query: ${queryUrl}`);
+          
+          const dbRes = await fetch(queryUrl, {
+            headers: {
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`,
+              "Accept": "application/json",
+            },
+          });
+
+          if (dbRes.ok) {
+            const rows = await dbRes.json();
+            console.log(`[SYNC-DEBUG] DB Response Rows: ${rows.length}`);
+            if (rows.length > 0) {
+              const dbData = rows[0];
+              if (mapVerifiedValue === undefined || mapVerifiedValue === null) {
+                mapVerifiedValue = dbData["MAP VERIFIED"] ?? "";
+                console.log(`[SYNC-DEBUG] Recovered MAP VERIFIED: [${mapVerifiedValue}]`);
+              }
+              
+              vitalFields.forEach(f => {
+                if (record[f.key] === undefined || record[f.key] === null) {
+                  record[f.key] = dbData[f.db] ?? "";
+                  console.log(`[SYNC-DEBUG] Recovered ${f.key} (${f.db}): [${record[f.key] ? 'Found' : 'Empty'}]`);
+                }
+              });
+            } else {
+              console.warn(`[SYNC-DEBUG] No rows found for GEO ID: ${geoId}`);
+            }
+          } else {
+            console.error(`[SYNC-DEBUG] DB Recovery failed: ${dbRes.status}`);
           }
         }
       } catch (err) {
@@ -477,7 +512,7 @@ serve(async (req) => {
             } else {
               console.log(`GEO ID ${geoId} not found in backup Sheet1, skipping backup sync`);
             }
-          } catch (backupErr) {
+          } catch (backupErr: any) {
             console.warn("Backup spreadsheet sync failed (non-fatal):", backupErr.message);
           }
         }
@@ -488,7 +523,7 @@ serve(async (req) => {
       JSON.stringify({ success: true, geoId, changedFields }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (err) {
+  } catch (err: any) {
     console.error("Error:", err.message);
     return new Response(
       JSON.stringify({ error: err.message }),
