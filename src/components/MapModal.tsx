@@ -89,6 +89,9 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
     const [showFilters, setShowFilters] = useState(false);
     const [usePriceFilter, setUsePriceFilter] = useState(true);
     const [useLotSizeFilter, setUseLotSizeFilter] = useState(true);
+    const [selectedSaleTypes, setSelectedSaleTypes] = useState<string[]>([]);
+    const [showOnlyDirect, setShowOnlyDirect] = useState(false);
+    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
     // Filter Helpers
     const matchesPropertyType = (item: Listing): boolean => {
@@ -103,6 +106,35 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
             if (type === 'OFFICE/COMMERCIAL') return itemType.includes('OFFICE') || itemType.includes('COMMERCIAL');
             if (type === 'BUILDING') return itemType.includes('BUILDING');
             if (type === 'CLUB SHARE / BUSINESS') return itemType.includes('CLUB SHARES') || itemType.includes('CLUB SHARE') || itemType.includes('BUSINESS');
+            return false;
+        });
+    };
+
+    const matchesSaleType = (item: Listing): boolean => {
+        if (selectedSaleTypes.length === 0) return true;
+        const saleType = (item.saleType || '').toUpperCase().trim();
+        return selectedSaleTypes.some(type => {
+            if (type === 'FOR SALE') return saleType.includes('SALE');
+            if (type === 'FOR LEASE') return saleType.includes('LEASE');
+            return false;
+        });
+    };
+
+    const matchesDirect = (item: Listing): boolean => {
+        if (!showOnlyDirect) return true;
+        return item.isDirect === true;
+    };
+
+    const matchesCategory = (item: Listing): boolean => {
+        if (selectedCategories.length === 0) return true;
+        const category = (item.category || '').toUpperCase().trim();
+        const typeAE = (item.columnAE || '').toUpperCase().trim();
+        const combined = `${category} ${typeAE}`;
+        return selectedCategories.some(cat => {
+            if (cat === 'RESIDENTIAL') return combined.includes('RESIDENTIAL') || combined.includes('RES\'L');
+            if (cat === 'COMMERCIAL') return combined.includes('COMMERCIAL') || combined.includes('COMM\'L');
+            if (cat === 'INDUSTRIAL') return combined.includes('INDUSTRIAL') || combined.includes('IND\'L');
+            if (cat === 'AGRICULTURAL') return combined.includes('AGRICULTURAL') || combined.includes('AGRI');
             return false;
         });
     };
@@ -179,9 +211,12 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
     const neighbors = allListings.filter(l => {
         if (l.id === centerListing.id || !l.lat || !l.lng) return false;
 
-        // Apply Status and Property Type filters
+        // Apply Status, Property Type, Sale Type, Direct, and Category filters
         if (!matchesStatus(l)) return false;
         if (!matchesPropertyType(l)) return false;
+        if (!matchesSaleType(l)) return false;
+        if (!matchesDirect(l)) return false;
+        if (!matchesCategory(l)) return false;
 
         const dist = calculateDistance(centerListing.lat, centerListing.lng, l.lat, l.lng);
 
@@ -455,7 +490,7 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
                             >
                                 <Filter size={14} />
                                 Filters
-                                {(selectedPropertyTypes.length > 0 || showAllInMap) && (
+                                {(selectedPropertyTypes.length > 0 || selectedSaleTypes.length > 0 || showOnlyDirect || selectedCategories.length > 0 || showAllInMap) && (
                                     <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
                                 )}
                             </button>
@@ -464,117 +499,201 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
 
                     {/* Filters Popover */}
                     {showFilters && (
-                        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-[1001] w-[95%] max-w-[400px]">
-                            <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 py-4 px-5 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h3 className="text-sm font-bold text-gray-800">Property Type</h3>
+                        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-[1001] w-[95%] max-w-[450px]">
+                            <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 py-6 px-6 animate-in fade-in slide-in-from-bottom-4 duration-300 ring-1 ring-black/5">
+                                <div className="flex justify-between items-center mb-6">
+                                    <div className="flex flex-col">
+                                        <h3 className="text-lg font-bold text-gray-900 leading-tight">Map Filters</h3>
+                                        <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest mt-0.5">Customize your local search</p>
+                                    </div>
                                     <button 
                                         onClick={() => setShowFilters(false)}
-                                        className="p-1 hover:bg-gray-50 rounded-full transition-colors"
+                                        className="p-2 hover:bg-gray-100 rounded-full transition-all group lg:hidden"
                                     >
-                                        <X size={16} className="text-gray-400" />
+                                        <X size={20} className="text-gray-400 group-hover:text-gray-600" />
                                     </button>
                                 </div>
                                 
-                                <div className="grid grid-cols-2 gap-2 mb-6">
-                                    {[
-                                        'HOUSE AND LOT', 'TOWNHOUSE', 'CONDO', 'VACANT LOT',
-                                        'WAREHOUSE', 'BUILDING', 'OFFICE/COMMERCIAL', 'CLUB SHARE / BUSINESS'
-                                    ].map(type => (
-                                        <button
-                                            key={type}
-                                            onClick={() => {
-                                                setSelectedPropertyTypes(prev => 
-                                                    prev.includes(type) 
-                                                        ? prev.filter(t => t !== type)
-                                                        : [...prev, type]
-                                                );
-                                            }}
-                                            className={`px-3 py-2.5 text-[10px] font-bold rounded-xl transition-all border ${
-                                                selectedPropertyTypes.includes(type)
-                                                    ? 'bg-blue-600 border-blue-600 text-white shadow-md'
-                                                    : 'bg-white border-gray-100 text-gray-600 hover:border-blue-200'
-                                            } uppercase tracking-tight text-center`}
-                                        >
-                                            {type}
-                                        </button>
-                                    ))}
-                                </div>
-
-                                <div className="flex items-center justify-between pt-4 border-t border-gray-50">
-                                    <div className="flex flex-col">
-                                        <span className="text-xs font-bold text-gray-800 uppercase tracking-wider">Property Status</span>
-                                        <span className="text-[10px] text-gray-400">Filter by Available only</span>
-                                    </div>
-                                    <button 
-                                        onClick={() => setShowAllInMap(!showAllInMap)}
-                                        className={`relative w-24 h-8 rounded-full p-1 transition-colors duration-200 flex items-center ${
-                                            showAllInMap ? 'bg-gray-100' : 'bg-blue-600'
-                                        }`}
-                                    >
-                                        <div className={`absolute left-1 flex items-center justify-center w-[calc(50%-2px)] h-6 rounded-full text-[9px] font-bold transition-all duration-200 ${
-                                            !showAllInMap ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400'
-                                        }`}>
-                                            AVAILABLE
+                                <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin">
+                                    {/* Listing Type & Direct Selection */}
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex gap-2">
+                                                {['FOR SALE', 'FOR LEASE'].map(type => (
+                                                    <button
+                                                        key={type}
+                                                        onClick={() => {
+                                                            setSelectedSaleTypes(prev => 
+                                                                prev.includes(type) 
+                                                                    ? prev.filter(t => t !== type)
+                                                                    : [...prev, type]
+                                                            );
+                                                        }}
+                                                        className={`px-4 py-2 text-[10px] font-bold rounded-xl transition-all border ${
+                                                            selectedSaleTypes.includes(type)
+                                                                ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200'
+                                                                : 'bg-gray-50 border-gray-100 text-gray-500 hover:border-blue-200'
+                                                        } uppercase tracking-wider`}
+                                                    >
+                                                        {type}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <button
+                                                onClick={() => setShowOnlyDirect(!showOnlyDirect)}
+                                                className={`px-4 py-2 text-[10px] font-bold rounded-xl transition-all border ${
+                                                    showOnlyDirect
+                                                        ? 'bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-200'
+                                                        : 'bg-gray-50 border-gray-100 text-gray-500 hover:border-amber-200'
+                                                } uppercase tracking-wider`}
+                                            >
+                                                DIRECT
+                                            </button>
                                         </div>
-                                        <div className={`absolute right-1 flex items-center justify-center w-[calc(50%-2px)] h-6 rounded-full text-[9px] font-bold transition-all duration-200 ${
-                                            showAllInMap ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400'
-                                        }`}>
-                                            SHOW ALL
-                                        </div>
-                                    </button>
-                                </div>
-
-                                <div className="flex items-center justify-between pt-4 mt-2 border-t border-gray-50">
-                                    <div className="flex flex-col">
-                                        <span className="text-xs font-bold text-gray-800 uppercase tracking-wider">Similarity Criteria</span>
-                                        <span className="text-[10px] text-gray-400">Apply price/area restrictions</span>
                                     </div>
-                                    <div className="flex gap-2">
-                                        {/* Price Filter Toggle */}
+
+                                    {/* Classification Selection */}
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Classification</span>
+                                            <div className="h-px flex-1 bg-gray-100"></div>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                            {[
+                                                { id: 'RESIDENTIAL', label: 'RES\'L' },
+                                                { id: 'COMMERCIAL', label: 'COMM\'L' },
+                                                { id: 'INDUSTRIAL', label: 'IND\'L' },
+                                                { id: 'AGRICULTURAL', label: 'AGRI' }
+                                            ].map(cat => (
+                                                <button
+                                                    key={cat.id}
+                                                    onClick={() => {
+                                                        setSelectedCategories(prev => 
+                                                            prev.includes(cat.id) 
+                                                                ? prev.filter(c => c !== cat.id)
+                                                                : [...prev, cat.id]
+                                                        );
+                                                    }}
+                                                    className={`px-4 py-2 text-[10px] font-bold rounded-xl transition-all border ${
+                                                        selectedCategories.includes(cat.id)
+                                                            ? 'bg-gray-900 border-gray-900 text-white shadow-lg shadow-gray-200'
+                                                            : 'bg-white border-gray-200 text-gray-500 hover:border-gray-800'
+                                                    } uppercase tracking-wider`}
+                                                >
+                                                    {cat.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Property Type Selection */}
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Property Type</span>
+                                            <div className="h-px flex-1 bg-gray-100"></div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {[
+                                                'HOUSE AND LOT', 'TOWNHOUSE', 'CONDO', 'VACANT LOT',
+                                                'WAREHOUSE', 'BUILDING', 'OFFICE/COMMERCIAL', 'CLUB SHARE / BUSINESS'
+                                            ].map(type => (
+                                                <button
+                                                    key={type}
+                                                    onClick={() => {
+                                                        setSelectedPropertyTypes(prev => 
+                                                            prev.includes(type) 
+                                                                ? prev.filter(t => t !== type)
+                                                                : [...prev, type]
+                                                        );
+                                                    }}
+                                                    className={`px-3 py-3 text-[10px] font-bold rounded-xl transition-all border ${
+                                                        selectedPropertyTypes.includes(type)
+                                                            ? 'bg-blue-600 border-blue-600 text-white shadow-md'
+                                                            : 'bg-white border-gray-100 text-gray-600 hover:border-blue-200'
+                                                    } uppercase tracking-tight text-center`}
+                                                >
+                                                    {type}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Property Status */}
+                                    <div className="flex items-center justify-between py-4 border-t border-gray-50">
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-bold text-gray-900 uppercase tracking-widest">Property Status</span>
+                                            <span className="text-[9px] text-gray-400">Filter by Available only</span>
+                                        </div>
                                         <button 
-                                            onClick={() => setUsePriceFilter(!usePriceFilter)}
-                                            className={`flex items-center justify-center px-3 py-2 rounded-xl text-[9px] font-bold transition-all border ${
-                                                usePriceFilter
-                                                    ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
-                                                    : 'bg-white border-gray-200 text-gray-400'
-                                            } uppercase tracking-tight`}
-                                            title="Filter by Price Similarity"
+                                            onClick={() => setShowAllInMap(!showAllInMap)}
+                                            className={`relative w-28 h-9 rounded-full p-1 transition-all duration-300 flex items-center ${
+                                                showAllInMap ? 'bg-gray-100' : 'bg-blue-600 shadow-inner'
+                                            }`}
                                         >
-                                            PRICE
+                                            <div className={`absolute left-1 flex items-center justify-center w-[calc(50%-2px)] h-7 rounded-full text-[9px] font-bold transition-all duration-300 ${
+                                                !showAllInMap ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-500'
+                                            }`}>
+                                                AVAILABLE
+                                            </div>
+                                            <div className={`absolute right-1 flex items-center justify-center w-[calc(50%-2px)] h-7 rounded-full text-[9px] font-bold transition-all duration-300 ${
+                                                showAllInMap ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-500'
+                                            }`}>
+                                                SHOW ALL
+                                            </div>
                                         </button>
-                                        {/* Lot Size Filter Toggle */}
-                                        <button 
-                                            onClick={() => setUseLotSizeFilter(!useLotSizeFilter)}
-                                            className={`flex items-center justify-center px-3 py-2 rounded-xl text-[9px] font-bold transition-all border ${
-                                                useLotSizeFilter
-                                                    ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
-                                                    : 'bg-white border-gray-200 text-gray-400'
-                                            } uppercase tracking-tight`}
-                                            title="Filter by Lot/Floor Area Similarity"
-                                        >
-                                            LOT SIZE
-                                        </button>
+                                    </div>
+
+                                    {/* Similarity Criteria */}
+                                    <div className="flex items-center justify-between py-4 border-t border-gray-50 pt-6">
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-bold text-gray-900 uppercase tracking-widest">Similarity Criteria</span>
+                                            <span className="text-[9px] text-gray-400">Apply price/area restrictions</span>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button 
+                                                onClick={() => setUsePriceFilter(!usePriceFilter)}
+                                                className={`flex items-center justify-center px-4 py-2 rounded-xl text-[9px] font-bold transition-all border ${
+                                                    usePriceFilter
+                                                        ? 'bg-indigo-600 border-indigo-600 text-white shadow-md'
+                                                        : 'bg-white border-gray-200 text-gray-400 hover:border-indigo-300'
+                                                } uppercase tracking-wider`}
+                                            >
+                                                PRICE
+                                            </button>
+                                            <button 
+                                                onClick={() => setUseLotSizeFilter(!useLotSizeFilter)}
+                                                className={`flex items-center justify-center px-4 py-2 rounded-xl text-[9px] font-bold transition-all border ${
+                                                    useLotSizeFilter
+                                                        ? 'bg-indigo-600 border-indigo-600 text-white shadow-md'
+                                                        : 'bg-white border-gray-200 text-gray-400 hover:border-indigo-300'
+                                                } uppercase tracking-wider`}
+                                            >
+                                                AREA
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                                 
-                                <div className="mt-4 flex gap-2">
+                                <div className="mt-8 flex gap-3">
                                     <button 
                                         onClick={() => {
                                             setSelectedPropertyTypes([]);
+                                            setSelectedSaleTypes([]);
+                                            setShowOnlyDirect(false);
+                                            setSelectedCategories([]);
                                             setShowAllInMap(false);
                                             setUsePriceFilter(true);
                                             setUseLotSizeFilter(true);
                                         }}
-                                        className="flex-1 py-2 rounded-xl text-[11px] font-bold text-gray-400 hover:bg-gray-50 transition-colors"
+                                        className="flex-1 py-3 rounded-xl text-[11px] font-bold text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-all uppercase tracking-widest"
                                     >
-                                        RESET FILTERS
+                                        Reset
                                     </button>
                                     <button 
                                         onClick={() => setShowFilters(false)}
-                                        className="flex-1 py-2 bg-gray-900 rounded-xl text-[11px] font-bold text-white shadow-lg shadow-gray-200"
+                                        className="flex-[2] py-3 bg-gray-900 rounded-xl text-[11px] font-bold text-white shadow-xl shadow-gray-200 hover:bg-black hover:-translate-y-0.5 active:translate-y-0 transition-all uppercase tracking-[0.2em]"
                                     >
-                                        APPLY
+                                        Apply Filters
                                     </button>
                                 </div>
                             </div>

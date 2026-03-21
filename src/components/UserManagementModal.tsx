@@ -5,7 +5,7 @@ import type { Feature } from '../contexts/PermissionsContext';
 import { useAuth } from '../contexts/AuthContext';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-type AppRole = 'ADMIN' | 'EDITOR' | 'BROKER' | 'VIEWER';
+type AppRole = 'SUPERADMIN' | 'ADMIN' | 'EDITOR' | 'BROKER' | 'VIEWER';
 type Tab = 'users' | 'permissions' | 'groups';
 
 interface FbGroup {
@@ -39,6 +39,7 @@ interface UserManagementModalProps {
 const ROLES: AppRole[] = ['ADMIN', 'EDITOR', 'BROKER', 'VIEWER'];
 
 const ROLE_BADGE: Record<AppRole, string> = {
+    SUPERADMIN: 'bg-indigo-100 text-indigo-800 border border-indigo-300',
     ADMIN:  'bg-purple-50 text-purple-700 border border-purple-200',
     EDITOR: 'bg-amber-50 text-amber-700 border border-amber-200',
     BROKER: 'bg-blue-50 text-blue-700 border border-blue-200',
@@ -46,6 +47,7 @@ const ROLE_BADGE: Record<AppRole, string> = {
 };
 
 const ROLE_TOGGLE_COLORS: Record<AppRole, string> = {
+    SUPERADMIN: 'bg-indigo-600',
     ADMIN:  'bg-purple-500',
     EDITOR: 'bg-amber-500',
     BROKER: 'bg-blue-500',
@@ -84,6 +86,21 @@ const FEATURES: { key: Feature; label: string; group: string; active: boolean }[
 const FEATURE_GROUPS = ['Listing Card', 'Edit Section'];
 
 const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
+    SUPERADMIN: {
+        // Same as ADMIN but used for first-class recognition
+        view_col_k: true, view_listing_ownership: true, view_pricing: true,
+        view_photos: true, view_col_aa: true, view_col_ac: true,
+        show_all: true, view_fb_link: true, view_map: true, view_copy: true, view_notes: true,
+        change_status: true, geo_id_click: true, view_last_update: true, copy_photo_link: false, edit_listing: true,
+        full_screen_map: true,
+        // Edit Section
+        edit_sale_price: true, edit_lease_price: true, edit_notes: true, edit_monthly_dues: true,
+        edit_coordinates: true, geocoding: true, edit_fb_link: true, edit_update_date: true,
+        // Misc
+        add_listing: true, delete_listing: true,
+        telegram_send: true, batch_review: true, ai_extract: true,
+        export_data: true, manage_users: true,
+    },
     ADMIN: {
         // Listing Card
         view_col_k: true, view_listing_ownership: true, view_pricing: true,
@@ -152,6 +169,7 @@ function buildDefaultPermState(): PermState {
     const state = {} as PermState;
     for (const f of FEATURES) {
         state[f.key] = {
+            SUPERADMIN: ROLE_DEFAULTS.SUPERADMIN[f.key],
             ADMIN:   ROLE_DEFAULTS.ADMIN[f.key],
             EDITOR:  ROLE_DEFAULTS.EDITOR[f.key],
             BROKER:  ROLE_DEFAULTS.BROKER[f.key],

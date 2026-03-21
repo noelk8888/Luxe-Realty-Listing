@@ -20,6 +20,7 @@ interface AuthContextType {
     user: User | null;
     session: Session | null;
     role: Role;
+    displayRole: Role;
     fbLink: string | null;
     fbGroup: string | null;
     groupBranding: GroupBranding | null;
@@ -30,7 +31,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-async function fetchUserProfile(email: string): Promise<{ role: Role; fbLink: string | null; fbGroup: string | null }> {
+async function fetchUserProfile(email: string): Promise<{ role: Role; displayRole: Role; fbLink: string | null; fbGroup: string | null }> {
     console.log('Auth: fetching profile for', email);
 
     // Check SUPERADMIN env var first (bypasses DB, same as LUXE Edit)
@@ -41,11 +42,21 @@ async function fetchUserProfile(email: string): Promise<{ role: Role; fbLink: st
     if (saEmails.includes(email.toLowerCase())) {
         const { data: saData } = await supabase
             .from('luxe_listing_users')
-            .select('fb_link, fb_group')
+            .select('role, fb_link, fb_group')
             .eq('email', email.toLowerCase())
             .maybeSingle();
-        const d = saData as { fb_link?: string | null; fb_group?: string | null } | null;
-        return { role: 'superadmin', fbLink: d?.fb_link ?? null, fbGroup: d?.fb_group ?? null };
+        const d = saData as { role?: string; fb_link?: string | null; fb_group?: string | null } | null;
+        
+        let displayRole: Role = 'admin';
+        if (d?.role) {
+            const dr = d.role.toUpperCase();
+            if (dr === 'ADMIN') displayRole = 'admin';
+            else if (dr === 'EDITOR') displayRole = 'editor';
+            else if (dr === 'BROKER') displayRole = 'broker';
+            else if (dr === 'VIEWER') displayRole = 'viewer';
+        }
+        
+        return { role: 'superadmin', displayRole, fbLink: d?.fb_link ?? null, fbGroup: d?.fb_group ?? null };
     }
 
     const { data, error } = await supabase
@@ -55,23 +66,23 @@ async function fetchUserProfile(email: string): Promise<{ role: Role; fbLink: st
         .maybeSingle();
 
     console.log('Auth: fetchUserProfile response', { data, error });
-    if (error || !data) return { role: null, fbLink: null, fbGroup: null };
+    if (error || !data) return { role: null, displayRole: null, fbLink: null, fbGroup: null };
 
     const r = (data.role as string).toUpperCase();
-    let role: Role = null;
+    let role: Role = 'viewer';
     if (r === 'ADMIN')  role = 'admin';
+    else if (r === 'SUPERADMIN') role = 'superadmin';
     else if (r === 'EDITOR') role = 'editor';
     else if (r === 'BROKER') role = 'broker';
-    else if (r === 'VIEWER') role = 'viewer';
 
-    const d = data as { fb_link?: string | null; fb_group?: string | null };
-    return { role, fbLink: d.fb_link ?? null, fbGroup: d.fb_group ?? null };
+    return { role, displayRole: role, fbLink: data.fb_link ?? null, fbGroup: data.fb_group ?? null };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [session, setSession] = useState<Session | null>(null);
     const [role, setRole] = useState<Role>(null);
+    const [displayRole, setDisplayRole] = useState<Role>(null);
     const [fbLink, setFbLink] = useState<string | null>(null);
     const [fbGroup, setFbGroup] = useState<string | null>(null);
     const [groupBranding, setGroupBranding] = useState<GroupBranding | null>(null);
@@ -110,10 +121,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         let cancelled = false;
 
         console.log('Auth: fetching profile (separate effect) for', user.email);
-        fetchUserProfile(user.email).then(async ({ role: r, fbLink: fb, fbGroup: fg }) => {
+        fetchUserProfile(user.email).then(async ({ role: r, displayRole: dr, fbLink: fb, fbGroup: fg }) => {
             if (cancelled) return;
-            console.log('Auth: role =', r, 'fbLink =', fb, 'fbGroup =', fg);
+            console.log('Auth: role =', r, 'displayRole =', dr, 'fbLink =', fb, 'fbGroup =', fg);
             setRole(r);
+            setDisplayRole(dr);
             setFbLink(fb);
             setFbGroup(fg);
 
@@ -167,7 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, session, role, fbLink, fbGroup, groupBranding, isLoading, signInWithGoogle, signOut }}>
+        <AuthContext.Provider value={{ user, session, role, displayRole, fbLink, fbGroup, groupBranding, isLoading, signInWithGoogle, signOut }}>
             {children}
         </AuthContext.Provider>
     );
