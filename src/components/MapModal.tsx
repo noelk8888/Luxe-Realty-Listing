@@ -5,7 +5,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
-import { X, ArrowLeft } from 'lucide-react';
+import { X, ArrowLeft, Filter, Users } from 'lucide-react';
 import type { Listing } from '../types';
 import { calculateDistance } from '../utils/geoUtils';
 import { ListingCard } from './ListingCard';
@@ -84,6 +84,32 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
     const [showSimilar, setShowSimilar] = useState(true);
     const [similarRadius, setSimilarRadius] = useState<2 | 5>(2);
     const [showNearby, setShowNearby] = useState(true);
+    const [showAllInMap, setShowAllInMap] = useState(false);
+    const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<string[]>([]);
+    const [showFilters, setShowFilters] = useState(false);
+
+    // Filter Helpers
+    const matchesPropertyType = (item: Listing): boolean => {
+        if (selectedPropertyTypes.length === 0) return true;
+        const itemType = (item.typeDescription || '').trim().toUpperCase();
+        return selectedPropertyTypes.some(type => {
+            if (type === 'TOWNHOUSE') return itemType.includes('TOWNHOUSE') || itemType.includes('TOWN HOUSE');
+            if (type === 'WAREHOUSE') return itemType.includes('WAREHOUSE');
+            if (type === 'VACANT LOT') return itemType.includes('VACANT LOT');
+            if (type === 'HOUSE AND LOT') return itemType.includes('HOUSE AND LOT') || itemType.includes('HOUSE & LOT');
+            if (type === 'CONDO') return itemType.includes('CONDO');
+            if (type === 'OFFICE/COMMERCIAL') return itemType.includes('OFFICE') || itemType.includes('COMMERCIAL');
+            if (type === 'BUILDING') return itemType.includes('BUILDING');
+            if (type === 'CLUB SHARE / BUSINESS') return itemType.includes('CLUB SHARES') || itemType.includes('CLUB SHARE') || itemType.includes('BUSINESS');
+            return false;
+        });
+    };
+
+    const matchesStatus = (item: Listing): boolean => {
+        if (showAllInMap) return true;
+        const status = (item.statusAQ || '').toUpperCase().trim();
+        return status === 'AVAILABLE';
+    };
 
     // Wrapper to close modal when notes button is clicked
     const handleNotesClick = (id: string) => {
@@ -145,6 +171,11 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
     const nearbyRadius = 1; // Fixed 1km for nearby (gray pins)
     const neighbors = allListings.filter(l => {
         if (l.id === centerListing.id || !l.lat || !l.lng) return false;
+
+        // Apply Status and Property Type filters
+        if (!matchesStatus(l)) return false;
+        if (!matchesPropertyType(l)) return false;
+
         const dist = calculateDistance(centerListing.lat, centerListing.lng, l.lat, l.lng);
 
         const isSimilar = isSimilarListing(l);
@@ -402,15 +433,111 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
                             <div className="w-px h-4 bg-gray-300 mx-1"></div>
 
                             {/* Nearby Toggle */}
-                            <button
+                            <button 
                                 onClick={() => setShowNearby(!showNearby)}
-                                className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full transition-all ${showNearby ? 'bg-blue-600' : 'opacity-40'}`}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-gray-50 transition-colors text-xs font-medium border-l border-gray-100 ml-1 ${showNearby ? 'text-blue-600' : 'text-gray-400'}`}
                             >
-                                <div className={`w-[7px] h-[7px] rounded-full ${showNearby ? 'bg-white' : 'bg-[#9ca3af]'} border border-black/20`}></div>
-                                <span className={`text-[9px] font-bold ${showNearby ? 'text-white' : 'text-gray-700'}`}>Nearby 1km</span>
+                                <Users size={14} />
+                                Nearby 1km
+                            </button>
+
+                            {/* Filters Button */}
+                            <button 
+                                onClick={() => setShowFilters(!showFilters)}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-gray-50 transition-colors text-xs font-medium border-l border-gray-100 ml-1 ${showFilters || selectedPropertyTypes.length > 0 || showAllInMap ? 'text-blue-600' : 'text-gray-400'}`}
+                            >
+                                <Filter size={14} />
+                                Filters
+                                {(selectedPropertyTypes.length > 0 || showAllInMap) && (
+                                    <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
+                                )}
                             </button>
                         </div>
                     </div>
+
+                    {/* Filters Popover */}
+                    {showFilters && (
+                        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-[1001] w-[95%] max-w-[400px]">
+                            <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 py-4 px-5 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-sm font-bold text-gray-800">Property Type</h3>
+                                    <button 
+                                        onClick={() => setShowFilters(false)}
+                                        className="p-1 hover:bg-gray-50 rounded-full transition-colors"
+                                    >
+                                        <X size={16} className="text-gray-400" />
+                                    </button>
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-2 mb-6">
+                                    {[
+                                        'HOUSE AND LOT', 'TOWNHOUSE', 'CONDO', 'VACANT LOT',
+                                        'WAREHOUSE', 'BUILDING', 'OFFICE/COMMERCIAL', 'CLUB SHARE / BUSINESS'
+                                    ].map(type => (
+                                        <button
+                                            key={type}
+                                            onClick={() => {
+                                                setSelectedPropertyTypes(prev => 
+                                                    prev.includes(type) 
+                                                        ? prev.filter(t => t !== type)
+                                                        : [...prev, type]
+                                                );
+                                            }}
+                                            className={`px-3 py-2.5 text-[10px] font-bold rounded-xl transition-all border ${
+                                                selectedPropertyTypes.includes(type)
+                                                    ? 'bg-blue-600 border-blue-600 text-white shadow-md'
+                                                    : 'bg-white border-gray-100 text-gray-600 hover:border-blue-200'
+                                            } uppercase tracking-tight text-center`}
+                                        >
+                                            {type}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <div className="flex items-center justify-between pt-4 border-t border-gray-50">
+                                    <div className="flex flex-col">
+                                        <span className="text-xs font-bold text-gray-800 uppercase tracking-wider">Property Status</span>
+                                        <span className="text-[10px] text-gray-400">Filter by Available only</span>
+                                    </div>
+                                    <button 
+                                        onClick={() => setShowAllInMap(!showAllInMap)}
+                                        className={`relative w-24 h-8 rounded-full p-1 transition-colors duration-200 flex items-center ${
+                                            showAllInMap ? 'bg-gray-100' : 'bg-blue-600'
+                                        }`}
+                                    >
+                                        <div className={`absolute left-1 flex items-center justify-center w-[calc(50%-2px)] h-6 rounded-full text-[9px] font-bold transition-all duration-200 ${
+                                            !showAllInMap ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400'
+                                        }`}>
+                                            AVAILABLE
+                                        </div>
+                                        <div className={`absolute right-1 flex items-center justify-center w-[calc(50%-2px)] h-6 rounded-full text-[9px] font-bold transition-all duration-200 ${
+                                            showAllInMap ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400'
+                                        }`}>
+                                            SHOW ALL
+                                        </div>
+                                    </button>
+                                </div>
+                                
+                                <div className="mt-4 flex gap-2">
+                                    <button 
+                                        onClick={() => {
+                                            setSelectedPropertyTypes([]);
+                                            setShowAllInMap(false);
+                                        }}
+                                        className="flex-1 py-2 rounded-xl text-[11px] font-bold text-gray-400 hover:bg-gray-50 transition-colors"
+                                    >
+                                        RESET FILTERS
+                                    </button>
+                                    <button 
+                                        onClick={() => setShowFilters(false)}
+                                        className="flex-1 py-2 bg-gray-900 rounded-xl text-[11px] font-bold text-white shadow-lg shadow-gray-200"
+                                    >
+                                        APPLY
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Grid Overlay for Grouped Listings */}
