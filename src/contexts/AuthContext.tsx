@@ -56,9 +56,11 @@ async function fetchUserProfile(email: string): Promise<{ role: Role; displayRol
         .maybeSingle();
 
     console.log('Auth: fetchUserProfile response', { data, error });
-    if (error || !data) return { role: null, displayRole: null, fbLink: null, fbGroup: null };
+    
+    // If there's an actual error (not just "no data"), log it
+    if (error) console.error('Auth: profile fetch error', error);
 
-    const dbRole = (data.role as string).toUpperCase();
+    const dbRole = (data?.role as string || '').toUpperCase();
     
     // Calculate Internal Role
     let role: Role = 'viewer';
@@ -89,7 +91,7 @@ async function fetchUserProfile(email: string): Promise<{ role: Role; displayRol
         else if (dbRole === 'VIEWER') displayRole = 'viewer';
     }
 
-    return { role, displayRole, fbLink: data.fb_link ?? null, fbGroup: data.fb_group ?? null };
+    return { role, displayRole, fbLink: data?.fb_link ?? null, fbGroup: data?.fb_group ?? null };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

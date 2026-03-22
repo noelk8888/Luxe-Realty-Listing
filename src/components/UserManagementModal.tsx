@@ -18,6 +18,7 @@ interface FbGroup {
     instagram_url: string | null;
     tiktok_url: string | null;
     youtube_url: string | null;
+    spearheaded_by: string | null;
 }
 
 interface AppUser {
@@ -240,6 +241,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
     const [editInstagramUrl, setEditInstagramUrl] = useState('');
     const [editTiktokUrl, setEditTiktokUrl] = useState('');
     const [editYoutubeUrl, setEditYoutubeUrl] = useState('');
+    const [editSpearheadedBy, setEditSpearheadedBy] = useState('');
     const [savingGroup, setSavingGroup] = useState<string | null>(null);
     const [confirmDeleteGroup, setConfirmDeleteGroup] = useState<string | null>(null);
     const [deletingGroup, setDeletingGroup] = useState<string | null>(null);
@@ -355,7 +357,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
         setGroupsLoading(true);
         const { data, error } = await supabase
             .from('luxe_listing_fb_groups')
-            .select('id, name, fb_link, brand_name, logo_url, messenger_url, instagram_url, tiktok_url, youtube_url')
+            .select('id, name, fb_link, brand_name, logo_url, messenger_url, instagram_url, tiktok_url, youtube_url, spearheaded_by')
             .order('name');
         if (error) setError('Failed to load groups: ' + error.message);
         else setGroups(data ?? []);
@@ -392,6 +394,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                 instagram_url: editInstagramUrl.trim() || null,
                 tiktok_url: editTiktokUrl.trim() || null,
                 youtube_url: editYoutubeUrl.trim() || null,
+                spearheaded_by: editSpearheadedBy.trim() || null,
             })
             .eq('id', id);
         if (error) setError('Failed to update group: ' + error.message);
@@ -822,6 +825,10 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                                 <input value={editBrandName} onChange={e => setEditBrandName(e.target.value)} placeholder="e.g. Luxe Realty Ph" className="w-full text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-gray-300" />
                                                             </div>
                                                             <div className="col-span-2">
+                                                                <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Spearheaded by:</label>
+                                                                <input value={editSpearheadedBy} onChange={e => setEditSpearheadedBy(e.target.value)} className="w-full text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-gray-300" />
+                                                            </div>
+                                                            <div className="col-span-2">
                                                                 <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Logo URL (header)</label>
                                                                 <input value={editLogoUrl} onChange={e => setEditLogoUrl(e.target.value)} placeholder="https://..." className="w-full text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-gray-300" />
                                                             </div>
@@ -890,7 +897,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                         <td className="px-5 py-3 text-right">
                                                             <div className="flex items-center justify-end gap-1">
                                                                 <button
-                                                                    onClick={() => { setEditingGroupId(g.id); setEditGroupName(g.name); setEditGroupFbLink(g.fb_link); setEditBrandName(g.brand_name ?? ''); setEditLogoUrl(g.logo_url ?? ''); setEditFacebookUrl(g.fb_link ?? ''); setEditMessengerUrl(g.messenger_url ?? ''); setEditInstagramUrl(g.instagram_url ?? ''); setEditTiktokUrl(g.tiktok_url ?? ''); setEditYoutubeUrl(g.youtube_url ?? ''); setConfirmDeleteGroup(null); }}
+                                                                    onClick={() => { setEditingGroupId(g.id); setEditGroupName(g.name); setEditGroupFbLink(g.fb_link); setEditBrandName(g.brand_name ?? ''); setEditLogoUrl(g.logo_url ?? ''); setEditFacebookUrl(g.fb_link ?? ''); setEditMessengerUrl(g.messenger_url ?? ''); setEditInstagramUrl(g.instagram_url ?? ''); setEditTiktokUrl(g.tiktok_url ?? ''); setEditYoutubeUrl(g.youtube_url ?? ''); setEditSpearheadedBy(g.spearheaded_by ?? ''); setConfirmDeleteGroup(null); }}
                                                                     className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                                                                     title="Edit"
                                                                 >

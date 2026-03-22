@@ -343,7 +343,7 @@ export const normalizeDbListing = (row: DbListing): Listing => {
         : (bedroomsValue || 0);
 
     return {
-        id: row['GEO ID'] || '',
+        id: (row['GEO ID'] || '').trim(),
         summary: summaryWithV,
         displaySummary: displaySummary,
         price: price,

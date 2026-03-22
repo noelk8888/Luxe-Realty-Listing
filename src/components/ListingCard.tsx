@@ -80,7 +80,9 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                 ? `https://www.google.com/maps/search/?api=1&query=${listing.lat},${listing.lng}`
                 : '');
 
-            let copyText = mainBody;
+            const cleanId = listing.id.trim();
+            const cleanBody = mainBody.trim();
+            let copyText = cleanBody.startsWith(cleanId) ? mainBody : `${cleanId}\n${mainBody}`;
             if (mapsLink && listing.mapVerified) copyText += `\nGoogle Map: ${mapsLink}`;
             if (notes) copyText += `\n\nNOTES: ${notes}`;
 
