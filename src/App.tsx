@@ -1235,8 +1235,8 @@ function App() {
 
           <p className={`font-bold text-gray-900 tracking-tight transition-all duration-500 ${(hasSearched || selectedType || selectedCategory || (selectedBedrooms.length > 0) || (selectedParking.length > 0) || (selectedPropertyTypes.length > 0)) ? 'text-2xl mb-4 mt-4' : 'text-4xl sm:text-5xl mb-8'}`}>
             {(selectedType || selectedCategory || hasSearched || (selectedBedrooms.length > 0) || (selectedParking.length > 0) || (selectedPropertyTypes.length > 0))
-              ? `Found ${displayedResults.length.toLocaleString()} of ${allListings.length.toLocaleString()} Available Listings`
-              : allListings.length > 0 ? `${allListings.length.toLocaleString()} Available Listings` : 'Loading properties...'
+              ? `Found ${displayedResults.length.toLocaleString()} of ${allListings.filter(l => l.sourceTab === 'Sheet1').length.toLocaleString()} Available Listings`
+              : allListings.filter(l => l.sourceTab === 'Sheet1').length > 0 ? `${allListings.filter(l => l.sourceTab === 'Sheet1').length.toLocaleString()} Available Listings` : 'Loading properties...'
             }
           </p>
 
