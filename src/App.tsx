@@ -423,7 +423,7 @@ function App() {
       setSelectedParking([]);
       setSelectedPropertyTypes([]);
       setSortConfig(null);
-      setShowAllListings(false);
+      setShowAllListings(true);
     } catch (error) {
       console.error('Failed to refresh listings:', error);
     } finally {
@@ -1410,7 +1410,7 @@ function App() {
                             setSelectedParking([]);
                             setSelectedPropertyTypes([]);
                             setSortConfig(null);
-                            setShowAllListings(false); // Reset to Available only
+                            setShowAllListings(true); // Reset to Show All
                             window.history.replaceState({}, '', window.location.pathname);
                           }}
                           className="text-sm font-bold text-red-500 hover:text-red-700 underline tracking-wide bg-white pl-2"
