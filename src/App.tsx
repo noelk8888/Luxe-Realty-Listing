@@ -1045,20 +1045,16 @@ function App() {
 
     // Date: use custom date if toggle is ON, else keep existing date from stamp
     let datePart = '';
+    const now = new Date();
     const formatDateStamp = (d: Date) => {
       return `${d.toLocaleString('en-US', { month: 'short' })} ${String(d.getDate()).padStart(2, '0')}, ${d.getFullYear()}`;
     };
 
     if (updates.updateDate) {
       datePart = formatDateStamp(new Date(updates.updateDate + 'T00:00:00'));
-    } else if (listing.columnBC) {
-      const existingParts = listing.columnBC.split(' | ');
-      const date = new Date(existingParts[0]);
-      if (!isNaN(date.getTime())) {
-        datePart = formatDateStamp(date);
-      } else {
-        datePart = existingParts[0];
-      }
+    } else {
+      // Always use today's date for an update if none provided
+      datePart = formatDateStamp(now);
     }
     const newStamp = datePart
       ? `${datePart} | ${changeTypes.join('/')} | ${author}`
