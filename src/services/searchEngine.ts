@@ -247,6 +247,23 @@ export const searchListings = (listings: Listing[], query: string, minScore: num
 
         const listingText = primaryText + ' . ' + secondaryText + ' . ' + (listing.statusAQ || '');
 
+        // D. ID Priority Boost (A/B/G + Number)
+        // If query looks like an ID (starts with A, B, or G followed by numbers), prioritize related ID matches
+        let isCrossSeriesIDMatch = false;
+        if (/^[abg]\d+/i.test(cleanQuery)) {
+            const queryDigits = cleanQuery.substring(1);
+            const listingId = (listing.id || '').toLowerCase();
+            const startsWithABG = /^[abg]/.test(listingId);
+            const idDigits = listingId.substring(1);
+
+            if (startsWithABG && idDigits === queryDigits) {
+                isCrossSeriesIDMatch = true;
+                score += 2000; // Massive boost for same-number different-series IDs
+            } else if (listingId.includes(cleanQuery)) {
+                score += 2000; // Original exact match boost
+            }
+        }
+
         // Determine matching strategy based on query type
         const hasTypeAndLocation = criteria.types.length > 0 && criteria.keywords.length > 0;
         const isPureMultiKeywordSearch = criteria.keywords.length > 1 && criteria.types.length === 0 && !criteria.isProximitySearch;
@@ -306,7 +323,8 @@ export const searchListings = (listings: Listing[], query: string, minScore: num
 
             // STRICT PHRASE MATCHING: The entire query phrase must appear in the listing
             // "Road 8" must match "Road 8" exactly, not just "Road" or "8" separately
-            if (cleanQuery.length > 0 && !listingText.includes(cleanQuery)) {
+            // EXCEPTION: Allow cross-series ID matches (A/B/G) through the filter
+            if (cleanQuery.length > 0 && !listingText.includes(cleanQuery) && !isCrossSeriesIDMatch) {
                 return { listing, score: -1 }; // Filter out non-phrase matches
             }
         }
@@ -320,21 +338,6 @@ export const searchListings = (listings: Listing[], query: string, minScore: num
                 const regex = new RegExp(`\\b${escapedLoc}\\b`, 'i');
                 if (regex.test(locString)) score += 20;
             });
-        }
-
-        // D. ID Priority Boost (A/B/G + Number)
-        // If query looks like an ID (starts with A, B, or G followed by numbers), prioritize related ID matches
-        if (/^[abg]\d+/i.test(cleanQuery)) {
-            const queryDigits = cleanQuery.substring(1);
-            const listingId = (listing.id || '').toLowerCase();
-            const startsWithABG = /^[abg]/.test(listingId);
-            const idDigits = listingId.substring(1);
-
-            if (startsWithABG && idDigits === queryDigits) {
-                score += 2000; // Massive boost for same-number different-series IDs
-            } else if (listingId.includes(cleanQuery)) {
-                score += 2000; // Original exact match boost
-            }
         }
 
         return { listing, score };
