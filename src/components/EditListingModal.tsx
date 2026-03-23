@@ -47,7 +47,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
     const [locationError, setLocationError] = useState<string | null>(null);
     const [mapVerified, setMapVerified] = useState('');
     const { permissions } = usePermissions();
-    const { fbGroup, user } = useAuth();
+    const { fbGroup, user, role } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const isInitialLoad = React.useRef(true);
@@ -79,16 +79,52 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
         }
     }, [listing?.id]); // Trigger on actual listing change
 
+    // Auto-enable Update Date toggle on field changes
+    useEffect(() => {
+        if (!listing) return;
+
+        if (!isInitialLoad.current) {
+            setUpdateDate(true);
+            return;
+        }
+
+        // On initial load, check if any field HAS ALREADY changed from the listing values
+        // (This handles cases where the modal opens with populated state that might differ)
+        const groupPostLinks: Record<string, string | undefined> = {
+            'Luxe': listing.postLinkLuxe,
+            'Nexia': listing.postLinkNexia,
+            'Adolf': listing.postLinkAdolf,
+            'PCO': listing.postLinkPco,
+            'SLoo': listing.postLinkSloo,
+            'Taoke': listing.postLinkTaoke,
+            'Kiu': listing.facebookLink,
+        };
+        const originalFbLink = (fbGroup ? groupPostLinks[fbGroup] : listing.facebookLink) || '';
+        const originalPrice = listing.price > 0 ? listing.price.toString() : '';
+        const originalLease = listing.leasePrice > 0 ? listing.leasePrice.toString() : '';
+        const originalCoords = listing.lat && listing.lng ? `${listing.lat}, ${listing.lng}` : '';
+
+        const hasChanged = 
+            (salePrice !== originalPrice) ||
+            (leasePrice !== originalLease) ||
+            (monthlyDues !== (listing.monthlyDues || '')) ||
+            (notes !== (listing.columnV || '')) ||
+            (latLong !== originalCoords) ||
+            (fbLink !== originalFbLink);
+
+        if (hasChanged) {
+            isInitialLoad.current = false;
+            setUpdateDate(true);
+        }
+    }, [salePrice, leasePrice, monthlyDues, notes, latLong, fbLink, listing, fbGroup]);
+
     // Auto-clear verification if coordinates change
     useEffect(() => {
         if (!listing) return;
         
         // Skip check on initial load to avoid precision-mismatch false positives
-        if (isInitialLoad.current) {
-            isInitialLoad.current = false;
-            return;
-        }
-
+        // Note: isInitialLoad logic is now partially handled by the other useEffect too
+        
         const currentCoords = latLong.trim().split(',').map(s => s.trim()).filter(Boolean);
         if (currentCoords.length === 2) {
             const originalLat = listing.lat?.toString().trim();
@@ -360,7 +396,8 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                                     const author = fbGroup || (user?.user_metadata?.full_name || user?.email || 'System');
                                     setMapVerified(`${dateStr} | ${author}`);
                                 }}
-                                className="px-4 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors whitespace-nowrap"
+                                disabled={!latLong.trim()}
+                                className="px-4 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                                 title="Mark coordinates as verified"
                             >
                                 VERIFIED
@@ -416,7 +453,11 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                             </div>
                             <button
                                 type="button"
-                                onClick={() => setUpdateDate(prev => !prev)}
+                                onClick={() => {
+                                    // Only superadmin can turn it OFF if it's already ON
+                                    if (updateDate && role !== 'superadmin') return;
+                                    setUpdateDate(prev => !prev);
+                                }}
                                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${updateDate ? 'bg-blue-600' : 'bg-gray-300'}`}
                             >
                                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${updateDate ? 'translate-x-6' : 'translate-x-1'}`} />
