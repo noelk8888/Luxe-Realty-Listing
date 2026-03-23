@@ -500,9 +500,19 @@ function App() {
     }
 
     // 0. ID Search Override
-    // If the query is an exact ID match, we show it regardless of other filters.
+    // If the query is an exact ID match or a series match (A/B/G), we show it regardless of other filters.
     const trimmedQuery = debouncedQuery.trim().toUpperCase();
-    const isExactIdMatch = trimmedQuery === (item.id || '').toUpperCase();
+    const itemId = (item.id || '').toUpperCase();
+    
+    // Check if it's a multi-series ID search (A/B/G + digits)
+    const seriesMatchMatch = trimmedQuery.match(/^([ABG])(\d+)$/);
+    let isSeriesMatch = false;
+    if (seriesMatchMatch) {
+      const digits = seriesMatchMatch[2];
+      isSeriesMatch = /^[ABG]/.test(itemId) && itemId.substring(1) === digits;
+    }
+
+    const isExactIdMatch = trimmedQuery === itemId || isSeriesMatch;
 
 
     if (isExactIdMatch) {

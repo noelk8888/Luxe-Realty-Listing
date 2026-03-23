@@ -322,11 +322,18 @@ export const searchListings = (listings: Listing[], query: string, minScore: num
             });
         }
 
-        // D. ID Priority Boost (G + Number)
-        // If query looks like an ID (starts with G followed by numbers), prioritize ID matches
-        if (/^g\d+/i.test(cleanQuery)) {
-            if (listing.id.toLowerCase().includes(cleanQuery)) {
-                score += 2000; // Massive boost to ensure it's top
+        // D. ID Priority Boost (A/B/G + Number)
+        // If query looks like an ID (starts with A, B, or G followed by numbers), prioritize related ID matches
+        if (/^[abg]\d+/i.test(cleanQuery)) {
+            const queryDigits = cleanQuery.substring(1);
+            const listingId = (listing.id || '').toLowerCase();
+            const startsWithABG = /^[abg]/.test(listingId);
+            const idDigits = listingId.substring(1);
+
+            if (startsWithABG && idDigits === queryDigits) {
+                score += 2000; // Massive boost for same-number different-series IDs
+            } else if (listingId.includes(cleanQuery)) {
+                score += 2000; // Original exact match boost
             }
         }
 
