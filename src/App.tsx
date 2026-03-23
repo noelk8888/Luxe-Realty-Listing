@@ -1023,7 +1023,10 @@ function App() {
     const hasNewCoords = updates.latLong && parsedLat !== null && parsedLng !== null;
     const coordsActuallyChanged = hasNewCoords && (Math.abs(parsedLat! - oldLat) > 0.000001 || Math.abs(parsedLng! - oldLng) > 0.000001);
     
-    if (coordsActuallyChanged) changeTypes.push('LOCATION');
+    // Also trigger LOCATION update if verification changed (e.g. user clicked VERIFIED button)
+    const verificationChanged = updates.mapVerified && updates.mapVerified !== listing.mapVerified;
+    
+    if (coordsActuallyChanged || verificationChanged) changeTypes.push('LOCATION');
     if (changeTypes.length === 0) changeTypes.push('LISTING');
     
     // Detect if we are adding a NEW listing (no existing listing ID)
