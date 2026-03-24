@@ -88,16 +88,6 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
 
         // On initial load, check if any field HAS ALREADY changed from the listing values
         // (This handles cases where the modal opens with populated state that might differ)
-        const groupPostLinks: Record<string, string | undefined> = {
-            'Luxe': listing.postLinkLuxe,
-            'Nexia': listing.postLinkNexia,
-            'Adolf': listing.postLinkAdolf,
-            'PCO': listing.postLinkPco,
-            'SLoo': listing.postLinkSloo,
-            'Taoke': listing.postLinkTaoke,
-            'Kiu': listing.facebookLink,
-        };
-        const originalFbLink = (fbGroup ? groupPostLinks[fbGroup] : listing.facebookLink) || '';
         const originalPrice = listing.price > 0 ? listing.price.toString() : '';
         const originalLease = listing.leasePrice > 0 ? listing.leasePrice.toString() : '';
         const originalCoords = listing.lat && listing.lng ? `${listing.lat}, ${listing.lng}` : '';
@@ -107,14 +97,13 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
             (leasePrice !== originalLease) ||
             (monthlyDues !== (listing.monthlyDues || '')) ||
             (notes !== (listing.columnV || '')) ||
-            (latLong !== originalCoords) ||
-            (fbLink !== originalFbLink);
+            (latLong !== originalCoords);
 
         if (hasChanged) {
             isInitialLoad.current = false;
             setUpdateDate(true);
         }
-    }, [salePrice, leasePrice, monthlyDues, notes, latLong, fbLink, listing, fbGroup]);
+    }, [salePrice, leasePrice, monthlyDues, notes, latLong, listing, fbGroup]);
 
     // Auto-clear verification if coordinates change
     useEffect(() => {
