@@ -36,9 +36,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
     const [updateDate, setUpdateDate] = useState(false);
     const todayStr = () => {
         const d = new Date();
-        const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        const time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
-        return `${date} ${time}`;
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     };
     const [customDate, setCustomDate] = useState(todayStr);
     const [latLong, setLatLong] = useState('');
@@ -224,7 +222,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                 const now = new Date();
                 const today = now.toLocaleDateString('en-US', { 
                     month: 'short', 
-                    day: 'numeric', 
+                    day: '2-digit', 
                     year: 'numeric' 
                 });
                 const time = now.toLocaleTimeString('en-US', { hour12: false });
@@ -456,7 +454,11 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                                 onClick={() => {
                                     // Only superadmin can turn it OFF if it's already ON
                                     if (updateDate && role !== 'superadmin') return;
-                                    setUpdateDate(prev => !prev);
+                                    setUpdateDate(prev => {
+                                        const next = !prev;
+                                        if (next) setCustomDate(todayStr()); // Always default to today when turned ON
+                                        return next;
+                                    });
                                 }}
                                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${updateDate ? 'bg-blue-600' : 'bg-gray-300'}`}
                             >

@@ -52,21 +52,18 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         }).format(price);
         return `P${formatted}`;
     };
-
-    const formatDate = (dateString: string) => {
-        if (!dateString) return '';
-        try {
-            const date = new Date(dateString);
-            if (isNaN(date.getTime())) return dateString;
-            const year = date.getFullYear();
-            const month = date.toLocaleString('en-US', { month: 'short' });
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${month} ${day}, ${year}`;
-        } catch {
-            return dateString;
-        }
+    const formatDate = (dateStr: string) => {
+        if (!dateStr) return '';
+        const date = new Date(dateStr.includes(' | ') ? dateStr.split(' | ')[0] : dateStr);
+        if (isNaN(date.getTime())) return dateStr;
+        
+        // Format: Mar 24, 2026 (Mmm dd, yyyy)
+        return date.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: '2-digit', 
+            year: 'numeric' 
+        });
     };
-
     const handleCopy = (e: React.MouseEvent) => {
         e.stopPropagation();
         if (listing.summary) {

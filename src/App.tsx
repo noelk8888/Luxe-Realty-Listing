@@ -935,7 +935,11 @@ function App() {
     console.log('Updating status:', { listingId, newStatus });
 
     const today = new Date();
-    const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const dateStr = today.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: '2-digit', 
+      year: 'numeric' 
+    });
     const authorName = fbGroup || (user?.user_metadata?.full_name || user?.email || '');
     const dateUpdated = `${dateStr} | ${authorName} | STATUS`.trim();
 
@@ -1041,19 +1045,22 @@ function App() {
     // Detect if we are adding a NEW listing (no existing listing ID)
     const author = fbGroup || (user?.user_metadata?.full_name || user?.email || 'System');
 
+    const formatDateStamp = (d: Date) => {
+      const dateToUse = isNaN(d.getTime()) ? new Date() : d;
+      return dateToUse.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: '2-digit', 
+        year: 'numeric' 
+      });
+    };
 
     // Date: use custom date if toggle is ON, else keep existing date from stamp
     let datePart = '';
-    const now = new Date();
-    const formatDateStamp = (d: Date) => {
-      return `${d.toLocaleString('en-US', { month: 'short' })} ${String(d.getDate()).padStart(2, '0')}, ${d.getFullYear()}`;
-    };
-
     if (updates.updateDate) {
       datePart = formatDateStamp(new Date(updates.updateDate + 'T00:00:00'));
     } else {
       // Always use today's date for an update if none provided
-      datePart = formatDateStamp(now);
+      datePart = formatDateStamp(new Date());
     }
     const newStamp = datePart
       ? `${datePart} | ${changeTypes.join('/')} | ${author}`
