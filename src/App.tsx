@@ -96,6 +96,8 @@ function App() {
       setSelectedBedrooms([]);
       setSelectedParking([]);
       setSelectedPropertyTypes([]);
+      setSelectedType(null);
+      setSelectedCategory(null);
     }
   }, [query]);
 
