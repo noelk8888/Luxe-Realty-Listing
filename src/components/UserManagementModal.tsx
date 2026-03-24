@@ -197,8 +197,10 @@ function Toggle({ enabled, onChange, disabled, color }: {
 
 // ── Main component ─────────────────────────────────────────────────────────────
 export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClose }) => {
-    const { role: currentRole } = useAuth();
-    const visibleRoles: AppRole[] = currentRole === 'admin'
+    const { role: currentRoleRaw } = useAuth();
+    const currentRole = (currentRoleRaw || '').toUpperCase() as AppRole;
+    const isSuperAdmin = currentRole === 'SUPERADMIN';
+    const visibleRoles: AppRole[] = currentRole === 'ADMIN'
         ? ['EDITOR', 'BROKER', 'VIEWER']
         : ['ADMIN', 'EDITOR', 'BROKER', 'VIEWER'];
 
@@ -963,7 +965,13 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                         </div>
                                                     </td>
                                                 </tr>
-                                                {FEATURES.filter(f => f.group === group).map(f => (
+                                                {FEATURES.filter(f => {
+                                                    if (f.group !== group) return false;
+                                                    // Superadmins see all rows
+                                                    if (isSuperAdmin) return true;
+                                                    // Others only see rows for features they have permission for
+                                                    return perms[f.key]?.[currentRole] !== false;
+                                                }).map(f => (
                                                     <tr key={f.key} className="hover:bg-gray-50/70 transition-colors">
                                                         <td className="px-5 py-3.5">
                                                             <div className="flex items-center gap-2">
