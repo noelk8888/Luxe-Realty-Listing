@@ -9,6 +9,7 @@ import { X, ArrowLeft, Filter, Users } from 'lucide-react';
 import type { Listing } from '../types';
 import { calculateDistance } from '../utils/geoUtils';
 import { ListingCard } from './ListingCard';
+import { usePermissions } from '../contexts/PermissionsContext';
 
 // Fix for default marker icon in Leaflet with Webpack/Vite
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -77,6 +78,7 @@ interface MapModalProps {
 
 
 export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListing, allListings, filteredListingsIds: _filteredListingsIds, onNotesClick, onShowNote, fullScreen }) => {
+    const { permissions } = usePermissions();
     const [focusedListing, setFocusedListing] = useState<Listing | null>(null);
     const [groupedViewListings, setGroupedViewListings] = useState<Listing[] | null>(null);
 
@@ -84,7 +86,7 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
     const [showSimilar, setShowSimilar] = useState(true);
     const [similarRadius, setSimilarRadius] = useState<2 | 5>(2);
     const [showNearby, setShowNearby] = useState(true);
-    const [showAllInMap, setShowAllInMap] = useState(false);
+    const [showAllInMap, setShowAllInMap] = useState(true);
     const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<string[]>([]);
     const [showFilters, setShowFilters] = useState(false);
     const [usePriceFilter, setUsePriceFilter] = useState(true);
@@ -140,7 +142,7 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
     };
 
     const matchesStatus = (item: Listing): boolean => {
-        if (showAllInMap) return true;
+        if (showAllInMap && permissions.show_all) return true;
         const status = (item.statusAQ || '').toUpperCase().trim();
         return status === 'AVAILABLE';
     };
@@ -619,29 +621,31 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
                                     </div>
 
                                     {/* Property Status */}
-                                    <div className="flex items-center justify-between py-4 border-t border-gray-50">
-                                        <div className="flex flex-col">
-                                            <span className="text-[10px] font-bold text-gray-900 uppercase tracking-widest">Property Status</span>
-                                            <span className="text-[9px] text-gray-400">Filter by Available only</span>
+                                    {permissions.show_all && (
+                                        <div className="flex items-center justify-between py-4 border-t border-gray-50">
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] font-bold text-gray-900 uppercase tracking-widest">Property Status</span>
+                                                <span className="text-[9px] text-gray-400">Filter by Available only</span>
+                                            </div>
+                                            <button 
+                                                onClick={() => setShowAllInMap(!showAllInMap)}
+                                                className={`relative w-28 h-9 rounded-full p-1 transition-all duration-300 flex items-center ${
+                                                    showAllInMap ? 'bg-gray-100' : 'bg-blue-600 shadow-inner'
+                                                }`}
+                                            >
+                                                <div className={`absolute left-1 flex items-center justify-center w-[calc(50%-2px)] h-7 rounded-full text-[9px] font-bold transition-all duration-300 ${
+                                                    !showAllInMap ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-500'
+                                                }`}>
+                                                    AVAILABLE
+                                                </div>
+                                                <div className={`absolute right-1 flex items-center justify-center w-[calc(50%-2px)] h-7 rounded-full text-[9px] font-bold transition-all duration-300 ${
+                                                    showAllInMap ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-500'
+                                                }`}>
+                                                    SHOW ALL
+                                                </div>
+                                            </button>
                                         </div>
-                                        <button 
-                                            onClick={() => setShowAllInMap(!showAllInMap)}
-                                            className={`relative w-28 h-9 rounded-full p-1 transition-all duration-300 flex items-center ${
-                                                showAllInMap ? 'bg-gray-100' : 'bg-blue-600 shadow-inner'
-                                            }`}
-                                        >
-                                            <div className={`absolute left-1 flex items-center justify-center w-[calc(50%-2px)] h-7 rounded-full text-[9px] font-bold transition-all duration-300 ${
-                                                !showAllInMap ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-500'
-                                            }`}>
-                                                AVAILABLE
-                                            </div>
-                                            <div className={`absolute right-1 flex items-center justify-center w-[calc(50%-2px)] h-7 rounded-full text-[9px] font-bold transition-all duration-300 ${
-                                                showAllInMap ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-500'
-                                            }`}>
-                                                SHOW ALL
-                                            </div>
-                                        </button>
-                                    </div>
+                                    )}
 
                                     {/* Similarity Criteria */}
                                     <div className="flex items-center justify-between py-4 border-t border-gray-50 pt-6">

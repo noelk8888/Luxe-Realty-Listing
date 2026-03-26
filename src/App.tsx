@@ -492,8 +492,8 @@ function App() {
 
     // 0. Base Filter (Show All)
     // console.log(`Filtering item: ${item.id}, status: ${item.statusAQ}, showAll: ${showAllListings}`);
-    // If showAllListings is false, only show AVAILABLE items
-    if (!showAllListings) {
+    // If showAllListings is false OR show_all permission is missing, only show AVAILABLE items
+    if (!showAllListings || !permissions.show_all) {
       const status = (item.statusAQ || '').toUpperCase().trim();
       if (status !== 'AVAILABLE') {
         return false;
