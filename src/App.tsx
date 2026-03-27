@@ -397,7 +397,15 @@ function App() {
     return () => clearInterval(interval);
   }, [loading, loadingProgress]);
 
+  // Handle initial loader removal
+  useEffect(() => {
+    if (!authLoading && !loading) {
+      document.body.classList.add('loaded');
+    }
+  }, [authLoading, loading]);
+
   // Manual Refresh Handler
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
@@ -1246,14 +1254,17 @@ function App() {
 
           {/* Animated Loading Progress Bar */}
           {loading && (
-            <div className="w-full max-w-md mx-auto">
-              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-300 ease-out"
-                  style={{ width: `${loadingProgress}%` }}
-                />
+            <div className="w-full max-w-md mx-auto flex flex-col items-center gap-6">
+              <img src="/footer-logo.png" alt="Loading" className="h-16 w-auto animate-pulse" />
+              <div className="w-full">
+                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${loadingProgress}%` }}
+                  />
+                </div>
+                <p className="text-sm text-gray-400 mt-2">{Math.round(loadingProgress)}%</p>
               </div>
-              <p className="text-sm text-gray-400 mt-2">{Math.round(loadingProgress)}%</p>
             </div>
           )}
 
