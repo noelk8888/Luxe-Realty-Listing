@@ -1200,12 +1200,22 @@ function App() {
             <div className="flex items-center gap-2">
               {groupBranding.logoUrl && (
                 <img
-                  src={groupBranding.logoUrl.startsWith('http') || groupBranding.logoUrl.startsWith('/')
-                    ? groupBranding.logoUrl
-                    : `https://${groupBranding.logoUrl}`
-                  }
+                  src={(() => {
+                    let url = groupBranding.logoUrl.trim();
+                    if (url.startsWith('/')) return url;
+                    if (!url.startsWith('http')) url = `https://${url}`;
+                    // Strip 'www.' as it often breaks Vercel subdomains
+                    return url.replace('https://www.', 'https://');
+                  })()}
                   alt="Logo"
                   className="h-8 w-auto"
+                  onError={(e) => {
+                    // Fallback to relative path if absolute fails
+                    const img = e.currentTarget;
+                    if (!img.src.endsWith('/luxe-logo.png')) {
+                      img.src = '/luxe-logo.png';
+                    }
+                  }}
                 />
               )}
               {groupBranding.brandName && <span className="font-bold text-gray-900 text-xl tracking-tight">{groupBranding.brandName}</span>}
