@@ -80,7 +80,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             const cleanId = listing.id.trim();
             const cleanBody = mainBody.trim();
             let copyText = cleanBody.startsWith(cleanId) ? mainBody : `${cleanId}\n${mainBody}`;
-            if (mapsLink && listing.mapVerified) copyText += `\nGoogle Map: ${mapsLink}`;
+            if (mapsLink && listing.mapVerified && !copyText.includes('Google Map:')) copyText += `\nGoogle Map: ${mapsLink}`;
             if (notes) copyText += `\n\nNOTES: ${notes}`;
 
             navigator.clipboard.writeText(copyText);
