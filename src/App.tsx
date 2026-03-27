@@ -1198,7 +1198,16 @@ function App() {
         <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
           {(groupBranding?.logoUrl || groupBranding?.brandName) && (
             <div className="flex items-center gap-2">
-              {groupBranding.logoUrl && <img src={groupBranding.logoUrl} alt="Logo" className="h-8 w-auto" />}
+              {groupBranding.logoUrl && (
+                <img
+                  src={groupBranding.logoUrl.startsWith('http') || groupBranding.logoUrl.startsWith('/')
+                    ? groupBranding.logoUrl
+                    : `https://${groupBranding.logoUrl}`
+                  }
+                  alt="Logo"
+                  className="h-8 w-auto"
+                />
+              )}
               {groupBranding.brandName && <span className="font-bold text-gray-900 text-xl tracking-tight">{groupBranding.brandName}</span>}
             </div>
           )}
