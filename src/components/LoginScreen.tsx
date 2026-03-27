@@ -15,7 +15,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSignIn }) => {
                         className="h-16 w-auto"
                     />
                     <h1 className="font-bold text-gray-900 text-2xl tracking-tight">
-                        Luxe Realty Ph
+                        Luxe Realty and Development Corporation
                     </h1>
                     <p className="text-gray-500 text-sm">
                         Sign in to access the property dashboard

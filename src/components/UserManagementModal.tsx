@@ -824,7 +824,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                             </div>
                                                             <div>
                                                                 <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Brand Name (header)</label>
-                                                                <input value={editBrandName} onChange={e => setEditBrandName(e.target.value)} placeholder="e.g. Luxe Realty Ph" className="w-full text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-gray-300" />
+                                                                <input value={editBrandName} onChange={e => setEditBrandName(e.target.value)} placeholder="e.g. Luxe Realty and Development Corporation" className="w-full text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-gray-300" />
                                                             </div>
                                                             <div className="col-span-2">
                                                                 <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Spearheaded by:</label>
