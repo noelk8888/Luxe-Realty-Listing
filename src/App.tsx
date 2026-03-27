@@ -1172,7 +1172,7 @@ function App() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <img src="/footer-logo.png" alt="Loading" className="h-12 w-auto animate-pulse" />
+          <img src="/footer-logo.png" alt="Loading" className="h-24 w-auto animate-pulse" />
           <div className="h-1 w-32 bg-gray-200 rounded-full overflow-hidden">
             <div className="h-full bg-blue-600 rounded-full animate-pulse w-2/3" />
           </div>
@@ -1264,7 +1264,7 @@ function App() {
           {/* Animated Loading Progress Bar */}
           {loading && (
             <div className="w-full max-w-md mx-auto flex flex-col items-center gap-6">
-              <img src="/footer-logo.png" alt="Loading" className="h-16 w-auto animate-pulse" />
+              <img src="/footer-logo.png" alt="Loading" className="h-24 w-auto animate-pulse" />
               <div className="w-full">
                 <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                   <div
