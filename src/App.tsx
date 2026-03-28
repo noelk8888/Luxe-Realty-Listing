@@ -1229,15 +1229,14 @@ function App() {
               {user.email}
             </span>
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-              displayRole === 'admin'   ? 'bg-green-50 text-green-600'
+              (displayRole === 'admin' || displayRole === 'superadmin') ? 'bg-green-50 text-green-600'
               : displayRole === 'editor'  ? 'bg-amber-50 text-amber-700'
               : displayRole === 'broker'  ? 'bg-blue-50 text-blue-600'
               : 'bg-gray-100 text-gray-500'
             }`}>
-              {displayRole === 'admin' ? 'ADMIN'
+              {(displayRole === 'admin' || displayRole === 'superadmin') ? 'ADMIN'
                 : displayRole === 'editor' ? 'EDITOR'
                 : displayRole === 'broker' ? 'BROKER'
-                : displayRole === 'superadmin' ? 'SUPERADMIN'
                 : 'VIEWER'}
             </span>
             {(role === 'superadmin' || role === 'admin') && (

@@ -40,7 +40,7 @@ interface UserManagementModalProps {
 const ROLES: AppRole[] = ['ADMIN', 'EDITOR', 'BROKER', 'VIEWER'];
 
 const ROLE_BADGE: Record<AppRole, string> = {
-    SUPERADMIN: 'bg-indigo-100 text-indigo-800 border border-indigo-300',
+    SUPERADMIN: 'bg-purple-50 text-purple-700 border border-purple-200', // matches ADMIN
     ADMIN:  'bg-purple-50 text-purple-700 border border-purple-200',
     EDITOR: 'bg-amber-50 text-amber-700 border border-amber-200',
     BROKER: 'bg-blue-50 text-blue-700 border border-blue-200',
@@ -724,7 +724,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                         <td className="px-5 py-3 text-gray-400 text-xs truncate max-w-[180px]">{u.email}</td>
                                                         <td className="px-5 py-3">
                                                             <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide ${ROLE_BADGE[u.role]}`}>
-                                                                {u.role}
+                                                                {u.role === 'SUPERADMIN' ? 'ADMIN' : u.role}
                                                             </span>
                                                         </td>
                                                         <td className="px-5 py-3 text-gray-400 text-xs hidden sm:table-cell truncate max-w-[140px]">
@@ -765,7 +765,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                         {/* Footer note */}
                         <div className="px-5 py-3 border-t border-gray-100 flex-shrink-0">
                             <p className="text-[11px] text-gray-400">
-                                SUPERADMIN accounts are configured via the <code className="font-mono bg-gray-100 px-1 rounded">VITE_SUPERADMIN_EMAILS</code> environment variable and do not appear in this table.
+                                Administrative accounts are configured via the <code className="font-mono bg-gray-100 px-1 rounded">VITE_SUPERADMIN_EMAILS</code> environment variable and appear in this table as ADMIN.
                             </p>
                         </div>
                     </div>

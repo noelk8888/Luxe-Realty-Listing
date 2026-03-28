@@ -83,12 +83,9 @@ async function fetchUserProfile(email: string): Promise<{ role: Role; displayRol
     let displayRole = role;
     if (MASKED_ROLES[lowEmail]) {
         displayRole = MASKED_ROLES[lowEmail];
-    } else if (role === 'superadmin' && dbRole !== 'SUPERADMIN') {
-        // If they are superadmin via list but DB says something else, show the DB role
-        if (dbRole === 'ADMIN') displayRole = 'admin';
-        else if (dbRole === 'EDITOR') displayRole = 'editor';
-        else if (dbRole === 'BROKER') displayRole = 'broker';
-        else if (dbRole === 'VIEWER') displayRole = 'viewer';
+    } else if (role === 'superadmin') {
+        // Always show superadmin as admin (unless already masked above)
+        displayRole = 'admin';
     }
 
     return { role, displayRole, fbLink: data?.fb_link ?? null, fbGroup: data?.fb_group ?? null };
