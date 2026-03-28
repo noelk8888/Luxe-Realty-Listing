@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface StatusDropdownProps {
     currentStatus: string;
@@ -13,6 +13,34 @@ export const StatusDropdown: React.FC<StatusDropdownProps> = ({
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // Close on click outside or ESC key
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+
+        const handleEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                setIsOpen(false);
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+            document.addEventListener('touchstart', handleClickOutside);
+            document.addEventListener('keydown', handleEscape);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('touchstart', handleClickOutside);
+            document.removeEventListener('keydown', handleEscape);
+        };
+    }, [isOpen]);
 
     const isNotAvailable = currentStatus.toLowerCase().trim() !== 'available';
     const isUnderNego = currentStatus.toLowerCase().trim() === 'under nego';
@@ -33,7 +61,7 @@ export const StatusDropdown: React.FC<StatusDropdownProps> = ({
     };
 
     return (
-        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-[50]">
+        <div ref={dropdownRef} className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-[50]">
             <button
                 onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
                 disabled={isUpdating}
