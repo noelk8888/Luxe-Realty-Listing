@@ -44,7 +44,34 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
 
     const [isExpanded, setIsExpanded] = useState(false);
     const { permissions } = usePermissions();
-    const { fbGroup } = useAuth();
+    const { fbGroup, role, userName } = useAuth();
+
+    // STATUS CHANGE ACCESS CONTROL:
+    // 1. Superadmin: Full access (always bypasses permission flag)
+    // 2. Admin/Editor: Full access IF 'change_status' permission is ON
+    // 3. Broker: Access only if 'change_status' is ON AND they belong to the listing's ownership (Group or Name match)
+    // 4. Implicit Ownership: Empty columnBD defaults to 'Luxe' group
+    const canEditStatus = (() => {
+        if (role === 'superadmin') return true;
+
+        const hasChangePerm = permissions.change_status;
+        if (!hasChangePerm) return false;
+
+        if (role === 'admin' || role === 'editor') return true;
+
+        if (role === 'broker') {
+            const ownerString = (listing.columnBD || 'Luxe').toLowerCase();
+            const userGroup = (fbGroup || '').toLowerCase();
+            const name = (userName || '').toLowerCase();
+
+            const isGroupMatch = userGroup && ownerString.includes(userGroup);
+            const isNameMatch = name && ownerString.includes(name);
+
+            return !!(isGroupMatch || isNameMatch);
+        }
+
+        return false;
+    })();
 
     const formatPrice = (price: number) => {
         const formatted = new Intl.NumberFormat('en-PH', {
@@ -171,7 +198,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         <div
             className={`${cardClassName} ${isDisabled && !isSelected ? 'opacity-50' : ''} p-5`}
         >
-            {permissions.edit_listing && permissions.change_status && onStatusUpdate ? (
+            {permissions.edit_listing && canEditStatus && onStatusUpdate ? (
                 <StatusDropdown
                     currentStatus={listing.statusAQ || 'Available'}
                     listingId={listing.id}

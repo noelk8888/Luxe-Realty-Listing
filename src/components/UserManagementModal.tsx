@@ -39,6 +39,14 @@ interface UserManagementModalProps {
 // ── Constants ─────────────────────────────────────────────────────────────────
 const ROLES: AppRole[] = ['ADMIN', 'EDITOR', 'BROKER', 'VIEWER'];
 
+const ROLE_ORDER: Record<string, number> = {
+    SUPERADMIN: 0,
+    ADMIN: 0,
+    EDITOR: 1,
+    BROKER: 2,
+    VIEWER: 3,
+};
+
 const ROLE_BADGE: Record<AppRole, string> = {
     SUPERADMIN: 'bg-purple-50 text-purple-700 border border-purple-200', // matches ADMIN
     ADMIN:  'bg-purple-50 text-purple-700 border border-purple-200',
@@ -286,10 +294,43 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
         setUsersLoading(true);
         const { data, error } = await supabase
             .from('luxe_listing_users')
-            .select('id, email, name, role, fb_link, fb_group, created_by')
-            .order('role').order('name');
-        if (error) setError('Failed to load users: ' + error.message);
-        else setUsers((data ?? []).map(u => ({ ...u, role: (u.role as string).toUpperCase() as AppRole })));
+            .select('id, email, name, role, fb_link, fb_group, created_by');
+
+        if (error) {
+            setError('Failed to load users: ' + error.message);
+        } else {
+            const formattedUsers = (data ?? []).map(u => ({
+                ...u,
+                role: (u.role as string).toUpperCase() as AppRole
+            }));
+
+            // Custom sort logic:
+            // 1. "Luxe" group members always on top
+            // 2. Then by Role (ADMIN > EDITOR > BROKER > VIEWER)
+            // 3. Then by Name (alphabetical)
+            formattedUsers.sort((a, b) => {
+                const aGroup = (a.fb_group || '').trim().toLowerCase();
+                const bGroup = (b.fb_group || '').trim().toLowerCase();
+                const isALuxe = aGroup === 'luxe';
+                const isBLuxe = bGroup === 'luxe';
+
+                // Sort by group priority (Luxe group first)
+                if (isALuxe && !isBLuxe) return -1;
+                if (!isALuxe && isBLuxe) return 1;
+
+                // Sort by role priority
+                const aRolePriority = ROLE_ORDER[a.role] ?? 99;
+                const bRolePriority = ROLE_ORDER[b.role] ?? 99;
+                if (aRolePriority !== bRolePriority) {
+                    return aRolePriority - bRolePriority;
+                }
+
+                // Final sort by name
+                return (a.name || '').localeCompare(b.name || '');
+            });
+
+            setUsers(formattedUsers);
+        }
         setUsersLoading(false);
     }
 

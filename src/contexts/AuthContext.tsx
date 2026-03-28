@@ -23,6 +23,7 @@ interface AuthContextType {
     displayRole: Role;
     fbLink: string | null;
     fbGroup: string | null;
+    userName: string | null;
     groupBranding: GroupBranding | null;
     isLoading: boolean;
     signInWithGoogle: () => Promise<void>;
@@ -45,13 +46,13 @@ const MASKED_ROLES: Record<string, Role> = {
     'leslie@luxerealtyph.com': 'broker',
 };
 
-async function fetchUserProfile(email: string): Promise<{ role: Role; displayRole: Role; fbLink: string | null; fbGroup: string | null }> {
+async function fetchUserProfile(email: string): Promise<{ role: Role; displayRole: Role; fbLink: string | null; fbGroup: string | null; userName: string | null }> {
     console.log('Auth: fetching profile for', email);
     const lowEmail = email.toLowerCase();
 
     const { data, error } = await supabase
         .from('luxe_listing_users')
-        .select('role, fb_link, fb_group')
+        .select('role, fb_link, fb_group, name')
         .eq('email', lowEmail)
         .maybeSingle();
 
@@ -88,7 +89,7 @@ async function fetchUserProfile(email: string): Promise<{ role: Role; displayRol
         displayRole = 'admin';
     }
 
-    return { role, displayRole, fbLink: data?.fb_link ?? null, fbGroup: data?.fb_group ?? null };
+    return { role, displayRole, fbLink: data?.fb_link ?? null, fbGroup: data?.fb_group ?? null, userName: data?.name ?? null };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -98,6 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [displayRole, setDisplayRole] = useState<Role>(null);
     const [fbLink, setFbLink] = useState<string | null>(null);
     const [fbGroup, setFbGroup] = useState<string | null>(null);
+    const [userName, setUserName] = useState<string | null>(null);
     const [groupBranding, setGroupBranding] = useState<GroupBranding | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -134,13 +136,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         let cancelled = false;
 
         console.log('Auth: fetching profile (separate effect) for', user.email);
-        fetchUserProfile(user.email).then(async ({ role: r, displayRole: dr, fbLink: fb, fbGroup: fg }) => {
+        fetchUserProfile(user.email).then(async ({ role: r, displayRole: dr, fbLink: fb, fbGroup: fg, userName: un }) => {
             if (cancelled) return;
-            console.log('Auth: role =', r, 'displayRole =', dr, 'fbLink =', fb, 'fbGroup =', fg);
+            console.log('Auth: role =', r, 'displayRole =', dr, 'fbLink =', fb, 'fbGroup =', fg, 'userName =', un);
             setRole(r);
             setDisplayRole(dr);
             setFbLink(fb);
             setFbGroup(fg);
+            setUserName(un);
 
             if (fg) {
                 const { data: gData } = await supabase
@@ -192,7 +195,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, session, role, displayRole, fbLink, fbGroup, groupBranding, isLoading, signInWithGoogle, signOut }}>
+        <AuthContext.Provider value={{ user, session, role, displayRole, fbLink, fbGroup, userName, groupBranding, isLoading, signInWithGoogle, signOut }}>
             {children}
         </AuthContext.Provider>
     );
