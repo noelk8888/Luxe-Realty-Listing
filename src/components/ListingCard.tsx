@@ -560,7 +560,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                 
                 if (upperType.includes('STATUS')) labels.push('Status');
                 if (upperType.includes('PRICE')) labels.push('Price');
-                if (upperType.includes('LOCATION')) labels.push('Location');
+                // if (upperType.includes('LOCATION')) labels.push('Location');
                 if (upperType.includes('COMMENTS')) labels.push('Comments');
                 if (upperType.includes('LISTING')) labels.push('Listing');
 
