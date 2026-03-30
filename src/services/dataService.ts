@@ -297,9 +297,15 @@ export const normalizeDbListing = (row: DbListing): Listing => {
         const upperComments = (row['COMMENTS'] || '').toUpperCase();
         const combinedText = `${upperFull} ${upperComments}`;
 
-        if (combinedText.includes('SOLD')) {
+        // Phrases to ignore (e.g. "To be sold unfurnished")
+        let textToSearch = combinedText
+            .replace('TO BE SOLD', '')
+            .replace('TO BE LEASED', '')
+            .replace('TO BE RENTED', '');
+
+        if (textToSearch.includes('SOLD')) {
             statusAQ = 'SOLD';
-        } else if (combinedText.includes('LEASED') || combinedText.includes('RENTED')) {
+        } else if (textToSearch.includes('LEASED') || textToSearch.includes('RENTED')) {
             statusAQ = 'LEASED OUT';
         } else if (combinedText.includes('TEMP HOLD') || combinedText.includes('TEMP ON HOLD')) {
             statusAQ = 'UNDER NEGO';
