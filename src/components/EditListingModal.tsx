@@ -86,24 +86,22 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
             return;
         }
 
-        // On initial load, check if any field HAS ALREADY changed from the listing values
-        // (This handles cases where the modal opens with populated state that might differ)
+        // On initial load, check if any CORE field HAS ALREADY changed from the listing values
         const originalPrice = listing.price > 0 ? listing.price.toString() : '';
         const originalLease = listing.leasePrice > 0 ? listing.leasePrice.toString() : '';
         const originalCoords = listing.lat && listing.lng ? `${listing.lat}, ${listing.lng}` : '';
 
-        const hasChanged = 
+        const coreFieldsHasChanged = 
             (salePrice !== originalPrice) ||
             (leasePrice !== originalLease) ||
             (monthlyDues !== (listing.monthlyDues || '')) ||
-            (notes !== (listing.columnV || '')) ||
             (latLong !== originalCoords);
 
-        if (hasChanged) {
+        if (coreFieldsHasChanged) {
             isInitialLoad.current = false;
             setUpdateDate(true);
         }
-    }, [salePrice, leasePrice, monthlyDues, notes, latLong, listing, fbGroup]);
+    }, [salePrice, leasePrice, monthlyDues, latLong, listing, fbGroup]);
 
     // Auto-clear verification if coordinates change
     useEffect(() => {

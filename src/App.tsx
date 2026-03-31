@@ -33,6 +33,9 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showRefreshPrompt, setShowRefreshPrompt] = useState(false);
+  const [refreshCountdown, setRefreshCountdown] = useState(10);
+  const lastRefreshTimeRef = useRef<number>(Date.now());
   const [allListings, setAllListings] = useState<Listing[]>([]);
   const [results, setResults] = useState<Listing[]>([]);
   const [selectedType, setSelectedType] = useState<string | null>(null); // Default null (No filter)
@@ -408,6 +411,8 @@ function App() {
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
+    setShowRefreshPrompt(false);
+    setRefreshCountdown(10);
     try {
       const data = await refreshListings();
       console.log('Refreshed listings:', data.length);
@@ -434,12 +439,45 @@ function App() {
       setSelectedPropertyTypes([]);
       setSortConfig(null);
       setShowAllListings(true);
+      lastRefreshTimeRef.current = Date.now();
     } catch (error) {
       console.error('Failed to refresh listings:', error);
     } finally {
       setIsRefreshing(false);
     }
   };
+
+  // Auto-Refresh: Check every minute if 3 hours have passed since last refresh
+  useEffect(() => {
+    const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
+    const CHECK_INTERVAL_MS = 60 * 1000; // Check every minute
+
+    const intervalId = setInterval(() => {
+      const elapsed = Date.now() - lastRefreshTimeRef.current;
+      if (elapsed >= THREE_HOURS_MS && !showRefreshPrompt && !isRefreshing) {
+        setRefreshCountdown(10);
+        setShowRefreshPrompt(true);
+      }
+    }, CHECK_INTERVAL_MS);
+
+    return () => clearInterval(intervalId);
+  }, [showRefreshPrompt, isRefreshing]);
+
+  // Countdown timer: when prompt is visible, count down from 10 to 0, then auto-refresh
+  useEffect(() => {
+    if (!showRefreshPrompt) return;
+
+    if (refreshCountdown <= 0) {
+      handleRefresh();
+      return;
+    }
+
+    const timerId = setTimeout(() => {
+      setRefreshCountdown(prev => prev - 1);
+    }, 1000);
+
+    return () => clearTimeout(timerId);
+  }, [showRefreshPrompt, refreshCountdown]);
 
   // Post-load search if URL had query
   useEffect(() => {
@@ -2387,6 +2425,52 @@ function App() {
             )}
           </div>
         </footer>
+      )}
+
+      {/* Auto-Refresh Prompt Toast */}
+      {showRefreshPrompt && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] animate-slide-up">
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 px-6 py-4 flex flex-col gap-3 min-w-[340px] max-w-[420px]">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5">
+                <svg className="w-6 h-6 text-blue-600 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-gray-900">Database Refresh Available</p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Auto-refreshing in <span className="font-bold text-blue-600">{refreshCountdown}s</span>
+                </p>
+              </div>
+            </div>
+            {/* Countdown progress bar */}
+            <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-blue-600 rounded-full transition-all duration-1000 ease-linear"
+                style={{ width: `${(refreshCountdown / 10) * 100}%` }}
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setShowRefreshPrompt(false);
+                  setRefreshCountdown(10);
+                  lastRefreshTimeRef.current = Date.now(); // Postpone for another 3 hours
+                }}
+                className="flex-1 py-2 px-3 bg-gray-100 text-gray-700 rounded-xl text-xs font-bold hover:bg-gray-200 transition-colors"
+              >
+                DISMISS
+              </button>
+              <button
+                onClick={handleRefresh}
+                className="flex-1 py-2 px-3 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-colors"
+              >
+                REFRESH NOW
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div >
   );
