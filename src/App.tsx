@@ -1102,17 +1102,13 @@ function App() {
       });
     };
 
-    // Date: use custom date if toggle is ON, else keep existing date from stamp
-    let datePart = '';
+    // Date: use custom date if toggle is ON, else preserve existing stamp
+    let newStamp: string | undefined;
     if (updates.updateDate) {
-      datePart = formatDateStamp(new Date(updates.updateDate + 'T00:00:00'));
-    } else {
-      // Always use today's date for an update if none provided
-      datePart = formatDateStamp(new Date());
+      const datePart = formatDateStamp(new Date(updates.updateDate + 'T00:00:00'));
+      newStamp = `${datePart} | ${changeTypes.join('/')} | ${author}`;
     }
-    const newStamp = datePart
-      ? `${datePart} | ${changeTypes.join('/')} | ${author}`
-      : `${changeTypes.join('/')} | ${author}`;
+    // If updateDate is null (toggle OFF), newStamp stays undefined → we won't overwrite DATE UPDATED
 
     const { data, error } = await supabase
       .from('KIU Properties')
@@ -1123,7 +1119,7 @@ function App() {
         'Lease Price/Sqm': leasePricePerSqm || null,
         'MONTHLY DUES': updates.monthlyDues || null,
         'COMMENTS': updates.notes || null,
-        'DATE UPDATED': newStamp,
+        ...(newStamp ? { 'DATE UPDATED': newStamp } : {}),
         'LAT LONG': updates.latLong || listing.latLong || null,
         'LAT': parsedLat !== null ? parsedLat.toString() : (listing.lat?.toString() || null),
         'LONG': parsedLng !== null ? parsedLng.toString() : (listing.lng?.toString() || null),
@@ -1164,7 +1160,7 @@ function App() {
         leasePricePerSqm: leasePricePerSqm,
         monthlyDues: updates.monthlyDues,
         columnV: updates.notes,
-        columnBC: newStamp,
+        columnBC: newStamp || l.columnBC,
         ...(parsedLat !== null && { lat: parsedLat }),
         ...(parsedLng !== null && { lng: parsedLng }),
         facebookLink: fbGroup === 'Kiu' || !fbGroup ? updates.fbLink : l.facebookLink,
