@@ -77,31 +77,18 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
         }
     }, [listing?.id]); // Trigger on actual listing change
 
-    // Auto-enable Update Date toggle on field changes
+    // Auto-enable Update Date toggle on CORE field changes only (excludes Notes & Social Media)
     useEffect(() => {
         if (!listing) return;
 
-        if (!isInitialLoad.current) {
-            setUpdateDate(true);
+        // Skip the very first run(s) after the modal opens — the toggle must start OFF
+        if (isInitialLoad.current) {
+            isInitialLoad.current = false;
             return;
         }
 
-        // On initial load, check if any CORE field HAS ALREADY changed from the listing values
-        const originalPrice = listing.price > 0 ? listing.price.toString() : '';
-        const originalLease = listing.leasePrice > 0 ? listing.leasePrice.toString() : '';
-        const originalCoords = listing.lat && listing.lng ? `${listing.lat}, ${listing.lng}` : '';
-
-        const coreFieldsHasChanged = 
-            (salePrice !== originalPrice) ||
-            (leasePrice !== originalLease) ||
-            (monthlyDues !== (listing.monthlyDues || '')) ||
-            (latLong !== originalCoords);
-
-        if (coreFieldsHasChanged) {
-            isInitialLoad.current = false;
-            setUpdateDate(true);
-        }
-    }, [salePrice, leasePrice, monthlyDues, latLong, listing, fbGroup]);
+        setUpdateDate(true);
+    }, [salePrice, leasePrice, monthlyDues, latLong]);
 
     // Auto-clear verification if coordinates change
     useEffect(() => {
