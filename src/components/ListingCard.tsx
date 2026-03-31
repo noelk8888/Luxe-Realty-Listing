@@ -305,7 +305,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                 )}
                 {permissions.view_pricing && <>
                     {/* Column BD: Top of Price, Light Green Theme */}
-                    {permissions.view_listing_ownership && listing.columnBD && (
+                    {permissions.view_listing_ownership && listing.columnBD && !['available', 'sold', 'leased out', 'off market', 'on hold', 'under nego', 'undecisive seller'].includes(listing.columnBD.toLowerCase().trim()) && (
                         <div
                             onClick={handleCopyColumnBD}
                             className={`mb-0.5 text-xs font-bold px-1.5 py-0.5 rounded border shadow-sm w-fit cursor-pointer transition-colors
