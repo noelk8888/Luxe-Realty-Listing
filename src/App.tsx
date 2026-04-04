@@ -448,36 +448,36 @@ function App() {
   };
 
   // Auto-Refresh: Check every minute if 3 hours have passed since last refresh
-  useEffect(() => {
-    const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
-    const CHECK_INTERVAL_MS = 60 * 1000; // Check every minute
+  // useEffect(() => {
+  //   const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
+  //   const CHECK_INTERVAL_MS = 60 * 1000; // Check every minute
 
-    const intervalId = setInterval(() => {
-      const elapsed = Date.now() - lastRefreshTimeRef.current;
-      if (elapsed >= THREE_HOURS_MS && !showRefreshPrompt && !isRefreshing) {
-        setRefreshCountdown(10);
-        setShowRefreshPrompt(true);
-      }
-    }, CHECK_INTERVAL_MS);
+  //   const intervalId = setInterval(() => {
+  //     const elapsed = Date.now() - lastRefreshTimeRef.current;
+  //     if (elapsed >= THREE_HOURS_MS && !showRefreshPrompt && !isRefreshing) {
+  //       setRefreshCountdown(10);
+  //       setShowRefreshPrompt(true);
+  //     }
+  //   }, CHECK_INTERVAL_MS);
 
-    return () => clearInterval(intervalId);
-  }, [showRefreshPrompt, isRefreshing]);
+  //   return () => clearInterval(intervalId);
+  // }, [showRefreshPrompt, isRefreshing]);
 
   // Countdown timer: when prompt is visible, count down from 10 to 0, then auto-refresh
-  useEffect(() => {
-    if (!showRefreshPrompt) return;
+  // useEffect(() => {
+  //   if (!showRefreshPrompt) return;
 
-    if (refreshCountdown <= 0) {
-      handleRefresh();
-      return;
-    }
+  //   if (refreshCountdown <= 0) {
+  //     handleRefresh();
+  //     return;
+  //   }
 
-    const timerId = setTimeout(() => {
-      setRefreshCountdown(prev => prev - 1);
-    }, 1000);
+  //   const timerId = setTimeout(() => {
+  //     setRefreshCountdown(prev => prev - 1);
+  //   }, 1000);
 
-    return () => clearTimeout(timerId);
-  }, [showRefreshPrompt, refreshCountdown]);
+  //   return () => clearTimeout(timerId);
+  // }, [showRefreshPrompt, refreshCountdown]);
 
   // Post-load search if URL had query
   useEffect(() => {
