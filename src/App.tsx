@@ -150,6 +150,11 @@ function App() {
   const [isParkingFilterOpen, setIsParkingFilterOpen] = useState(false);
   const [isTypeFilterOpen, setIsTypeFilterOpen] = useState(false);
 
+  // SUPERADMIN Sort State
+  const [adminSortMode, setAdminSortMode] = useState<'SOCMED' | 'GEO-ID' | 'LISTING DATE'>('GEO-ID');
+  const [isAdminSortMenuOpen, setIsAdminSortMenuOpen] = useState(false);
+  const adminSortRef = useRef<HTMLDivElement>(null);
+
   const sortButtonsContainerRef = useRef<HTMLDivElement>(null);
 
   const calculateCenteredLeft = (containerRect: DOMRect, popoverWidth: number = 288) => {
@@ -843,10 +848,44 @@ function App() {
     }
 
     if (!sortConfig) {
-      // DEFAULT SORT: Prioritize listings with Facebook links
-      if (a.facebookLink && !b.facebookLink) return -1;
-      if (!a.facebookLink && b.facebookLink) return 1;
-      return 0;
+      if (role === 'superadmin' && adminSortMode === 'SOCMED') {
+        const hasSocmedA = !!(a.facebookLink || a.postLinkLuxe || a.postLinkNexia || a.postLinkAdolf || a.postLinkPco || a.postLinkSloo || a.postLinkTaoke);
+        const hasSocmedB = !!(b.facebookLink || b.postLinkLuxe || b.postLinkNexia || b.postLinkAdolf || b.postLinkPco || b.postLinkSloo || b.postLinkTaoke);
+        if (hasSocmedA && !hasSocmedB) return -1;
+        if (!hasSocmedA && hasSocmedB) return 1;
+        
+        // Secondary sort: Listing Update Date (newest first)
+        const dateA = a.columnBC ? new Date(a.columnBC.split(' | ')[0]).getTime() : 0;
+        const dateB = b.columnBC ? new Date(b.columnBC.split(' | ')[0]).getTime() : 0;
+        if (!isNaN(dateA) && !isNaN(dateB) && dateA !== dateB) return dateB - dateA;
+        
+        // Tertiary sort: GEO-ID
+        const geoA = parseInt((a.id || '').match(/\d+/)?.join('') || '0', 10);
+        const geoB = parseInt((b.id || '').match(/\d+/)?.join('') || '0', 10);
+        return geoB - geoA;
+      } else if (role === 'superadmin' && adminSortMode === 'LISTING DATE') {
+        // 1st: Listing Update Date (newest first)
+        const dateA = a.columnBC ? new Date(a.columnBC.split(' | ')[0]).getTime() : 0;
+        const dateB = b.columnBC ? new Date(b.columnBC.split(' | ')[0]).getTime() : 0;
+        if (!isNaN(dateA) && !isNaN(dateB) && dateA !== dateB) return dateB - dateA;
+        
+        // Secondary sort: GEO-ID
+        const geoA = parseInt((a.id || '').match(/\d+/)?.join('') || '0', 10);
+        const geoB = parseInt((b.id || '').match(/\d+/)?.join('') || '0', 10);
+        return geoB - geoA;
+      } else {
+        // DEFAULT for all (and GEO-ID sort)
+        const geoA = parseInt((a.id || '').match(/\d+/)?.join('') || '0', 10);
+        const geoB = parseInt((b.id || '').match(/\d+/)?.join('') || '0', 10);
+        if (geoA !== geoB) return geoB - geoA;
+
+        // Secondary: Listing Update Date (newest first)
+        const dateA = a.columnBC ? new Date(a.columnBC.split(' | ')[0]).getTime() : 0;
+        const dateB = b.columnBC ? new Date(b.columnBC.split(' | ')[0]).getTime() : 0;
+        if (!isNaN(dateA) && !isNaN(dateB)) return dateB - dateA;
+        
+        return 0;
+      }
     }
 
     let comparison = 0;
@@ -1298,12 +1337,56 @@ function App() {
         <div className={`w-full max-w-2xl text-center space-y-6 transition-all duration-500 ${(hasSearched || selectedType || selectedCategory || (selectedBedrooms.length > 0) || (selectedParking.length > 0) || (selectedPropertyTypes.length > 0)) ? 'translate-y-0' : '-translate-y-8'
           }`}>
 
-          <p className={`font-bold text-gray-900 tracking-tight transition-all duration-500 ${(hasSearched || selectedType || selectedCategory || (selectedBedrooms.length > 0) || (selectedParking.length > 0) || (selectedPropertyTypes.length > 0)) ? 'text-2xl mb-4 mt-4' : 'text-4xl sm:text-5xl mb-8'}`}>
+          <div className={`font-bold text-gray-900 tracking-tight transition-all duration-500 ${(hasSearched || selectedType || selectedCategory || (selectedBedrooms.length > 0) || (selectedParking.length > 0) || (selectedPropertyTypes.length > 0)) ? 'text-2xl mb-4 mt-4' : 'text-4xl sm:text-5xl mb-8'}`}>
             {(selectedType || selectedCategory || hasSearched || (selectedBedrooms.length > 0) || (selectedParking.length > 0) || (selectedPropertyTypes.length > 0))
-              ? `Found ${displayedResults.length.toLocaleString()} of ${allListings.filter(l => l.sourceTab === 'Sheet1').length.toLocaleString()} Available Listings`
-              : allListings.filter(l => l.sourceTab === 'Sheet1').length > 0 ? `${allListings.filter(l => l.sourceTab === 'Sheet1').length.toLocaleString()} Available Listings` : 'Loading properties...'
+              ? <>Found {displayedResults.length.toLocaleString()} of {allListings.filter(l => l.sourceTab === 'Sheet1').length.toLocaleString()} Available <span className="relative inline-block" ref={adminSortRef}>
+                  {role === 'superadmin' ? (
+                    <span onClick={() => setIsAdminSortMenuOpen(!isAdminSortMenuOpen)} className="cursor-pointer hover:text-blue-600 transition-colors border-b border-dashed border-gray-400 pb-0.5" title="Listings Sort Options">Listings</span>
+                  ) : (
+                    <span>Listings</span>
+                  )}
+                  {role === 'superadmin' && isAdminSortMenuOpen && (
+                    <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-100 py-1.5 z-[9999] text-sm font-medium animate-fade-in-up">
+                      <button onClick={() => { setAdminSortMode('SOCMED'); setIsAdminSortMenuOpen(false); }} className={`w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 ${adminSortMode === 'SOCMED' ? 'text-blue-600 font-bold' : 'text-gray-700'}`}>
+                        <span>SOCMED</span>
+                        {adminSortMode === 'SOCMED' && <span className="w-1.5 h-1.5 rounded-full bg-blue-600 ml-auto"></span>}
+                      </button>
+                      <button onClick={() => { setAdminSortMode('GEO-ID'); setIsAdminSortMenuOpen(false); }} className={`w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 ${adminSortMode === 'GEO-ID' ? 'text-blue-600 font-bold' : 'text-gray-700'}`}>
+                        <span>GEO-ID</span>
+                        {adminSortMode === 'GEO-ID' && <span className="w-1.5 h-1.5 rounded-full bg-blue-600 ml-auto"></span>}
+                      </button>
+                      <button onClick={() => { setAdminSortMode('LISTING DATE'); setIsAdminSortMenuOpen(false); }} className={`w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 ${adminSortMode === 'LISTING DATE' ? 'text-blue-600 font-bold' : 'text-gray-700'}`}>
+                        <span>LISTING DATE</span>
+                        {adminSortMode === 'LISTING DATE' && <span className="w-1.5 h-1.5 rounded-full bg-blue-600 ml-auto"></span>}
+                      </button>
+                    </div>
+                  )}
+                </span></>
+              : allListings.filter(l => l.sourceTab === 'Sheet1').length > 0 ? <>{allListings.filter(l => l.sourceTab === 'Sheet1').length.toLocaleString()} Available <span className="relative inline-block" ref={adminSortRef}>
+                  {role === 'superadmin' ? (
+                    <span onClick={() => setIsAdminSortMenuOpen(!isAdminSortMenuOpen)} className="cursor-pointer hover:text-blue-600 transition-colors border-b border-dashed border-gray-400 pb-0.5" title="Listings Sort Options">Listings</span>
+                  ) : (
+                    <span>Listings</span>
+                  )}
+                  {role === 'superadmin' && isAdminSortMenuOpen && (
+                    <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-100 py-1.5 z-[9999] text-sm font-medium animate-fade-in-up">
+                      <button onClick={() => { setAdminSortMode('SOCMED'); setIsAdminSortMenuOpen(false); }} className={`w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 ${adminSortMode === 'SOCMED' ? 'text-blue-600 font-bold' : 'text-gray-700'}`}>
+                        <span>SOCMED</span>
+                        {adminSortMode === 'SOCMED' && <span className="w-1.5 h-1.5 rounded-full bg-blue-600 ml-auto"></span>}
+                      </button>
+                      <button onClick={() => { setAdminSortMode('GEO-ID'); setIsAdminSortMenuOpen(false); }} className={`w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 ${adminSortMode === 'GEO-ID' ? 'text-blue-600 font-bold' : 'text-gray-700'}`}>
+                        <span>GEO-ID</span>
+                        {adminSortMode === 'GEO-ID' && <span className="w-1.5 h-1.5 rounded-full bg-blue-600 ml-auto"></span>}
+                      </button>
+                      <button onClick={() => { setAdminSortMode('LISTING DATE'); setIsAdminSortMenuOpen(false); }} className={`w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 ${adminSortMode === 'LISTING DATE' ? 'text-blue-600 font-bold' : 'text-gray-700'}`}>
+                        <span>LISTING DATE</span>
+                        {adminSortMode === 'LISTING DATE' && <span className="w-1.5 h-1.5 rounded-full bg-blue-600 ml-auto"></span>}
+                      </button>
+                    </div>
+                  )}
+                </span></> : 'Loading properties...'
             }
-          </p>
+          </div>
 
           {/* Animated Loading Progress Bar */}
           {loading && (
