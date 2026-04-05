@@ -33,6 +33,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isRefreshNeeded, setIsRefreshNeeded] = useState(false);
   const [showRefreshPrompt, setShowRefreshPrompt] = useState(false);
   const [refreshCountdown, setRefreshCountdown] = useState(10);
   const lastRefreshTimeRef = useRef<number>(Date.now());
@@ -412,6 +413,7 @@ function App() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     setShowRefreshPrompt(false);
+    setIsRefreshNeeded(false);
     setRefreshCountdown(10);
     try {
       const data = await refreshListings();
@@ -448,20 +450,19 @@ function App() {
   };
 
   // Auto-Refresh: Check every minute if 3 hours have passed since last refresh
-  // useEffect(() => {
-  //   const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
-  //   const CHECK_INTERVAL_MS = 60 * 1000; // Check every minute
+  useEffect(() => {
+    const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
+    const CHECK_INTERVAL_MS = 60 * 1000; // Check every minute
 
-  //   const intervalId = setInterval(() => {
-  //     const elapsed = Date.now() - lastRefreshTimeRef.current;
-  //     if (elapsed >= THREE_HOURS_MS && !showRefreshPrompt && !isRefreshing) {
-  //       setRefreshCountdown(10);
-  //       setShowRefreshPrompt(true);
-  //     }
-  //   }, CHECK_INTERVAL_MS);
+    const intervalId = setInterval(() => {
+      const elapsed = Date.now() - lastRefreshTimeRef.current;
+      if (elapsed >= THREE_HOURS_MS && !isRefreshNeeded && !isRefreshing) {
+        setIsRefreshNeeded(true);
+      }
+    }, CHECK_INTERVAL_MS);
 
-  //   return () => clearInterval(intervalId);
-  // }, [showRefreshPrompt, isRefreshing]);
+    return () => clearInterval(intervalId);
+  }, [isRefreshNeeded, isRefreshing]);
 
   // Countdown timer: when prompt is visible, count down from 10 to 0, then auto-refresh
   // useEffect(() => {
@@ -1517,7 +1518,7 @@ function App() {
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
-                  <span className="text-xs sm:text-sm font-bold uppercase tracking-wide whitespace-nowrap select-none text-gray-600">
+                  <span className={`text-xs sm:text-sm font-bold uppercase tracking-wide whitespace-nowrap select-none ${isRefreshNeeded ? 'text-red-600 animate-pulse' : 'text-gray-600'}`}>
                     {isRefreshing ? 'REFRESHING...' : 'REFRESH'}
                   </span>
                 </button>
@@ -1544,7 +1545,7 @@ function App() {
                   title="Refresh data"
                 >
                   <svg
-                    className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-blue-600' : 'text-gray-600'}`}
+                    className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-blue-600' : (isRefreshNeeded ? 'text-red-600' : 'text-gray-600')}`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"

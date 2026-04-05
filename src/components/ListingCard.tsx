@@ -602,8 +602,36 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                 const label = labels.length > 0
                     ? `${labels.join('/')} Update`
                     : 'Listing Update';
+
+                // Calculate age of update in days (Phil Standard Time)
+                // Assuming local browser time is PHT as per metadata (+08:00)
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                
+                // Parse datePart (e.g. "Oct 16, 2025")
+                const updateDateObj = new Date(datePart.includes(' | ') ? datePart.split(' | ')[0] : datePart);
+                const updateDate = isNaN(updateDateObj.getTime()) 
+                    ? null 
+                    : new Date(updateDateObj.getFullYear(), updateDateObj.getMonth(), updateDateObj.getDate());
+                
+                let textColorClass = 'text-black';
+                let fontWeightClass = '';
+
+                if (updateDate) {
+                    const diffTime = today.getTime() - updateDate.getTime();
+                    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    if (diffDays >= 0 && diffDays <= 30) {
+                        fontWeightClass = 'font-black'; // BOLD BLACK for 0-30 days
+                    } else if (diffDays > 30 && diffDays <= 180) {
+                        // Current style: regular black for 31-180 days
+                    } else if (diffDays > 180) {
+                        textColorClass = 'text-orange-600'; // Orange for 181+ days
+                    }
+                }
+
                 return (
-                    <div className="mt-2 text-xs text-black text-center">
+                    <div className={`mt-2 text-xs ${textColorClass} ${fontWeightClass} text-center`}>
                         {label}{displayDate ? ` - ${displayDate}` : ''}{userPart ? `, by ${userPart}` : ''}
                     </div>
                 );
