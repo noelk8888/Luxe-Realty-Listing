@@ -107,7 +107,17 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             const cleanId = listing.id.trim();
             const cleanBody = mainBody.trim();
             let copyText = cleanBody.startsWith(cleanId) ? mainBody : `${cleanId}\n${mainBody}`;
-            if (mapsLink && listing.mapVerified && !copyText.includes('Google Map:')) copyText += `\nGoogle Map: ${mapsLink}`;
+            
+            if (listing.monthlyDues && !copyText.toLowerCase().includes('monthly dues:')) {
+                const priceMatch = copyText.match(/\n(?=\s*(?:Lease Price|Sale Price|Price)\s*:)/i);
+                if (priceMatch && priceMatch.index !== undefined) {
+                    copyText = copyText.slice(0, priceMatch.index) + `\nMonthly Dues: ${listing.monthlyDues}` + copyText.slice(priceMatch.index);
+                } else {
+                    copyText += `\nMonthly Dues: ${listing.monthlyDues}`;
+                }
+            }
+
+            if (mapsLink && listing.mapVerified && !copyText.includes('Verified Map Location:')) copyText += `\nVerified Map Location: ${mapsLink}`;
             if (notes) copyText += `\n\nNOTES: ${notes}`;
 
             navigator.clipboard.writeText(copyText);
