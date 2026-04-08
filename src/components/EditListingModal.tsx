@@ -45,7 +45,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
     const [locationError, setLocationError] = useState<string | null>(null);
     const [mapVerified, setMapVerified] = useState('');
     const { permissions } = usePermissions();
-    const { fbGroup, user, role } = useAuth();
+    const { fbGroup, user, role, userName } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const isInitialLoad = React.useRef(true);
@@ -111,6 +111,21 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
             }
         }
     }, [latLong, listing?.id]);
+
+    // Owner group explicitly allowed to edit notes even if permission is disabled
+    const isOwnerGroup = (() => {
+        if (!listing) return false;
+        if (role !== 'broker') return false; // Only applies to brokers based on ownership logic
+
+        const ownerString = (listing.columnBD || 'Luxe').toLowerCase();
+        const userGroup = (fbGroup || '').toLowerCase();
+        const name = (userName || '').toLowerCase(); // Fallback in case userName is absent
+
+        const isGroupMatch = userGroup && ownerString.includes(userGroup);
+        const isNameMatch = name && ownerString.includes(name);
+
+        return !!(isGroupMatch || isNameMatch);
+    })();
 
     if (!isOpen || !listing) return null;
 
@@ -242,6 +257,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="p-6 space-y-5">
                     {/* Quick action buttons at top */}
+                    {(permissions.edit_sale_price || permissions.edit_lease_price) && (
                     <div className="flex gap-3 pb-3 border-b border-gray-100">
                         <button
                             type="button"
@@ -258,6 +274,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                             {isSubmitting ? 'Saving...' : 'Save Changes'}
                         </button>
                     </div>
+                    )}
 
                     {/* Sale Price */}
                     {permissions.edit_sale_price && (
@@ -318,7 +335,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                     )}
 
                     {/* Notes */}
-                    {permissions.edit_notes && (
+                    {(permissions.edit_notes || isOwnerGroup) && (
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1.5">
                             Notes
