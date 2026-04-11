@@ -873,18 +873,33 @@ function App() {
         const geoA = parseInt((a.id || '').match(/\d+/)?.join('') || '0', 10);
         const geoB = parseInt((b.id || '').match(/\d+/)?.join('') || '0', 10);
         return geoB - geoA;
-      } else {
-        // DEFAULT for all (and GEO-ID sort)
-        const geoA = parseInt((a.id || '').match(/\d+/)?.join('') || '0', 10);
-        const geoB = parseInt((b.id || '').match(/\d+/)?.join('') || '0', 10);
-        if (geoA !== geoB) return geoB - geoA;
+      } else if (role === 'viewer') {
+        // 1st: SOCMED LINK
+        const hasSocmedA = !!(a.facebookLink || a.postLinkLuxe || a.postLinkNexia || a.postLinkAdolf || a.postLinkPco || a.postLinkSloo || a.postLinkTaoke);
+        const hasSocmedB = !!(b.facebookLink || b.postLinkLuxe || b.postLinkNexia || b.postLinkAdolf || b.postLinkPco || b.postLinkSloo || b.postLinkTaoke);
+        if (hasSocmedA && !hasSocmedB) return -1;
+        if (!hasSocmedA && hasSocmedB) return 1;
 
-        // Secondary: Listing Update Date (newest first)
+        // 2nd: Listing Update Date (newest first)
         const dateA = a.columnBC ? new Date(a.columnBC.split(' | ')[0]).getTime() : 0;
         const dateB = b.columnBC ? new Date(b.columnBC.split(' | ')[0]).getTime() : 0;
-        if (!isNaN(dateA) && !isNaN(dateB)) return dateB - dateA;
-        
-        return 0;
+        if (!isNaN(dateA) && !isNaN(dateB) && dateA !== dateB) return dateB - dateA;
+
+        // 3rd: GEO-ID
+        const geoA = parseInt((a.id || '').match(/\d+/)?.join('') || '0', 10);
+        const geoB = parseInt((b.id || '').match(/\d+/)?.join('') || '0', 10);
+        return geoB - geoA;
+      } else {
+        // Other roles (Admin, Editor, Broker)
+        // 1st: Listing Update Date (newest first)
+        const dateA = a.columnBC ? new Date(a.columnBC.split(' | ')[0]).getTime() : 0;
+        const dateB = b.columnBC ? new Date(b.columnBC.split(' | ')[0]).getTime() : 0;
+        if (!isNaN(dateA) && !isNaN(dateB) && dateA !== dateB) return dateB - dateA;
+
+        // 2nd: GEO-ID
+        const geoA = parseInt((a.id || '').match(/\d+/)?.join('') || '0', 10);
+        const geoB = parseInt((b.id || '').match(/\d+/)?.join('') || '0', 10);
+        return geoB - geoA;
       }
     }
 
@@ -1624,7 +1639,7 @@ function App() {
                 <button
                   onClick={handleRefresh}
                   disabled={isRefreshing}
-                  className="ml-2 p-2 rounded-lg bg-white shadow-md disabled:opacity-50"
+                  className="ml-2 p-2 rounded-lg bg-white shadow-md disabled:opacity-50 flex items-center gap-2"
                   title="Refresh data"
                 >
                   <svg
@@ -1635,6 +1650,9 @@ function App() {
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
+                  {role === 'viewer' && (
+                    <span className="text-[10px] font-bold text-gray-600 uppercase">Refresh Listings</span>
+                  )}
                 </button>
               </div>
 

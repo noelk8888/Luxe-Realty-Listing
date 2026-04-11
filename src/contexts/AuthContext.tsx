@@ -186,11 +186,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const signOut = async () => {
+        setIsLoading(true);
         await clearCache();
         await supabase.auth.signOut();
         setRole(null);
+        setDisplayRole(null);
         setFbLink(null);
         setFbGroup(null);
+        setUserName(null);
         setGroupBranding(null);
     };
 
