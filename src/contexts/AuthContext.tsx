@@ -191,16 +191,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Don't await clearCache to prevent potential IndexedDB hangs/locks from blocking signout
             clearCache().catch(() => { });
             await supabase.auth.signOut();
+            // We let the onAuthStateChange listener handle the state reset 
+            // to ensure 'user' and 'role' are cleared atomically, avoiding 
+            // the "Access Denied" flash.
         } catch (error) {
             console.error('Sign out error:', error);
-        } finally {
+            // If signout fails, force local state clear as fallback
             setRole(null);
-            setDisplayRole(null);
-            setFbLink(null);
-            setFbGroup(null);
-            setUserName(null);
-            setGroupBranding(null);
             setIsLoading(false);
+        } finally {
+            // Safety timeout: Ensure loading state is eventually cleared 
+            // even if the auth listener doesn't fire as expected.
+            setTimeout(() => {
+                setIsLoading((currentLoading) => {
+                    // Only clear if we're still stuck in the signout-triggered loading state
+                    return currentLoading ? false : currentLoading;
+                });
+            }, 2500);
         }
     };
 
