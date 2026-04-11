@@ -36,7 +36,8 @@ export type Feature =
     | 'view_last_update'
     | 'edit_monthly_dues'
     | 'copy_photo_link'
-    | 'full_screen_map';
+    | 'full_screen_map'
+    | 'map_preview';
 
 const ALL_FEATURES: Feature[] = [
     'add_listing', 'edit_listing', 'delete_listing',
@@ -51,6 +52,7 @@ const ALL_FEATURES: Feature[] = [
     'edit_coordinates', 'edit_fb_link', 'edit_update_date',
     'show_all', 'view_last_update', 'edit_monthly_dues', 'copy_photo_link',
     'full_screen_map',
+    'map_preview',
 ];
 
 // ── Role defaults ─────────────────────────────────────────────────────────────
@@ -68,6 +70,7 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'viewer', Record<Fea
         edit_coordinates: true, edit_fb_link: true, edit_update_date: true,
         show_all: true, view_last_update: true, edit_monthly_dues: true, copy_photo_link: false,
         full_screen_map: true,
+        map_preview: true,
     },
     editor: {
         add_listing: true, edit_listing: true, delete_listing: false,
@@ -82,6 +85,7 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'viewer', Record<Fea
         edit_coordinates: true, edit_fb_link: true, edit_update_date: true,
         show_all: true, view_last_update: true, edit_monthly_dues: true, copy_photo_link: false,
         full_screen_map: false,
+        map_preview: true,
     },
     broker: {
         add_listing: true, edit_listing: true, delete_listing: false,
@@ -96,6 +100,7 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'viewer', Record<Fea
         edit_coordinates: true, edit_fb_link: true, edit_update_date: true,
         show_all: true, view_last_update: true, edit_monthly_dues: false, copy_photo_link: false,
         full_screen_map: false,
+        map_preview: true,
     },
     viewer: {
         add_listing: false, edit_listing: false, delete_listing: false,
@@ -110,6 +115,7 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'viewer', Record<Fea
         edit_coordinates: false, edit_fb_link: false, edit_update_date: false,
         show_all: false, view_last_update: true, edit_monthly_dues: false, copy_photo_link: false,
         full_screen_map: false,
+        map_preview: true,
     },
 };
 
