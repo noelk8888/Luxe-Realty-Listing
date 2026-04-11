@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Tooltip } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -430,7 +430,52 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
                                                 setGroupedViewListings(sorted);
                                             }
                                         }}
-                                    />
+                                    >
+                                        <Tooltip 
+                                            direction="top" 
+                                            offset={[0, -35]} 
+                                            opacity={1}
+                                            permanent={false}
+                                            sticky={true}
+                                            className="custom-map-tooltip"
+                                        >
+                                            <div className="text-[10px] leading-relaxed font-sans text-gray-900 max-w-[200px] whitespace-pre-wrap">
+                                                {(() => {
+                                                    // Sort listings to get the "best" one for the tooltip (Same logic as icon color)
+                                                    const bestListing = [...listings].sort((a, b) => {
+                                                        const aIsCenter = a.id === centerListing.id;
+                                                        const bIsCenter = b.id === centerListing.id;
+                                                        if (aIsCenter && !bIsCenter) return -1;
+                                                        if (!aIsCenter && bIsCenter) return 1;
+
+                                                        const aIsMatch = similarListingIds.has(a.id);
+                                                        const bIsMatch = similarListingIds.has(b.id);
+                                                        if (aIsMatch && !bIsMatch) return -1;
+                                                        if (!aIsMatch && bIsMatch) return 1;
+
+                                                        return 0;
+                                                    })[0];
+
+                                                    const content = bestListing.displaySummary || '';
+                                                    const lines = content.split('\n')
+                                                        .map(l => l.trim())
+                                                        .filter(Boolean)
+                                                        .slice(0, 5);
+                                                    
+                                                    return (
+                                                        <>
+                                                            <div className="font-black text-blue-600 mb-1 border-b border-blue-50 pb-0.5">
+                                                                {bestListing.id}
+                                                                {listings.length > 1 && ` (+${listings.length - 1} more)`}
+                                                            </div>
+                                                            {lines.join('\n')}
+                                                            {content.split('\n').filter(Boolean).length > 5 && '...'}
+                                                        </>
+                                                    );
+                                                })()}
+                                            </div>
+                                        </Tooltip>
+                                    </Marker>
                                 );
                             })}
                         </MarkerClusterGroup>
