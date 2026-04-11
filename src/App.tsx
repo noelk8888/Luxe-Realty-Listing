@@ -26,6 +26,7 @@ function App() {
   const { permissions } = usePermissions();
 
   const [showUserManagement, setShowUserManagement] = useState(false);
+  const [showAccessDenied, setShowAccessDenied] = useState(false);
 
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -75,6 +76,19 @@ function App() {
   const [floorAreaRange, setFloorAreaRange] = useState<[number, number] | null>(null);
   const [useExactFloorArea, setUseExactFloorArea] = useState<boolean>(false);
   const [manualFloorArea, setManualFloorArea] = useState<string>('');
+
+  // Graceful handling of Access Denied flash (especially during sign-out)
+  useEffect(() => {
+    if (user && !role && !authLoading) {
+      // Wait 500ms before showing the Access Denied screen
+      // This gives sign-out processes enough time to clear the 'user' object 
+      // without ever showing the error screen.
+      const timer = setTimeout(() => setShowAccessDenied(true), 500);
+      return () => clearTimeout(timer);
+    } else {
+      setShowAccessDenied(false);
+    }
+  }, [user, role, authLoading]);
 
   useEffect(() => {
     // Reset selections on search
@@ -1275,6 +1289,15 @@ function App() {
   }
 
   if (!role) {
+    if (!showAccessDenied) {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <img src="/footer-logo.png" alt="Checking permissions" className="h-36 w-auto animate-pulse" />
+          </div>
+        </div>
+      );
+    }
     return <AccessDenied email={user.email || ''} onSignOut={signOut} />;
   }
 

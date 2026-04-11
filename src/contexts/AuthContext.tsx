@@ -186,30 +186,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const signOut = async () => {
-        setIsLoading(true);
-
-        // Safety timeout: If for some reason the logout process or listener 
-        // doesn't finish in 3 seconds, force a return to the login screen.
-        const timeoutId = setTimeout(() => {
-            console.warn('Sign out auto-cleanup due to timeout');
-            setRole(null);
-            setIsLoading(false);
-        }, 3000);
-
         try {
-            // Don't await clearCache to prevent IndexedDB hangs from blocking signout
+            // Don't await clearCache to prevent potential IndexedDB hangs from blocking signout
             clearCache().catch(() => { });
-            
             await supabase.auth.signOut();
-            
-            // Note: We let the onAuthStateChange listener handle the atomic 
-            // state reset for user/role to avoid the "Access Denied" flash.
         } catch (error) {
             console.error('Sign out error:', error);
-            setRole(null);
-            setIsLoading(false);
         } finally {
-            clearTimeout(timeoutId);
+            // Force local state clear immediately to be snappy
+            setRole(null);
+            setDisplayRole(null);
+            setFbLink(null);
+            setFbGroup(null);
+            setUserName(null);
+            setGroupBranding(null);
         }
     };
 
