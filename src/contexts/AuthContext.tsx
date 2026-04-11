@@ -187,14 +187,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const signOut = async () => {
         setIsLoading(true);
-        await clearCache();
-        await supabase.auth.signOut();
-        setRole(null);
-        setDisplayRole(null);
-        setFbLink(null);
-        setFbGroup(null);
-        setUserName(null);
-        setGroupBranding(null);
+        try {
+            // Don't await clearCache to prevent potential IndexedDB hangs/locks from blocking signout
+            clearCache().catch(() => { });
+            await supabase.auth.signOut();
+        } catch (error) {
+            console.error('Sign out error:', error);
+        } finally {
+            setRole(null);
+            setDisplayRole(null);
+            setFbLink(null);
+            setFbGroup(null);
+            setUserName(null);
+            setGroupBranding(null);
+            setIsLoading(false);
+        }
     };
 
     return (
