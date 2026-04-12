@@ -340,10 +340,11 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
 
                 {/* Map Content */}
                 <div className="flex-1 relative z-0">
-                    <MapContainer center={center} zoom={15} style={{ height: '100%', width: '100%' }}>
+                    <MapContainer center={center} zoom={15} maxZoom={20} style={{ height: '100%', width: '100%' }}>
                         <TileLayer
                             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            maxZoom={20}
                         />
                         <MarkerClusterGroup
                             chunkedLoading
@@ -440,7 +441,7 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
                                                 sticky={true}
                                                 className="custom-map-tooltip"
                                             >
-                                                <div className="text-xl leading-relaxed font-sans text-gray-900 whitespace-pre-wrap">
+                                                <div className="text-base leading-relaxed font-sans text-gray-900 whitespace-pre-wrap">
                                                     {(() => {
                                                         // Sort listings to get the "best" one for the tooltip (Same logic as icon color)
                                                         const bestListing = [...listings].sort((a, b) => {
@@ -465,7 +466,7 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
                                                         
                                                         return (
                                                             <>
-                                                                <div className="font-black text-blue-600 mb-1 border-b border-blue-50 pb-1 text-2xl">
+                                                                <div className="font-black text-blue-600 mb-1 border-b border-blue-50 pb-1 text-lg">
                                                                     {bestListing.id}
                                                                     {listings.length > 1 && ` (+${listings.length - 1} more)`}
                                                                 </div>
