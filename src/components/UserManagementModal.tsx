@@ -47,6 +47,13 @@ const ROLE_ORDER: Record<string, number> = {
     VIEWER: 3,
 };
 
+// Hardcoded masking for "Stealth" users
+const MASKED_ROLES_UPPER: Record<string, AppRole> = {
+    'noelkiu@gmail.com': 'ADMIN',
+    'lesliekiudmd@yahoo.com': 'BROKER',
+    'leslie@luxerealtyph.com': 'BROKER',
+};
+
 const ROLE_BADGE: Record<AppRole, string> = {
     SUPERADMIN: 'bg-purple-50 text-purple-700 border border-purple-200', // matches ADMIN
     ADMIN:  'bg-purple-50 text-purple-700 border border-purple-200',
@@ -695,9 +702,10 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                         <td className="px-5 py-2.5 text-gray-400 text-xs truncate max-w-[160px]">{u.email}</td>
                                                         <td className="px-5 py-2.5">
                                                             <select
-                                                                value={editRole}
+                                                                value={MASKED_ROLES_UPPER[u.email.toLowerCase()] || editRole}
                                                                 onChange={e => setEditRole(e.target.value as AppRole)}
-                                                                className="text-xs font-bold border rounded-full px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                                                                disabled={!!MASKED_ROLES_UPPER[u.email.toLowerCase()]}
+                                                                className={`text-xs font-bold border rounded-full px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-gray-300 ${!!MASKED_ROLES_UPPER[u.email.toLowerCase()] ? 'bg-gray-50 opacity-100 cursor-not-allowed border-gray-100' : ''}`}
                                                             >
                                                                 <option value="ADMIN">ADMIN</option>
                                                                 <option value="EDITOR">EDITOR</option>
@@ -765,8 +773,8 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                         </td>
                                                         <td className="px-5 py-3 text-gray-400 text-xs truncate max-w-[180px]">{u.email}</td>
                                                         <td className="px-5 py-3">
-                                                            <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide ${ROLE_BADGE[u.role]}`}>
-                                                                {u.role === 'SUPERADMIN' ? 'ADMIN' : u.role}
+                                                            <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide ${ROLE_BADGE[MASKED_ROLES_UPPER[u.email.toLowerCase()] || u.role]}`}>
+                                                                {MASKED_ROLES_UPPER[u.email.toLowerCase()] || (u.role === 'SUPERADMIN' ? 'ADMIN' : u.role)}
                                                             </span>
                                                         </td>
                                                         <td className="px-5 py-3 text-gray-400 text-xs hidden sm:table-cell truncate max-w-[140px]">
