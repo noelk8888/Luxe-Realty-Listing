@@ -71,13 +71,14 @@ interface MapModalProps {
     onNotesClick?: (id: string) => void;
     onShowNote?: (note: string, id: string) => void;
     fullScreen?: boolean;
+    initialShowAll?: boolean;
 }
 
 
 
 
 
-export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListing, allListings, filteredListingsIds: _filteredListingsIds, onNotesClick, onShowNote, fullScreen }) => {
+export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListing, allListings, filteredListingsIds: _filteredListingsIds, onNotesClick, onShowNote, fullScreen, initialShowAll = false }) => {
     const { permissions } = usePermissions();
     const [focusedListing, setFocusedListing] = useState<Listing | null>(null);
     const [groupedViewListings, setGroupedViewListings] = useState<Listing[] | null>(null);
@@ -94,6 +95,13 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
     const [selectedSaleTypes, setSelectedSaleTypes] = useState<string[]>([]);
     const [showOnlyDirect, setShowOnlyDirect] = useState(false);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+
+    // Sync showAllInMap with dashboard preference when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            setShowAllInMap(initialShowAll);
+        }
+    }, [isOpen, initialShowAll]);
 
     // Filter Helpers
     const matchesPropertyType = (item: Listing): boolean => {
@@ -141,11 +149,6 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
         });
     };
 
-    const matchesStatus = (item: Listing): boolean => {
-        if (showAllInMap && permissions.show_all) return true;
-        const status = (item.statusAQ || '').toUpperCase().trim();
-        return status === 'AVAILABLE';
-    };
 
     // Wrapper to close modal when notes button is clicked
     const handleNotesClick = (id: string) => {
@@ -214,6 +217,14 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
         if (l.id === centerListing.id || !l.lat || !l.lng) return false;
 
         // Apply Status, Property Type, Sale Type, Direct, and Category filters
+        const matchesStatus = (item: Listing): boolean => {
+            if (showAllInMap && permissions.show_all) return true;
+            const status = (item.statusAQ || '').toUpperCase().trim();
+            // A property is also considered NOT available if its summary says SOLD or LEASED OUT
+            // though statusAQ usually handles this during normalization in dataService.
+            return status === 'AVAILABLE';
+        };
+
         if (!matchesStatus(l)) return false;
         if (!matchesPropertyType(l)) return false;
         if (!matchesSaleType(l)) return false;
@@ -682,7 +693,7 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
                                             <button 
                                                 onClick={() => setShowAllInMap(!showAllInMap)}
                                                 className={`relative w-28 h-9 rounded-full p-1 transition-all duration-300 flex items-center ${
-                                                    showAllInMap ? 'bg-gray-100' : 'bg-blue-600 shadow-inner'
+                                                    !showAllInMap ? 'bg-blue-600 shadow-inner' : 'bg-gray-100'
                                                 }`}
                                             >
                                                 <div className={`absolute left-1 flex items-center justify-center w-[calc(50%-2px)] h-7 rounded-full text-[9px] font-bold transition-all duration-300 ${

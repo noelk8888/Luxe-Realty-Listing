@@ -193,18 +193,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch (error) {
             console.error('Sign out error:', error);
         } finally {
-            // Force ALL auth state to clear immediately and simultaneously.
-            // This ensures App.tsx sees !user and transitions to Login screen 
-            // instantly, without ever showing the Access Denied error.
-            setSession(null);
-            setUser(null);
+            // Force local state clear immediately to be snappy
             setRole(null);
             setDisplayRole(null);
             setFbLink(null);
             setFbGroup(null);
             setUserName(null);
             setGroupBranding(null);
-            setIsLoading(false);
         }
     };
 
