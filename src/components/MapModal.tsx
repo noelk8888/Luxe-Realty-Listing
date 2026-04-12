@@ -464,11 +464,15 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
                                                             .filter(Boolean)
                                                             .slice(0, 5);
                                                         
+                                                        const isLease = bestListing.saleType?.toUpperCase() === 'LEASE';
+                                                        const priceVal = isLease ? bestListing.leasePrice : bestListing.price;
+                                                        const formattedPrice = priceVal ? new Intl.NumberFormat('en-PH', { maximumFractionDigits: 0 }).format(priceVal) : null;
+                                                        
                                                         return (
                                                             <>
-                                                                <div className="font-black text-blue-600 mb-1 border-b border-blue-50 pb-1 text-lg">
-                                                                    {bestListing.id}
-                                                                    {listings.length > 1 && ` (+${listings.length - 1} more)`}
+                                                                <div className="font-black text-blue-600 mb-1 border-b border-blue-50 pb-1 text-lg flex justify-between items-center gap-4">
+                                                                    <span>{bestListing.id}{listings.length > 1 && <span className="text-gray-400 font-bold ml-1 text-sm">(+{listings.length - 1})</span>}</span>
+                                                                    {formattedPrice && <span className="text-gray-900">₱{formattedPrice}</span>}
                                                                 </div>
                                                                 {lines.join('\n')}
                                                                 {content.split('\n').filter(Boolean).length > 5 && '...'}
