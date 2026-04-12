@@ -2486,7 +2486,6 @@ function App() {
         onNotesClick={handleSendForm}
         onShowNote={handleShowNote}
         fullScreen={role === 'superadmin' || permissions.full_screen_map}
-        initialShowAll={showAllListings}
       />
 
       <NoteModal

@@ -71,14 +71,13 @@ interface MapModalProps {
     onNotesClick?: (id: string) => void;
     onShowNote?: (note: string, id: string) => void;
     fullScreen?: boolean;
-    initialShowAll?: boolean;
 }
 
 
 
 
 
-export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListing, allListings, filteredListingsIds: _filteredListingsIds, onNotesClick, onShowNote, fullScreen, initialShowAll = false }) => {
+export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListing, allListings, filteredListingsIds: _filteredListingsIds, onNotesClick, onShowNote, fullScreen }) => {
     const { permissions } = usePermissions();
     const [focusedListing, setFocusedListing] = useState<Listing | null>(null);
     const [groupedViewListings, setGroupedViewListings] = useState<Listing[] | null>(null);
@@ -95,13 +94,6 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
     const [selectedSaleTypes, setSelectedSaleTypes] = useState<string[]>([]);
     const [showOnlyDirect, setShowOnlyDirect] = useState(false);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-
-    // Sync showAllInMap with dashboard preference when modal opens
-    useEffect(() => {
-        if (isOpen) {
-            setShowAllInMap(initialShowAll);
-        }
-    }, [isOpen, initialShowAll]);
 
     // Filter Helpers
     const matchesPropertyType = (item: Listing): boolean => {
