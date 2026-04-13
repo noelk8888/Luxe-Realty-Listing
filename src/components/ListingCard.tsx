@@ -118,7 +118,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             }
 
             if (mapsLink && listing.mapVerified && !copyText.includes('Verified Map Location:')) copyText += `\nVerified Map Location: ${mapsLink}`;
-            if (notes) copyText += `\n\nNOTES: ${notes}`;
+            if (notes) copyText += `\n\nThere's a NOTE in this listing. Check it in the app`;
 
             navigator.clipboard.writeText(copyText);
             setIsCopied(true);
@@ -391,7 +391,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                                 ${!isExpanded ? 'line-clamp-4' : ''}
                             `}
                         >
-                            {listing.displaySummary}
+                            {listing.displaySummary.split('\n').filter(line => !line.toLowerCase().includes('http://') && !line.toLowerCase().includes('https://')).join('\n')}
                         </div>
                         <button
                             onClick={(e) => {
