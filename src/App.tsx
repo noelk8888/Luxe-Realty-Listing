@@ -895,24 +895,14 @@ function App() {
           return geoB - geoA;
         }
       } else {
-        // NEW 5-TIER PRIORITY for all other roles (Admin, Editor, Broker, Viewer)
-        
-        // TIER 1: DATE (Listing Update - Newest First)
-        const dateA = a.columnBC ? new Date(a.columnBC.split(' | ')[0]).getTime() : 0;
-        const dateB = b.columnBC ? new Date(b.columnBC.split(' | ')[0]).getTime() : 0;
-        if (!isNaN(dateA) && !isNaN(dateB) && dateA !== dateB) return dateB - dateA;
-
-        // TIER 2: OWNERSHIP MATCH (Listing ownership matches logged-in user)
+        // PRIORITY for all other roles — order depends on SHOW ALL state
         const ownerA = (a.columnBD || 'Luxe').toLowerCase();
         const ownerB = (b.columnBD || 'Luxe').toLowerCase();
         const userGrp = (fbGroup || '').toLowerCase();
         const userNm = (userName || '').toLowerCase();
-        const aMatches = (userGrp && ownerA.includes(userGrp)) || (userNm && ownerA.includes(userNm));
-        const bMatches = (userGrp && ownerB.includes(userGrp)) || (userNm && ownerB.includes(userNm));
-        if (aMatches && !bMatches) return -1;
-        if (!aMatches && bMatches) return 1;
+        const aOwnerMatch = (userGrp && ownerA.includes(userGrp)) || (userNm && ownerA.includes(userNm));
+        const bOwnerMatch = (userGrp && ownerB.includes(userGrp)) || (userNm && ownerB.includes(userNm));
 
-        // TIER 3: SOCMED MATCH (User's specific group icon is present)
         const getGroupSocmed = (l: Listing) => {
           if (!fbGroup) return false;
           if (fbGroup === 'Luxe') return !!l.postLinkLuxe;
@@ -926,17 +916,34 @@ function App() {
         };
         const aHasMySocmed = getGroupSocmed(a);
         const bHasMySocmed = getGroupSocmed(b);
-        if (aHasMySocmed && !bHasMySocmed) return -1;
-        if (!aHasMySocmed && bHasMySocmed) return 1;
 
-        // TIER 4: MAP VERIFIED
-        if (a.mapVerified && !b.mapVerified) return -1;
-        if (!a.mapVerified && b.mapVerified) return 1;
+        const dateA = a.columnBC ? new Date(a.columnBC.split(' | ')[0]).getTime() : 0;
+        const dateB = b.columnBC ? new Date(b.columnBC.split(' | ')[0]).getTime() : 0;
 
-        // TIER 5: GEO-ID (Numeric Descending)
         const geoA = parseInt((a.id || '').match(/\d+/)?.join('') || '0', 10);
         const geoB = parseInt((b.id || '').match(/\d+/)?.join('') || '0', 10);
-        return geoB - geoA;
+
+        if (showAllListings) {
+          // SHOW ALL = ON: Date > Ownership > Socmed > Map Verified > GEO-ID
+          if (!isNaN(dateA) && !isNaN(dateB) && dateA !== dateB) return dateB - dateA;
+          if (aOwnerMatch && !bOwnerMatch) return -1;
+          if (!aOwnerMatch && bOwnerMatch) return 1;
+          if (aHasMySocmed && !bHasMySocmed) return -1;
+          if (!aHasMySocmed && bHasMySocmed) return 1;
+          if (a.mapVerified && !b.mapVerified) return -1;
+          if (!a.mapVerified && b.mapVerified) return 1;
+          return geoB - geoA;
+        } else {
+          // SHOW ALL = OFF: Ownership > Socmed > Date > Map Verified > GEO-ID
+          if (aOwnerMatch && !bOwnerMatch) return -1;
+          if (!aOwnerMatch && bOwnerMatch) return 1;
+          if (aHasMySocmed && !bHasMySocmed) return -1;
+          if (!aHasMySocmed && bHasMySocmed) return 1;
+          if (!isNaN(dateA) && !isNaN(dateB) && dateA !== dateB) return dateB - dateA;
+          if (a.mapVerified && !b.mapVerified) return -1;
+          if (!a.mapVerified && b.mapVerified) return 1;
+          return geoB - geoA;
+        }
       }
     }
 
