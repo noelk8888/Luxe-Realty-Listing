@@ -22,7 +22,7 @@ import { supabase } from './lib/supabase';
 import { clearCache } from './services/listingsCache';
 
 function App() {
-  const { user, role, displayRole, fbGroup, groupBranding, isLoading: authLoading, signInWithGoogle, signOut } = useAuth();
+  const { user, role, displayRole, fbGroup, userName, groupBranding, isLoading: authLoading, signInWithGoogle, signOut } = useAuth();
   const { permissions } = usePermissions();
 
   const [showUserManagement, setShowUserManagement] = useState(false);

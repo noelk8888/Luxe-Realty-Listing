@@ -80,15 +80,12 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
     // Auto-enable Update Date toggle on CORE field changes only (excludes Notes & Social Media)
     useEffect(() => {
         if (!listing) return;
-
-        // Skip the very first run(s) after the modal opens — the toggle must start OFF
         if (isInitialLoad.current) {
             isInitialLoad.current = false;
             return;
         }
-
         setUpdateDate(true);
-    }, [salePrice, leasePrice, monthlyDues, latLong]);
+    }, [salePrice, leasePrice, monthlyDues]);
 
     // Auto-clear verification if coordinates change
     useEffect(() => {
@@ -443,8 +440,6 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                             <button
                                 type="button"
                                 onClick={() => {
-                                    // Only superadmin can turn it OFF if it's already ON
-                                    if (updateDate && role !== 'superadmin') return;
                                     setUpdateDate(prev => {
                                         const next = !prev;
                                         if (next) setCustomDate(todayStr()); // Always default to today when turned ON
