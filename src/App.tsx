@@ -862,55 +862,78 @@ function App() {
     }
 
     if (!sortConfig) {
-      if (role === 'superadmin' && adminSortMode === 'SOCMED') {
-        const hasSocmedA = !!(a.facebookLink || a.postLinkLuxe || a.postLinkNexia || a.postLinkAdolf || a.postLinkPco || a.postLinkSloo || a.postLinkTaoke);
-        const hasSocmedB = !!(b.facebookLink || b.postLinkLuxe || b.postLinkNexia || b.postLinkAdolf || b.postLinkPco || b.postLinkSloo || b.postLinkTaoke);
-        if (hasSocmedA && !hasSocmedB) return -1;
-        if (!hasSocmedA && hasSocmedB) return 1;
-        
-        // Secondary sort: Listing Update Date (newest first)
-        const dateA = a.columnBC ? new Date(a.columnBC.split(' | ')[0]).getTime() : 0;
-        const dateB = b.columnBC ? new Date(b.columnBC.split(' | ')[0]).getTime() : 0;
-        if (!isNaN(dateA) && !isNaN(dateB) && dateA !== dateB) return dateB - dateA;
-        
-        // Tertiary sort: GEO-ID
-        const geoA = parseInt((a.id || '').match(/\d+/)?.join('') || '0', 10);
-        const geoB = parseInt((b.id || '').match(/\d+/)?.join('') || '0', 10);
-        return geoB - geoA;
-      } else if (role === 'superadmin' && adminSortMode === 'LISTING DATE') {
-        // 1st: Listing Update Date (newest first)
-        const dateA = a.columnBC ? new Date(a.columnBC.split(' | ')[0]).getTime() : 0;
-        const dateB = b.columnBC ? new Date(b.columnBC.split(' | ')[0]).getTime() : 0;
-        if (!isNaN(dateA) && !isNaN(dateB) && dateA !== dateB) return dateB - dateA;
-        
-        // Secondary sort: GEO-ID
-        const geoA = parseInt((a.id || '').match(/\d+/)?.join('') || '0', 10);
-        const geoB = parseInt((b.id || '').match(/\d+/)?.join('') || '0', 10);
-        return geoB - geoA;
-      } else if (role === 'viewer') {
-        // 1st: SOCMED LINK
-        const hasSocmedA = !!(a.facebookLink || a.postLinkLuxe || a.postLinkNexia || a.postLinkAdolf || a.postLinkPco || a.postLinkSloo || a.postLinkTaoke);
-        const hasSocmedB = !!(b.facebookLink || b.postLinkLuxe || b.postLinkNexia || b.postLinkAdolf || b.postLinkPco || b.postLinkSloo || b.postLinkTaoke);
-        if (hasSocmedA && !hasSocmedB) return -1;
-        if (!hasSocmedA && hasSocmedB) return 1;
-
-        // 2nd: Listing Update Date (newest first)
-        const dateA = a.columnBC ? new Date(a.columnBC.split(' | ')[0]).getTime() : 0;
-        const dateB = b.columnBC ? new Date(b.columnBC.split(' | ')[0]).getTime() : 0;
-        if (!isNaN(dateA) && !isNaN(dateB) && dateA !== dateB) return dateB - dateA;
-
-        // 3rd: GEO-ID
-        const geoA = parseInt((a.id || '').match(/\d+/)?.join('') || '0', 10);
-        const geoB = parseInt((b.id || '').match(/\d+/)?.join('') || '0', 10);
-        return geoB - geoA;
+      if (role === 'superadmin') {
+        if (adminSortMode === 'SOCMED') {
+          const hasSocmedA = !!(a.facebookLink || a.postLinkLuxe || a.postLinkNexia || a.postLinkAdolf || a.postLinkPco || a.postLinkSloo || a.postLinkTaoke);
+          const hasSocmedB = !!(b.facebookLink || b.postLinkLuxe || b.postLinkNexia || b.postLinkAdolf || b.postLinkPco || b.postLinkSloo || b.postLinkTaoke);
+          if (hasSocmedA && !hasSocmedB) return -1;
+          if (!hasSocmedA && hasSocmedB) return 1;
+          
+          // Secondary sort: Listing Update Date (newest first)
+          const dateA = a.columnBC ? new Date(a.columnBC.split(' | ')[0]).getTime() : 0;
+          const dateB = b.columnBC ? new Date(b.columnBC.split(' | ')[0]).getTime() : 0;
+          if (!isNaN(dateA) && !isNaN(dateB) && dateA !== dateB) return dateB - dateA;
+          
+          // Tertiary sort: GEO-ID
+          const geoA = parseInt((a.id || '').match(/\d+/)?.join('') || '0', 10);
+          const geoB = parseInt((b.id || '').match(/\d+/)?.join('') || '0', 10);
+          return geoB - geoA;
+        } else if (adminSortMode === 'LISTING DATE') {
+          // 1st: Listing Update Date (newest first)
+          const dateA = a.columnBC ? new Date(a.columnBC.split(' | ')[0]).getTime() : 0;
+          const dateB = b.columnBC ? new Date(b.columnBC.split(' | ')[0]).getTime() : 0;
+          if (!isNaN(dateA) && !isNaN(dateB) && dateA !== dateB) return dateB - dateA;
+          
+          // Secondary sort: GEO-ID
+          const geoA = parseInt((a.id || '').match(/\d+/)?.join('') || '0', 10);
+          const geoB = parseInt((b.id || '').match(/\d+/)?.join('') || '0', 10);
+          return geoB - geoA;
+        } else {
+          // Default: GEO-ID
+          const geoA = parseInt((a.id || '').match(/\d+/)?.join('') || '0', 10);
+          const geoB = parseInt((b.id || '').match(/\d+/)?.join('') || '0', 10);
+          return geoB - geoA;
+        }
       } else {
-        // Other roles (Admin, Editor, Broker)
-        // 1st: Listing Update Date (newest first)
+        // NEW 5-TIER PRIORITY for all other roles (Admin, Editor, Broker, Viewer)
+        
+        // TIER 1: DATE (Listing Update - Newest First)
         const dateA = a.columnBC ? new Date(a.columnBC.split(' | ')[0]).getTime() : 0;
         const dateB = b.columnBC ? new Date(b.columnBC.split(' | ')[0]).getTime() : 0;
         if (!isNaN(dateA) && !isNaN(dateB) && dateA !== dateB) return dateB - dateA;
 
-        // 2nd: GEO-ID
+        // TIER 2: OWNERSHIP MATCH (Listing ownership matches logged-in user)
+        const ownerA = (a.columnBD || 'Luxe').toLowerCase();
+        const ownerB = (b.columnBD || 'Luxe').toLowerCase();
+        const userGrp = (fbGroup || '').toLowerCase();
+        const userNm = (userName || '').toLowerCase();
+        const aMatches = (userGrp && ownerA.includes(userGrp)) || (userNm && ownerA.includes(userNm));
+        const bMatches = (userGrp && ownerB.includes(userGrp)) || (userNm && ownerB.includes(userNm));
+        if (aMatches && !bMatches) return -1;
+        if (!aMatches && bMatches) return 1;
+
+        // TIER 3: SOCMED MATCH (User's specific group icon is present)
+        const getGroupSocmed = (l: Listing) => {
+          if (!fbGroup) return false;
+          if (fbGroup === 'Luxe') return !!l.postLinkLuxe;
+          if (fbGroup === 'Nexia') return !!l.postLinkNexia;
+          if (fbGroup === 'Adolf') return !!l.postLinkAdolf;
+          if (fbGroup === 'PCO') return !!l.postLinkPco;
+          if (fbGroup === 'SLoo') return !!l.postLinkSloo;
+          if (fbGroup === 'Taoke') return !!l.postLinkTaoke;
+          if (fbGroup === 'Kiu') return !!l.facebookLink;
+          return false;
+        };
+        const aHasMySocmed = getGroupSocmed(a);
+        const bHasMySocmed = getGroupSocmed(b);
+        if (aHasMySocmed && !bHasMySocmed) return -1;
+        if (!aHasMySocmed && bHasMySocmed) return 1;
+
+        // TIER 4: MAP VERIFIED
+        if (a.mapVerified && !b.mapVerified) return -1;
+        if (!a.mapVerified && b.mapVerified) return 1;
+
+        // TIER 5: GEO-ID (Numeric Descending)
         const geoA = parseInt((a.id || '').match(/\d+/)?.join('') || '0', 10);
         const geoB = parseInt((b.id || '').match(/\d+/)?.join('') || '0', 10);
         return geoB - geoA;
