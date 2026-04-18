@@ -4,6 +4,7 @@ import { MapPin, Building, Maximize, ChevronDown, ChevronUp, Bed, Car, Facebook,
 import { StatusDropdown } from './StatusDropdown';
 import { usePermissions } from '../contexts/PermissionsContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useViewing } from '../contexts/ViewingContext';
 
 interface ListingCardProps {
     listing: Listing;
@@ -45,6 +46,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     const [isExpanded, setIsExpanded] = useState(false);
     const { permissions } = usePermissions();
     const { fbGroup, role, userName } = useAuth();
+    const { addToViewing, removeFromViewing, isInViewing, isFull } = useViewing();
 
     // STATUS CHANGE ACCESS CONTROL:
     // 1. Superadmin: Full access (always bypasses permission flag)
@@ -561,6 +563,34 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         EDIT
                     </button>
                 )}
+                {(role === 'superadmin' || fbGroup === 'Luxe') && permissions.viewing_listing && (() => {
+                    const inList = isInViewing(listing.id);
+                    const disabled = isFull && !inList;
+                    return (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (inList) {
+                                    removeFromViewing(listing.id);
+                                } else if (!disabled) {
+                                    addToViewing(listing);
+                                }
+                            }}
+                            title={disabled ? 'Viewing list is full (max 10)' : inList ? 'Remove from viewing list' : 'Add to viewing list'}
+                            className={`flex-1 text-center py-2 rounded-lg text-xs font-bold transition-all duration-200 uppercase tracking-wider
+                                ${
+                                    inList
+                                        ? 'bg-orange-400 text-white shadow-sm'
+                                        : disabled
+                                        ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
+                                        : 'bg-orange-50 text-orange-600 hover:bg-orange-100'
+                                }
+                            `}
+                        >
+                            {inList ? '✓ VIEWING' : 'VIEWING'}
+                        </button>
+                    );
+                })()}
             </div>
 
             {/* Last Update */}

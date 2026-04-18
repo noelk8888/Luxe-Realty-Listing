@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, ArrowUp, ArrowDown, Facebook, Instagram, Youtube } from 'lucide-react';
+import { Search, ArrowUp, ArrowDown, Facebook, Instagram, Youtube, Eye } from 'lucide-react';
 import { DualRangeSlider } from './components/DualRangeSlider';
 import { fetchListings, refreshListings } from './services/dataService';
 import { searchListings } from './services/searchEngine';
@@ -12,10 +12,12 @@ import { MapModal } from './components/MapModal';
 import { NoteModal } from './components/NoteModal';
 import { EditListingModal } from './components/EditListingModal';
 import { UserManagementModal } from './components/UserManagementModal';
+import { ViewingSidebar } from './components/ViewingSidebar';
 import Pagination from './components/Pagination';
 import { ScrollToTop } from './components/ScrollToTop';
 import { useAuth } from './contexts/AuthContext';
 import { usePermissions } from './contexts/PermissionsContext';
+import { useViewing } from './contexts/ViewingContext';
 import { LoginScreen } from './components/LoginScreen';
 import { AccessDenied } from './components/AccessDenied';
 import { supabase } from './lib/supabase';
@@ -24,9 +26,11 @@ import { clearCache } from './services/listingsCache';
 function App() {
   const { user, role, displayRole, fbGroup, userName, groupBranding, isLoading: authLoading, signInWithGoogle, signOut } = useAuth();
   const { permissions } = usePermissions();
+  const { viewingList } = useViewing();
 
   const [showUserManagement, setShowUserManagement] = useState(false);
   const [showAccessDenied, setShowAccessDenied] = useState(false);
+  const [showViewingSidebar, setShowViewingSidebar] = useState(false);
 
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -89,6 +93,13 @@ function App() {
       setShowAccessDenied(false);
     }
   }, [user, role, authLoading]);
+
+  // Auto-open the viewing sidebar when the first listing is added
+  useEffect(() => {
+    if (viewingList.length > 0) {
+      setShowViewingSidebar(true);
+    }
+  }, [viewingList.length]);
 
   useEffect(() => {
     // Reset selections on search
@@ -1332,11 +1343,17 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans selection:bg-blue-100">
+    <div
+      className="min-h-screen bg-gray-50 text-gray-900 font-sans selection:bg-blue-100 transition-all duration-300"
+      style={{ paddingRight: showViewingSidebar && (role === 'superadmin' || fbGroup === 'Luxe') && permissions.viewing_listing ? '320px' : '0px' }}
+    >
       <ScrollToTop />
 
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 w-full py-4 bg-white border-b border-gray-100 flex items-center justify-center px-4 z-50">
+      <header
+        className="fixed top-0 left-0 right-0 w-full py-4 bg-white border-b border-gray-100 flex items-center justify-center px-4 z-50 transition-all duration-300"
+        style={{ paddingRight: showViewingSidebar && (role === 'superadmin' || fbGroup === 'Luxe') && permissions.viewing_listing ? 'calc(320px + 1rem)' : '1rem' }}
+      >
         <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
           {(groupBranding?.logoUrl || groupBranding?.brandName) && (
             <div className="flex items-center gap-2">
@@ -2622,6 +2639,26 @@ function App() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Viewing Sidebar */}
+      {(role === 'superadmin' || fbGroup === 'Luxe') && permissions.viewing_listing && (
+        <ViewingSidebar
+          isOpen={showViewingSidebar}
+          onClose={() => setShowViewingSidebar(false)}
+        />
+      )}
+
+      {/* Viewing FAB — bottom-right floating button */}
+      {(role === 'superadmin' || fbGroup === 'Luxe') && permissions.viewing_listing && viewingList.length > 0 && (
+        <button
+          onClick={() => setShowViewingSidebar(v => !v)}
+          className="fixed bottom-6 right-6 z-[800] flex items-center gap-2 px-4 py-3 bg-orange-500 hover:bg-orange-600 text-white text-xs font-black rounded-2xl shadow-2xl transition-all duration-200 uppercase tracking-widest"
+          title="Toggle Viewing List"
+        >
+          <Eye size={15} />
+          <span>{viewingList.length}</span>
+        </button>
       )}
     </div >
   );
