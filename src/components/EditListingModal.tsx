@@ -238,10 +238,10 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-100">
+                <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
                     <div>
-                        <h2 className="text-xl font-bold text-gray-900">Update Listing</h2>
-                        <p className="text-sm text-gray-500 mt-1">{listing.id} - {listing.columnK || listing.building || listing.city}</p>
+                        <h2 className="text-lg font-bold text-gray-900">Update Listing</h2>
+                        <p className="text-xs text-gray-500 mt-0.5">{listing.id} - {listing.columnK || listing.building || listing.city}</p>
                     </div>
                     <button
                         onClick={onClose}
@@ -252,31 +252,11 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="p-6 space-y-5">
-                    {/* Quick action buttons at top */}
-                    {(permissions.edit_sale_price || permissions.edit_lease_price) && (
-                    <div className="flex gap-3 pb-3 border-b border-gray-100">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="flex-1 py-2 px-3 bg-gray-100 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-200 transition-colors"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="flex-1 py-2 px-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {isSubmitting ? 'Saving...' : 'Save Changes'}
-                        </button>
-                    </div>
-                    )}
-
+                <form onSubmit={handleSubmit} className="px-5 py-4 space-y-3">
                     {/* Sale Price */}
                     {permissions.edit_sale_price && (
-                    <div className="flex items-start gap-3">
-                        <label className="text-sm font-bold text-gray-700 whitespace-nowrap pt-3 w-36 shrink-0">
+                    <div className="flex items-center gap-3">
+                        <label className="text-sm font-bold text-gray-700 whitespace-nowrap w-36 shrink-0">
                             Sale Price (PHP)
                         </label>
                         <div className="flex-1">
@@ -285,10 +265,10 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                                 value={salePrice ? formatNumberInput(salePrice) : ''}
                                 onChange={(e) => setSalePrice(e.target.value.replace(/,/g, ''))}
                                 placeholder="e.g. 5,000,000"
-                                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-lg font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             />
                             {salePricePerSqm > 0 && (
-                                <p className="text-xs text-gray-500 mt-1">= P{salePricePerSqm.toLocaleString()}/sqm</p>
+                                <p className="text-xs text-gray-500 mt-0.5">= P{salePricePerSqm.toLocaleString()}/sqm</p>
                             )}
                         </div>
                     </div>
@@ -296,9 +276,9 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
 
                     {/* Lease Price */}
                     {permissions.edit_lease_price && (
-                    <div className="flex items-start gap-3">
-                        <label className="text-sm font-bold text-gray-700 whitespace-nowrap pt-3 w-36 shrink-0">
-                            Lease Price (PHP/month)
+                    <div className="flex items-center gap-3">
+                        <label className="text-sm font-bold text-gray-700 whitespace-nowrap w-36 shrink-0">
+                            Lease Price (PHP/mo)
                         </label>
                         <div className="flex-1">
                             <input
@@ -306,10 +286,10 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                                 value={leasePrice ? formatNumberInput(leasePrice) : ''}
                                 onChange={(e) => setLeasePrice(e.target.value.replace(/,/g, ''))}
                                 placeholder="e.g. 50,000"
-                                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-lg font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             />
                             {leasePricePerSqm > 0 && (
-                                <p className="text-xs text-gray-500 mt-1">= P{leasePricePerSqm.toLocaleString()}/sqm</p>
+                                <p className="text-xs text-gray-500 mt-0.5">= P{leasePricePerSqm.toLocaleString()}/sqm</p>
                             )}
                         </div>
                     </div>
@@ -318,7 +298,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                     {/* Monthly Dues */}
                     {permissions.edit_monthly_dues && (
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                        <label className="block text-sm font-bold text-gray-700 mb-1">
                             Monthly Dues (PHP)
                         </label>
                         <input
@@ -326,7 +306,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                             value={monthlyDues}
                             onChange={(e) => setMonthlyDues(e.target.value)}
                             placeholder="e.g. 2,681.92/month"
-                            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-lg font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                     </div>
                     )}
@@ -334,22 +314,22 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                     {/* Notes */}
                     {(permissions.edit_notes || isOwnerGroup) && (
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                        <label className="block text-sm font-bold text-gray-700 mb-1">
                             Notes
                         </label>
                         <textarea
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
                             placeholder="Add notes about this listing..."
-                            rows={4}
-                            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                            rows={3}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                         />
                     </div>
                     )}
 
                     {/* LAT LONG */}
                     {permissions.edit_coordinates && <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                        <label className="block text-sm font-bold text-gray-700 mb-1">
                             Coordinates (Lat, Long)
                         </label>
                         <div className="flex gap-2">
@@ -358,19 +338,19 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                                 value={latLong}
                                 onChange={(e) => setLatLong(e.target.value)}
                                 placeholder="e.g. 14.5995, 120.9842"
-                                className="flex-1 px-4 py-3 border border-gray-200 rounded-xl text-base font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             />
                             {permissions.geocoding && (
                             <button
                                 type="button"
                                 onClick={handleGetLocation}
                                 disabled={isGettingLocation}
-                                className="flex items-center gap-1.5 px-4 py-3 bg-green-600 text-white rounded-xl font-bold text-sm hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                                className="flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-xl font-bold text-xs hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                                 title="Use my current location"
                             >
                                 {isGettingLocation
-                                    ? <Locate className="w-4 h-4 animate-spin" />
-                                    : <MapPin className="w-4 h-4" />
+                                    ? <Locate className="w-3 h-3 animate-spin" />
+                                    : <MapPin className="w-3 h-3" />
                                 }
                                 HERE
                             </button>
@@ -383,7 +363,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                                     setMapVerified(`${dateStr} | ${author}`);
                                 }}
                                 disabled={!latLong.trim()}
-                                className="px-4 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-3 py-2 bg-blue-600 text-white rounded-xl font-bold text-xs hover:bg-blue-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                                 title="Mark coordinates as verified"
                             >
                                 VERIFIED
@@ -408,7 +388,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                             </p>
                         ) : parsedCoords ? (
                             <p className="text-xs text-gray-500 mt-1">
-                                LAT: {parsedCoords.lat} &nbsp;|&nbsp; LONG: {parsedCoords.lng}
+                                LAT: {parsedCoords.lat}&nbsp;|&nbsp; LONG: {parsedCoords.lng}
                             </p>
                         ) : null}
                         {locationError && (
@@ -418,7 +398,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
 
                     {/* FB Link */}
                     {permissions.edit_fb_link && <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                        <label className="block text-sm font-bold text-gray-700 mb-1">
                             Social Media Post Link
                         </label>
                         <input
@@ -426,7 +406,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                             value={fbLink}
                             onChange={(e) => setFbLink(e.target.value)}
                             placeholder="https://www.facebook.com/..."
-                            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                     </div>}
 
