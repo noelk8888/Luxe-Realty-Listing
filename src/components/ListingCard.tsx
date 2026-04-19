@@ -42,6 +42,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     const [isColumnKCopied, setIsColumnKCopied] = useState(false);
     const [isColumnBDCopied, setIsColumnBDCopied] = useState(false);
     const [isPhotoLinkCopied, setIsPhotoLinkCopied] = useState(false);
+    const [isMapLinkCopied, setIsMapLinkCopied] = useState(false);
 
     const [isExpanded, setIsExpanded] = useState(false);
     const { permissions } = usePermissions();
@@ -158,6 +159,16 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         }
     };
 
+    const handleCopyMapLink = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (role !== 'superadmin') return;
+        const link = listing.mapLink || '';
+        if (link) {
+            navigator.clipboard.writeText(link);
+            setIsMapLinkCopied(true);
+        }
+    };
+
     useEffect(() => {
         if (isCopied) {
             const timer = setTimeout(() => setIsCopied(false), 2000);
@@ -185,6 +196,13 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             return () => clearTimeout(timer);
         }
     }, [isPhotoLinkCopied]);
+
+    useEffect(() => {
+        if (isMapLinkCopied) {
+            const timer = setTimeout(() => setIsMapLinkCopied(false), 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [isMapLinkCopied]);
 
     const status = (listing.statusAQ || '').toLowerCase().trim();
     const isNotAvailable = status !== 'available' && status !== '';
@@ -447,9 +465,19 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         <span>Monthly Dues: {listing.monthlyDues}</span>
                     </div>
                 )}
-                <div className="flex items-center gap-2">
-                    <Maximize className="w-4 h-4" />
-                    {listing.lotArea > 0 && listing.floorArea > 0 ? (
+                <div
+                    className={`flex items-center gap-2 ${
+                        role === 'superadmin' && listing.mapLink
+                            ? 'cursor-pointer'
+                            : ''
+                    }`}
+                    onClick={role === 'superadmin' && listing.mapLink ? handleCopyMapLink : undefined}
+                    title={role === 'superadmin' && listing.mapLink ? 'Copy map link (col AD)' : undefined}
+                >
+                    <Maximize className={`w-4 h-4 flex-shrink-0 ${isMapLinkCopied ? 'text-green-500' : ''}`} />
+                    {isMapLinkCopied ? (
+                        <span className="text-green-600 font-semibold">Map link copied!</span>
+                    ) : listing.lotArea > 0 && listing.floorArea > 0 ? (
                         // Both lot and floor area present - use 2 lines
                         <div className="flex flex-col">
                             <span>{listing.lotArea.toLocaleString()} sqm Lot Area</span>
