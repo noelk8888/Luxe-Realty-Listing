@@ -442,9 +442,19 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                     </span>
                 </div>
                 {(listing.building || listing.area || listing.barangay) && (
-                    <div className="flex items-center gap-2">
-                        <Building className="w-4 h-4" />
-                        <span className="truncate">{listing.building || listing.area || listing.barangay}</span>
+                    <div
+                        className={`flex items-center gap-2 ${
+                            role === 'superadmin' && listing.mapLink
+                                ? 'cursor-pointer'
+                                : ''
+                        }`}
+                        onClick={role === 'superadmin' && listing.mapLink ? handleCopyMapLink : undefined}
+                        title={role === 'superadmin' && listing.mapLink ? 'Copy map link (col U)' : undefined}
+                    >
+                        <Building className={`w-4 h-4 flex-shrink-0 ${isMapLinkCopied ? 'text-green-500' : ''}`} />
+                        <span className={`truncate transition-colors ${isMapLinkCopied ? 'text-green-600 font-semibold' : ''}`}>
+                            {isMapLinkCopied ? 'Map link copied!' : (listing.building || listing.area || listing.barangay)}
+                        </span>
                     </div>
                 )}
                 {listing.bedrooms > 0 && (
@@ -465,19 +475,9 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         <span>Monthly Dues: {listing.monthlyDues}</span>
                     </div>
                 )}
-                <div
-                    className={`flex items-center gap-2 ${
-                        role === 'superadmin' && listing.mapLink
-                            ? 'cursor-pointer'
-                            : ''
-                    }`}
-                    onClick={role === 'superadmin' && listing.mapLink ? handleCopyMapLink : undefined}
-                    title={role === 'superadmin' && listing.mapLink ? 'Copy map link (col AD)' : undefined}
-                >
-                    <Maximize className={`w-4 h-4 flex-shrink-0 ${isMapLinkCopied ? 'text-green-500' : ''}`} />
-                    {isMapLinkCopied ? (
-                        <span className="text-green-600 font-semibold">Map link copied!</span>
-                    ) : listing.lotArea > 0 && listing.floorArea > 0 ? (
+                <div className="flex items-center gap-2">
+                    <Maximize className="w-4 h-4 flex-shrink-0" />
+                    {listing.lotArea > 0 && listing.floorArea > 0 ? (
                         // Both lot and floor area present - use 2 lines
                         <div className="flex flex-col">
                             <span>{listing.lotArea.toLocaleString()} sqm Lot Area</span>
