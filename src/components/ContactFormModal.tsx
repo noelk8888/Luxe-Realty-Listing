@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { X, MapPin, Locate } from 'lucide-react';
-import { usePermissions } from '../contexts/PermissionsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import type { Listing } from '../types';
@@ -85,7 +84,6 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
-    const { permissions } = usePermissions();
 
     // Reset form state on close
     useEffect(() => {
