@@ -32,6 +32,12 @@ function App() {
   const [showAccessDenied, setShowAccessDenied] = useState(false);
   const [showViewingSidebar, setShowViewingSidebar] = useState(false);
 
+  // ── New Note Submitted alert ──
+  // Visible only to: superadmin, or admin/editor whose fbGroup === 'Luxe'
+  const NOTES_GSHEET_URL = 'https://docs.google.com/spreadsheets/d/1x0as4KKRqQ4YZYQ30gDxdW6qyggh4n4gtnVOXBYvs-8/edit?resourcekey=&gid=1150742435#gid=1150742435';
+  const LS_KEY = 'luxe_notes_last_seen';
+  const [hasNewNote, setHasNewNote] = useState(false);
+
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
@@ -100,6 +106,32 @@ function App() {
       setShowViewingSidebar(true);
     }
   }, [viewingList.length]);
+
+  // ── Note submission alert: poll Supabase every 30 s ──
+  const canSeeNoteAlert =
+    role === 'superadmin' ||
+    ((role === 'admin' || role === 'editor') && fbGroup === 'Luxe');
+
+  useEffect(() => {
+    if (!canSeeNoteAlert) return;
+
+    const checkNewNotes = async () => {
+      const lastSeen = localStorage.getItem(LS_KEY) ?? '1970-01-01T00:00:00.000Z';
+      const { data, error } = await supabase
+        .from('luxe_note_submissions')
+        .select('id', { count: 'exact', head: false })
+        .gt('submitted_at', lastSeen)
+        .limit(1);
+      if (!error && data && data.length > 0) {
+        setHasNewNote(true);
+      }
+    };
+
+    checkNewNotes(); // run immediately on mount
+    const interval = setInterval(checkNewNotes, 3 * 60 * 60 * 1000); // then every 3 hours
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canSeeNoteAlert]);
 
   useEffect(() => {
     // Reset selections on search
@@ -1061,6 +1093,83 @@ function App() {
     setShowFormModal(true);
   };
 
+  /**
+   * Called by ContactFormModal on submit.
+   * Saves ONLY coordinates + map verification + social media link to Supabase,
+   * mirroring the behaviour of EditListingModal without touching price / notes / dates.
+   */
+  const handleNotesCoordsSave = async (
+    listingId: string,
+    latLongStr: string,
+    mapVerified: string,
+    fbLinkStr: string,
+  ) => {
+    const listing = allListings.find(l => l.id === listingId);
+    if (!listing) return; // nothing to do if listing not found
+
+    // Parse coordinates
+    let parsedLat: number | null = null;
+    let parsedLng: number | null = null;
+    if (latLongStr) {
+      const parts = latLongStr.split(',').map(s => s.trim());
+      if (parts.length === 2) {
+        const lat = parseFloat(parts[0]);
+        const lng = parseFloat(parts[1]);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          parsedLat = lat;
+          parsedLng = lng;
+        }
+      }
+    }
+
+    // Only commit if something has actually changed
+    const oldLat = listing.lat || 0;
+    const oldLng = listing.lng || 0;
+    const coordsChanged = parsedLat !== null && parsedLng !== null &&
+      (Math.abs(parsedLat - oldLat) > 0.000001 || Math.abs(parsedLng - oldLng) > 0.000001);
+    const verifiedChanged = mapVerified !== (listing.mapVerified || '');
+    const socmedChanged = fbLinkStr !== undefined;
+
+    if (!coordsChanged && !verifiedChanged && !socmedChanged) return;
+
+    // Determine which social media column to write (same logic as full edit)
+    const socmedColMap: Record<string, string> = {
+      Luxe: 'BP', Nexia: 'BQ', Adolf: 'BR', PCO: 'BS', SLoo: 'BT', Taoke: 'BU',
+    };
+    const socmedCol = fbGroup ? (socmedColMap[fbGroup] ?? 'FB LINK') : 'FB LINK';
+
+    await supabase
+      .from('KIU Properties')
+      .update({
+        'LAT LONG': latLongStr || listing.latLong || null,
+        'LAT': parsedLat !== null ? parsedLat.toString() : (listing.lat?.toString() || null),
+        'LONG': parsedLng !== null ? parsedLng.toString() : (listing.lng?.toString() || null),
+        'MAP VERIFIED': mapVerified || null,
+        ...(fbLinkStr !== undefined && { [socmedCol]: fbLinkStr || null }),
+      })
+      .eq('"GEO ID"', listingId);
+
+    // Optimistic local state update
+    const updateFn = (l: typeof listing): typeof listing =>
+      l.id !== listingId ? l : {
+        ...l,
+        ...(parsedLat !== null && { lat: parsedLat }),
+        ...(parsedLng !== null && { lng: parsedLng }),
+        mapVerified,
+        facebookLink: fbGroup === 'Kiu' || !fbGroup ? fbLinkStr : l.facebookLink,
+        postLinkLuxe: fbGroup === 'Luxe' ? fbLinkStr : l.postLinkLuxe,
+        postLinkNexia: fbGroup === 'Nexia' ? fbLinkStr : l.postLinkNexia,
+        postLinkAdolf: fbGroup === 'Adolf' ? fbLinkStr : l.postLinkAdolf,
+        postLinkPco: fbGroup === 'PCO' ? fbLinkStr : l.postLinkPco,
+        postLinkSloo: fbGroup === 'SLoo' ? fbLinkStr : l.postLinkSloo,
+        postLinkTaoke: fbGroup === 'Taoke' ? fbLinkStr : l.postLinkTaoke,
+      };
+
+    setAllListings(prev => prev.map(updateFn));
+    setResults(prev => prev.map(updateFn));
+    clearCache().catch(() => {});
+  };
+
   // Map Modal State
   const [showMapModal, setShowMapModal] = useState(false);
   const [mapCenterListing, setMapCenterListing] = useState<Listing | null>(null);
@@ -1405,6 +1514,23 @@ function App() {
               >
                 Users
               </button>
+            )}
+            {/* New Note Submitted alert — superadmin or Luxe admin/editor only */}
+            {canSeeNoteAlert && hasNewNote && (
+              <a
+                href={NOTES_GSHEET_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => {
+                  // Mark as seen: save current UTC timestamp to localStorage
+                  localStorage.setItem(LS_KEY, new Date().toISOString());
+                  setHasNewNote(false);
+                }}
+                className="text-xs font-bold text-red-600 hover:text-red-800 transition-colors animate-pulse whitespace-nowrap"
+                title="Open Notes GSheet"
+              >
+                ● New Note Submitted
+              </a>
             )}
             <button
               onClick={signOut}
@@ -2522,6 +2648,12 @@ function App() {
             ? allListings.find(l => l.id === selectedListings[0])?.columnV || ''
             : ''
         }
+        listing={
+          selectedListings.length > 0
+            ? allListings.find(l => l.id === selectedListings[0]) ?? null
+            : null
+        }
+        onSaveCoords={handleNotesCoordsSave}
       />
 
       <MapModal

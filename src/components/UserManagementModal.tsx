@@ -412,7 +412,17 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
             .select('id, name, fb_link, brand_name, logo_url, messenger_url, instagram_url, tiktok_url, youtube_url, spearheaded_by')
             .order('name');
         if (error) setError('Failed to load groups: ' + error.message);
-        else setGroups(data ?? []);
+        else {
+            // Luxe always first, then alphabetical
+            const sorted = (data ?? []).sort((a, b) => {
+                const aIsLuxe = a.name.toLowerCase() === 'luxe';
+                const bIsLuxe = b.name.toLowerCase() === 'luxe';
+                if (aIsLuxe && !bIsLuxe) return -1;
+                if (!aIsLuxe && bIsLuxe) return 1;
+                return a.name.localeCompare(b.name);
+            });
+            setGroups(sorted);
+        }
         setGroupsLoading(false);
     }
 

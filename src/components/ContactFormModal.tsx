@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { X, MapPin, Locate } from 'lucide-react';
 import { usePermissions } from '../contexts/PermissionsContext';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
+import type { Listing } from '../types';
 
 
 interface ContactFormModalProps {
@@ -9,6 +11,9 @@ interface ContactFormModalProps {
     onClose: () => void;
     selectedListings: string[];
     initialSuggestedEdit?: string;
+    listing?: Listing | null;
+    /** Called on submit to save coords + verification to the database (like Edit Module) */
+    onSaveCoords?: (listingId: string, latLong: string, mapVerified: string, fbLink: string) => Promise<void>;
 }
 
 export const ContactFormModal: React.FC<ContactFormModalProps> = ({
@@ -16,31 +21,70 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
     onClose,
     selectedListings,
     initialSuggestedEdit = '',
+    listing = null,
+    onSaveCoords,
 }) => {
-    const { fbGroup, groupBranding } = useAuth();
+    const { fbGroup, groupBranding, userName } = useAuth();
     const [formData, setFormData] = useState({
         name: '',
-        email: '',
-        viberNumber: '',
-        buyerType: 'Direct Buyer' as 'Broker' | 'Direct Buyer',
         additionalQuestions: '',
     });
 
-    // Initialize name with group name and additionalQuestions with initialSuggestedEdit when modal opens
+    // Coordinates section state (shown for all users)
+    const [latLong, setLatLong] = useState('');
+    const [mapVerified, setMapVerified] = useState('');
+    const [isGettingLocation, setIsGettingLocation] = useState(false);
+    const [locationError, setLocationError] = useState<string | null>(null);
+
+    // Social media section state (shown only for owner group)
+    const [fbLink, setFbLink] = useState('');
+
+    // Determine if user is the listing owner group
+    const isOwnerGroup = (() => {
+        if (!listing) return false;
+        const ownerString = (listing.columnBD || 'Luxe').toLowerCase();
+        const userGroup = (fbGroup || '').toLowerCase();
+        const name = (userName || '').toLowerCase();
+        const isGroupMatch = userGroup && ownerString.includes(userGroup);
+        const isNameMatch = name && ownerString.includes(name);
+        return !!(isGroupMatch || isNameMatch);
+    })();
+
+    // Initialize all fields when modal opens
     useEffect(() => {
         if (isOpen) {
-            setFormData(prev => ({
-                ...prev,
-                name: groupBranding?.brandName ?? fbGroup ?? prev.name,
-                additionalQuestions: initialSuggestedEdit
-            }));
+            setFormData({
+                name: groupBranding?.brandName ?? fbGroup ?? '',
+                additionalQuestions: initialSuggestedEdit,
+            });
+
+            if (listing) {
+                // Pre-populate coordinates from the listing
+                setLatLong(listing.lat && listing.lng ? `${listing.lat}, ${listing.lng}` : '');
+                setMapVerified(listing.mapVerified || '');
+
+                // Pre-populate social media link based on current user's group
+                const groupPostLink: Record<string, string | undefined> = {
+                    'Luxe': listing.postLinkLuxe,
+                    'Nexia': listing.postLinkNexia,
+                    'Adolf': listing.postLinkAdolf,
+                    'PCO': listing.postLinkPco,
+                    'SLoo': listing.postLinkSloo,
+                    'Taoke': listing.postLinkTaoke,
+                    'Kiu': listing.facebookLink,
+                };
+                setFbLink((fbGroup ? groupPostLink[fbGroup] : listing.facebookLink) || '');
+            } else {
+                setLatLong('');
+                setMapVerified('');
+                setFbLink('');
+            }
+            setLocationError(null);
         }
-    }, [isOpen, initialSuggestedEdit, fbGroup]);
+    }, [isOpen, initialSuggestedEdit, fbGroup, listing?.id]);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
-    const [isGettingLocation, setIsGettingLocation] = useState(false);
-    const [locationError, setLocationError] = useState<string | null>(null);
     const { permissions } = usePermissions();
 
     // Reset form state on close
@@ -50,49 +94,56 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
         }
     }, [isOpen]);
 
-    const validateForm = (): boolean => {
-        return true;
-    };
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
-        if (!validateForm()) {
-            return;
-        }
-
         setIsSubmitting(true);
         setSubmitStatus('idle');
 
-        // Google Form Submission Logic
-        // Form: 'Luxe Suggested Notes/Comments'
-        const GOOGLE_FORM_ACTION_URL = "https://docs.google.com/forms/u/0/d/e/1FAIpQLScsBzxO6PgWWJjDVf4rd1uXHiwQZlFYHOMTkg4jk-IxGPtOWg/formResponse";
-
-        const formBody = new FormData();
-        // Mapping fields to Google Form Entry IDs
-        formBody.append("entry.524309596", formData.name);
-        // Email, Viber, and BuyerType are not present in the new form
-        // formBody.append("entry.1794044649", formData.email);
-        // formBody.append("entry.739228677", formData.viberNumber);
-        // formBody.append("entry.1511942672", formData.buyerType);
-
-        formBody.append("entry.1404259207", selectedListings.join(', '));
-        formBody.append("entry.94649554", formData.additionalQuestions);
-
         try {
+            // ── STEP 1: Save coordinates + verification to Supabase (Edit Module behaviour) ──
+            // This runs for all users who have a listing, even if coords haven't changed.
+            // We only call it when there is a listing context and the callback is provided.
+            if (listing && onSaveCoords) {
+                await onSaveCoords(
+                    listing.id,
+                    latLong.trim(),
+                    mapVerified.trim(),
+                    isOwnerGroup ? fbLink.trim() : ''   // fbLink only saved for owner group
+                );
+            }
+
+            // ── STEP 2: Submit suggested-edit note to Google Form (Notes Module behaviour) ──
+            const GOOGLE_FORM_ACTION_URL = "https://docs.google.com/forms/u/0/d/e/1FAIpQLScsBzxO6PgWWJjDVf4rd1uXHiwQZlFYHOMTkg4jk-IxGPtOWg/formResponse";
+            const formBody = new FormData();
+            formBody.append("entry.524309596", formData.name);               // Your Group
+            formBody.append("entry.1404259207", selectedListings.join(', ')); // Selected Property
+            formBody.append("entry.94649554", formData.additionalQuestions);  // Suggested Edits
+
             await fetch(GOOGLE_FORM_ACTION_URL, {
                 method: "POST",
-                mode: "no-cors", // Important for submitting to Google Forms from client-side
-                body: formBody
+                mode: "no-cors",
+                body: formBody,
             });
 
-            setSubmitStatus('success');
+            // ── STEP 3: Write a submission event to Supabase so admins are notified ──
+            // Fire-and-forget — don't let this block the success flow
+            supabase
+                .from('luxe_note_submissions')
+                .insert({
+                    listing_id: selectedListings.join(', '),
+                    group_name: formData.name,
+                    submitted_at: new Date().toISOString(),
+                })
+                .then(({ error }) => {
+                    if (error) console.warn('Note event insert failed:', error.message);
+                });
 
-            // Close modal and reset form after success message
+            setSubmitStatus('success');
             setTimeout(() => {
                 onClose();
                 resetForm();
             }, 2000);
+
         } catch (error) {
             console.error("Form submission error:", error);
             setSubmitStatus('error');
@@ -102,16 +153,15 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
     };
 
     const resetForm = () => {
-        setFormData({
-            name: '',
-            email: '',
-            viberNumber: '',
-            buyerType: 'Direct Buyer',
-            additionalQuestions: '',
-        });
+        setFormData({ name: '', additionalQuestions: '' });
+        setLatLong('');
+        setMapVerified('');
+        setFbLink('');
+        setLocationError(null);
         setSubmitStatus('idle');
     };
 
+    // GPS: populates the Coordinates field
     const handleGetLocation = () => {
         if (!navigator.geolocation) {
             setLocationError('Geolocation not supported by this browser');
@@ -122,13 +172,9 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const { latitude, longitude } = position.coords;
-                const coords = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
-                setFormData(prev => ({
-                    ...prev,
-                    additionalQuestions: prev.additionalQuestions
-                        ? `${prev.additionalQuestions}\nCoordinates: ${coords}`
-                        : `Coordinates: ${coords}`
-                }));
+                setLatLong(`${latitude.toFixed(7)}, ${longitude.toFixed(7)}`);
+                // Clear verification whenever coordinates change
+                setMapVerified('');
                 setIsGettingLocation(false);
             },
             (err) => {
@@ -137,6 +183,22 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
             },
             { enableHighAccuracy: true, timeout: 10000 }
         );
+    };
+
+    // Parse lat/long for the preview line
+    const parsedCoords = (() => {
+        const parts = latLong.split(',').map(s => s.trim());
+        if (parts.length === 2) {
+            const lat = parseFloat(parts[0]);
+            const lng = parseFloat(parts[1]);
+            if (!isNaN(lat) && !isNaN(lng)) return { lat, lng };
+        }
+        return null;
+    })();
+
+    const todayStr = () => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     };
 
     const handleClose = () => {
@@ -188,7 +250,7 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
                                 </div>
                             </div>
 
-                            {/* Selected Listings */}
+                            {/* Selected Property */}
                             <div className="flex items-center gap-3">
                                 <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Selected Property</label>
                                 <div className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
@@ -196,28 +258,11 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
                                 </div>
                             </div>
 
-                            {/* Additional Questions */}
+                            {/* Suggested Edits — no GPS Coordinates button here */}
                             <div>
-                                <div className="flex items-center justify-between mb-1">
-                                    <label className="block text-sm font-medium text-gray-700">
-                                        Suggested Edits
-                                    </label>
-                                    {permissions.geocoding && (
-                                    <button
-                                        type="button"
-                                        onClick={handleGetLocation}
-                                        disabled={isGettingLocation || isSubmitting}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white rounded-lg font-bold text-xs hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                        title="Use my current location"
-                                    >
-                                        {isGettingLocation
-                                            ? <Locate className="w-3 h-3 animate-spin" />
-                                            : <MapPin className="w-3 h-3" />
-                                        }
-                                        GPS Coordinates
-                                    </button>
-                                    )}
-                                </div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Suggested Edits
+                                </label>
                                 <textarea
                                     value={formData.additionalQuestions}
                                     onChange={(e) => setFormData({ ...formData, additionalQuestions: e.target.value })}
@@ -226,13 +271,86 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
                                     placeholder="Any specific questions about the selected properties..."
                                     disabled={isSubmitting}
                                 />
+                            </div>
+
+                            {/* ── COORDINATES SECTION (shown for ALL users) ── */}
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                                    Coordinates (Lat, Long)
+                                </label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={latLong}
+                                        onChange={(e) => {
+                                            setLatLong(e.target.value);
+                                            setMapVerified(''); // Clear verification on manual edit
+                                        }}
+                                        placeholder="e.g. 14.5995, 120.9842"
+                                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        disabled={isSubmitting}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleGetLocation}
+                                        disabled={isGettingLocation || isSubmitting}
+                                        className="flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-lg font-bold text-xs hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                                        title="Use my current GPS location"
+                                    >
+                                        {isGettingLocation
+                                            ? <Locate className="w-3 h-3 animate-spin" />
+                                            : <MapPin className="w-3 h-3" />
+                                        }
+                                        HERE
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const author = fbGroup || 'System';
+                                            setMapVerified(`${todayStr()} | ${author}`);
+                                        }}
+                                        disabled={!latLong.trim() || isSubmitting}
+                                        className="px-3 py-2 bg-blue-600 text-white rounded-lg font-bold text-xs hover:bg-blue-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                                        title="Mark coordinates as verified"
+                                    >
+                                        VERIFIED
+                                    </button>
+                                </div>
+                                {mapVerified ? (
+                                    <p className="text-xs text-green-600 font-medium mt-1">
+                                        {(() => {
+                                            const parts = mapVerified.split(' | ');
+                                            const date = parts[0];
+                                            const group = parts[1] || 'System';
+                                            return `Verified by ${group} on ${date}`;
+                                        })()}
+                                    </p>
+                                ) : parsedCoords ? (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        LAT: {parsedCoords.lat}&nbsp;|&nbsp;LONG: {parsedCoords.lng}
+                                    </p>
+                                ) : null}
                                 {locationError && (
                                     <p className="text-xs text-red-500 mt-1">{locationError}</p>
                                 )}
                             </div>
 
-
-
+                            {/* ── SOCIAL MEDIA SECTION (owner group only) ── */}
+                            {isOwnerGroup && (
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                                        Social Media Post Link
+                                    </label>
+                                    <input
+                                        type="url"
+                                        value={fbLink}
+                                        onChange={(e) => setFbLink(e.target.value)}
+                                        placeholder="https://www.facebook.com/..."
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        disabled={isSubmitting}
+                                    />
+                                </div>
+                            )}
 
                             {/* Submit Button */}
                             <button
