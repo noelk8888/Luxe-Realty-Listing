@@ -1145,6 +1145,10 @@ function App() {
         'LAT': parsedLat !== null ? parsedLat.toString() : (listing.lat?.toString() || null),
         'LONG': parsedLng !== null ? parsedLng.toString() : (listing.lng?.toString() || null),
         'MAP VERIFIED': mapVerified || null,
+        // Auto-generate MAP LINK when verifying
+        ...(mapVerified && parsedLat !== null && parsedLng !== null && {
+          'MAP LINK': `https://www.google.com/maps/search/?api=1&query=${parsedLat},${parsedLng}`,
+        }),
         ...(fbLinkStr !== undefined && { [socmedCol]: fbLinkStr || null }),
       })
       .eq('"GEO ID"', listingId);
@@ -1156,6 +1160,9 @@ function App() {
         ...(parsedLat !== null && { lat: parsedLat }),
         ...(parsedLng !== null && { lng: parsedLng }),
         mapVerified,
+        ...(mapVerified && parsedLat !== null && parsedLng !== null && {
+          mapLink: `https://www.google.com/maps/search/?api=1&query=${parsedLat},${parsedLng}`,
+        }),
         facebookLink: fbGroup === 'Kiu' || !fbGroup ? fbLinkStr : l.facebookLink,
         postLinkLuxe: fbGroup === 'Luxe' ? fbLinkStr : l.postLinkLuxe,
         postLinkNexia: fbGroup === 'Nexia' ? fbLinkStr : l.postLinkNexia,
@@ -1257,6 +1264,7 @@ function App() {
     latLong: string;
     fbLink: string;
     mapVerified: string;
+    mapLink: string;
     sourceTab?: string;
   }) => {
     console.log('Editing listing:', { listingId, updates });
@@ -1343,6 +1351,7 @@ function App() {
         'LAT': parsedLat !== null ? parsedLat.toString() : (listing.lat?.toString() || null),
         'LONG': parsedLng !== null ? parsedLng.toString() : (listing.lng?.toString() || null),
         'MAP VERIFIED': updates.mapVerified !== undefined ? (updates.mapVerified || null) : (listing.mapVerified || null),
+        ...(updates.mapLink !== undefined && { 'MAP LINK': updates.mapLink || null }),
         ...(updates.fbLink !== undefined && {
           [fbGroup === 'Nexia' ? 'BQ'
             : fbGroup === 'Adolf' ? 'BR'
@@ -1390,6 +1399,7 @@ function App() {
         postLinkSloo: fbGroup === 'SLoo' ? updates.fbLink : l.postLinkSloo,
         postLinkTaoke: fbGroup === 'Taoke' ? updates.fbLink : l.postLinkTaoke,
         mapVerified: updates.mapVerified,
+        mapLink: updates.mapLink || l.mapLink,
       } : l;
 
     setAllListings(prev => prev.map(updateListing));

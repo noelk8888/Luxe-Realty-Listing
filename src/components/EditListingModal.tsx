@@ -17,6 +17,7 @@ interface EditListingModalProps {
         latLong: string;
         fbLink: string;
         mapVerified: string;
+        mapLink: string;
         sourceTab?: string;
     }) => Promise<void>;
     groupName?: string;
@@ -44,6 +45,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
     const [isGettingLocation, setIsGettingLocation] = useState(false);
     const [locationError, setLocationError] = useState<string | null>(null);
     const [mapVerified, setMapVerified] = useState('');
+    const [mapLink, setMapLink] = useState('');
     const { permissions } = usePermissions();
     const { fbGroup, user, role, userName } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -71,6 +73,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
             };
             setFbLink((fbGroup ? groupPostLink[fbGroup] : listing.facebookLink) || '');
             setMapVerified(listing.mapVerified || '');
+            setMapLink(listing.mapLink || '');
             setLocationError(null);
             setError(null);
             isInitialLoad.current = true; // Mark as initial load
@@ -225,6 +228,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                 latLong: latLong.trim(),
                 fbLink: fbLink.trim(),
                 mapVerified: finalMapVerified,
+                mapLink: mapLink.trim(),
             });
             onClose();
         } catch (err) {
@@ -361,6 +365,15 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                                     const dateStr = todayStr();
                                     const author = fbGroup || (user?.user_metadata?.full_name || user?.email || 'System');
                                     setMapVerified(`${dateStr} | ${author}`);
+                                    // Auto-generate map link from current lat/long
+                                    const parts = latLong.trim().split(',').map(s => s.trim());
+                                    if (parts.length === 2) {
+                                        const lat = parseFloat(parts[0]);
+                                        const lng = parseFloat(parts[1]);
+                                        if (!isNaN(lat) && !isNaN(lng)) {
+                                            setMapLink(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`);
+                                        }
+                                    }
                                 }}
                                 disabled={!latLong.trim()}
                                 className="px-3 py-2 bg-blue-600 text-white rounded-xl font-bold text-xs hover:bg-blue-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"

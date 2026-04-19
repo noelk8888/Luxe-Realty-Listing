@@ -306,6 +306,16 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
                                         onClick={() => {
                                             const author = fbGroup || 'System';
                                             setMapVerified(`${todayStr()} | ${author}`);
+                                            // Auto-generate map link from current lat/long
+                                            const parts = latLong.trim().split(',').map(s => s.trim());
+                                            if (parts.length === 2) {
+                                                const lat = parseFloat(parts[0]);
+                                                const lng = parseFloat(parts[1]);
+                                                if (!isNaN(lat) && !isNaN(lng)) {
+                                                    // Stored in listing.mapLink via onSaveCoords → handleNotesCoordsSave
+                                                    // The map URL is generated in App.tsx when mapVerified is set
+                                                }
+                                            }
                                         }}
                                         disabled={!latLong.trim() || isSubmitting}
                                         className="px-3 py-2 bg-blue-600 text-white rounded-lg font-bold text-xs hover:bg-blue-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
