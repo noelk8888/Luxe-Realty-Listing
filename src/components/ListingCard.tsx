@@ -103,9 +103,9 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                 ? listing.summary.slice(0, -(notes.length + 2))
                 : listing.summary;
 
-            const mapsLink = listing.mapLink || (listing.lat && listing.lng
+            const mapsLink = (listing.lat && listing.lng)
                 ? `https://www.google.com/maps/search/?api=1&query=${listing.lat},${listing.lng}`
-                : '');
+                : '';
 
             const cleanId = listing.id.trim();
             const cleanBody = mainBody.trim();
