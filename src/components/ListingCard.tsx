@@ -162,11 +162,10 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     const handleCopyMapLink = (e: React.MouseEvent) => {
         e.stopPropagation();
         if (role !== 'superadmin') return;
-        const link = listing.mapLink || '';
-        if (link) {
-            navigator.clipboard.writeText(link);
-            setIsMapLinkCopied(true);
-        }
+        if (!listing.lat || !listing.lng) return;
+        const url = `https://www.google.com/maps/search/?api=1&query=${listing.lat},${listing.lng}`;
+        navigator.clipboard.writeText(url);
+        setIsMapLinkCopied(true);
     };
 
     useEffect(() => {
@@ -444,12 +443,12 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                 {(listing.building || listing.area || listing.barangay) && (
                     <div
                         className={`flex items-center gap-2 ${
-                            role === 'superadmin' && listing.mapLink
+                            role === 'superadmin' && listing.lat && listing.lng
                                 ? 'cursor-pointer'
                                 : ''
                         }`}
-                        onClick={role === 'superadmin' && listing.mapLink ? handleCopyMapLink : undefined}
-                        title={role === 'superadmin' && listing.mapLink ? 'Copy map link (col U)' : undefined}
+                        onClick={role === 'superadmin' && listing.lat && listing.lng ? handleCopyMapLink : undefined}
+                        title={role === 'superadmin' && listing.lat && listing.lng ? 'Copy map link (lat/long)' : undefined}
                     >
                         <Building className={`w-4 h-4 flex-shrink-0 ${isMapLinkCopied ? 'text-green-500' : ''}`} />
                         <span className={`truncate transition-colors ${isMapLinkCopied ? 'text-green-600 font-semibold' : ''}`}>
