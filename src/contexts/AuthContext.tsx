@@ -176,6 +176,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, [user?.email]);
 
     const signInWithGoogle = async () => {
+        // Clear stale Supabase PKCE / OAuth artifacts left over from an expired session.
+        // Without this, Google rejects the next login attempt with a 400 "malformed request"
+        // because it receives a code_verifier / state that no longer matches a valid flow.
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('sb-') || key.startsWith('supabase.auth') || key.startsWith('pkce-')) {
+                localStorage.removeItem(key);
+            }
+        });
+
         await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {

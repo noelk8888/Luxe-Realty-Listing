@@ -123,6 +123,9 @@ function App() {
         .gt('submitted_at', lastSeen)
         .limit(1);
       if (!error && data && data.length > 0) {
+        // Mark as seen immediately so repeated page loads don't re-trigger the same alert.
+        // The link in the notification still opens the GSheet on click.
+        localStorage.setItem(LS_KEY, new Date().toISOString());
         setHasNewNote(true);
       }
     };
