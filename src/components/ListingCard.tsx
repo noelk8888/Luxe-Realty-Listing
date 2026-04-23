@@ -640,6 +640,13 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                     if (parts.length === 3) {
                         typePart = parts[1];
                         userPart = parts[2];
+                        
+                        // Handle case where old code incorrectly wrote "Date | User | STATUS"
+                        if (userPart === 'STATUS' || userPart === 'PRICE' || userPart.includes('COMMENTS') || userPart === 'LISTING') {
+                            const temp = typePart;
+                            typePart = userPart;
+                            userPart = temp;
+                        }
                     } else if (parts.length === 2) {
                         // Check if first part looks like a date
                         const hasMonth = /Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/i.test(parts[0]);

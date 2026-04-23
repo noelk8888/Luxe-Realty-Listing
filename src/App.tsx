@@ -1218,7 +1218,7 @@ function App() {
       year: 'numeric' 
     });
     const authorName = fbGroup || (user?.user_metadata?.full_name || user?.email || '');
-    const dateUpdated = `${dateStr} | ${authorName} | STATUS`.trim();
+    const dateUpdated = `${dateStr} | STATUS | ${authorName}`.replace(/\|\s*$/, '').trim();
 
     const { data, error } = await supabase
       .from('KIU Properties')
