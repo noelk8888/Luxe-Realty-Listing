@@ -58,6 +58,7 @@ export interface Listing {
     sourceTab: string;
     mapVerified?: string;
     latLong?: string;
+    client?: string; // Col BW: Client Version
 }
 
 export interface RawListing {

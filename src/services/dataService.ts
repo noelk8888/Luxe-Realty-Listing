@@ -60,6 +60,7 @@ export interface DbListing {
     'MONTHLY DUES': number | string | null;
     'SOURCE_TAB': string | null;
     'MAP VERIFIED': string | null;
+    'BW': string | null; // Client
 }
 
 /**
@@ -402,5 +403,6 @@ export const normalizeDbListing = (row: DbListing): Listing => {
         monthlyDues: row['MONTHLY DUES'] ? String(row['MONTHLY DUES']).trim() : '',
         sourceTab: row['SOURCE_TAB'] || 'Sheet1',
         mapVerified: row['MAP VERIFIED'] || '',
+        client: row['BW'] || '',
     };
 };

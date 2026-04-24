@@ -18,6 +18,7 @@ interface EditListingModalProps {
         fbLink: string;
         mapVerified: string;
         mapLink: string;
+        client?: string;
         sourceTab?: string;
     }) => Promise<void>;
     groupName?: string;
@@ -46,6 +47,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
     const [locationError, setLocationError] = useState<string | null>(null);
     const [mapVerified, setMapVerified] = useState('');
     const [mapLink, setMapLink] = useState('');
+    const [clientVersion, setClientVersion] = useState('');
     const { permissions } = usePermissions();
     const { fbGroup, user, role, userName } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -74,6 +76,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
             setFbLink((fbGroup ? groupPostLink[fbGroup] : listing.facebookLink) || '');
             setMapVerified(listing.mapVerified || '');
             setMapLink(listing.mapLink || '');
+            setClientVersion(listing.client || '');
             setLocationError(null);
             setError(null);
             isInitialLoad.current = true; // Mark as initial load
@@ -229,6 +232,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                 fbLink: fbLink.trim(),
                 mapVerified: finalMapVerified,
                 mapLink: mapLink.trim(),
+                client: clientVersion.trim(),
             });
             onClose();
         } catch (err) {
@@ -421,6 +425,21 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                             placeholder="https://www.facebook.com/..."
                             className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
+                    </div>}
+
+                    {/* Client Version - Superadmin Only */}
+                    {role === 'superadmin' && <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">
+                            Client Version
+                        </label>
+                        <textarea
+                            value={clientVersion}
+                            onChange={(e) => setClientVersion(e.target.value)}
+                            placeholder="Paste client version text here (BW column)..."
+                            rows={6}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-medium"
+                        />
+                        <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Visible to Superadmin Only • Automatically replaces price on copy</p>
                     </div>}
 
                     {/* Update Date Toggle */}

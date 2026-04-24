@@ -1268,6 +1268,7 @@ function App() {
     fbLink: string;
     mapVerified: string;
     mapLink: string;
+    client?: string;
     sourceTab?: string;
   }) => {
     console.log('Editing listing:', { listingId, updates });
@@ -1364,6 +1365,7 @@ function App() {
             : fbGroup === 'Luxe' ? 'BP'
             : 'FB LINK']: updates.fbLink || null,
         }),
+        'BW': updates.client || null,
       })
       .eq('"GEO ID"', listingId)
       .select('"GEO ID"');
@@ -1392,6 +1394,7 @@ function App() {
         monthlyDues: updates.monthlyDues,
         columnV: updates.notes,
         columnBC: newStamp || l.columnBC,
+        client: updates.client !== undefined ? updates.client : l.client,
         ...(parsedLat !== null && { lat: parsedLat }),
         ...(parsedLng !== null && { lng: parsedLng }),
         facebookLink: fbGroup === 'Kiu' || !fbGroup ? updates.fbLink : l.facebookLink,

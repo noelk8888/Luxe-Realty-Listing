@@ -43,6 +43,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     const [isColumnBDCopied, setIsColumnBDCopied] = useState(false);
     const [isPhotoLinkCopied, setIsPhotoLinkCopied] = useState(false);
     const [isMapLinkCopied, setIsMapLinkCopied] = useState(false);
+    const [isClientCopied, setIsClientCopied] = useState(false);
 
     const [isExpanded, setIsExpanded] = useState(false);
     const { permissions } = usePermissions();
@@ -167,6 +168,29 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         navigator.clipboard.writeText(url);
         setIsMapLinkCopied(true);
     };
+    
+    const handleCopyClientVersion = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        
+        let text = (listing.client || '').trim();
+        const currentPrice = activeFilter === 'Lease' ? listing.leasePrice : listing.price;
+        
+        if (!text) {
+            // Fallback: just copy the formatted price if no client version exists
+            navigator.clipboard.writeText(formatPrice(currentPrice));
+            setIsClientCopied(true);
+            return;
+        }
+
+        const formattedPrice = formatPrice(currentPrice);
+
+        // Replace price patterns like P120,000,000 with the formatted current price
+        // Matches P followed by digits and commas (at least 3 characters after P to avoid matching just "P")
+        const updatedText = text.replace(/P[0-9,]{3,}/g, formattedPrice);
+        
+        navigator.clipboard.writeText(updatedText);
+        setIsClientCopied(true);
+    };
 
     useEffect(() => {
         if (isCopied) {
@@ -202,6 +226,13 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             return () => clearTimeout(timer);
         }
     }, [isMapLinkCopied]);
+
+    useEffect(() => {
+        if (isClientCopied) {
+            const timer = setTimeout(() => setIsClientCopied(false), 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [isClientCopied]);
 
     const status = (listing.statusAQ || '').toLowerCase().trim();
     const isNotAvailable = status !== 'available' && status !== '';
@@ -328,25 +359,40 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             {/* Removed combined BC/BD block from bottom - moved to specific locations */}
 
             <div className="mb-4 mt-0.5">
-                <div className="w-full bg-gray-100 p-2 rounded-lg shadow-inner flex flex-col items-center justify-center gap-0.5 text-center">
+                <div 
+                    onClick={handleCopyClientVersion}
+                    className={`w-full p-2 rounded-lg shadow-inner flex flex-col items-center justify-center gap-0.5 text-center cursor-pointer transition-all duration-200
+                        ${isClientCopied ? 'bg-green-100 shadow-md scale-[1.02]' : 'bg-gray-100 hover:bg-gray-200 shadow-inner'}
+                    `}
+                    title="Click to copy Client Version"
+                >
                 {!permissions.view_pricing && (
                     <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">Price Hidden</span>
                 )}
                 {permissions.view_pricing && <>
-                    {/* Column BD: Top of Price, Light Green Theme */}
-                    {permissions.view_listing_ownership && listing.columnBD && !['available', 'sold', 'leased out', 'off market', 'on hold', 'under nego', 'undecisive seller'].includes(listing.columnBD.toLowerCase().trim()) && (
-                        <div
-                            onClick={handleCopyColumnBD}
-                            className={`mb-0.5 text-xs font-bold px-1.5 py-0.5 rounded border shadow-sm w-fit cursor-pointer transition-colors
-                                ${isColumnBDCopied
-                                    ? 'text-green-700 bg-green-100 border-green-300'
-                                    : 'text-green-600 bg-green-50 border-green-200 hover:bg-green-100'
-                                }
-                            `}
-                            title="Click to copy"
-                        >
-                            {isColumnBDCopied ? 'COPIED!' : listing.columnBD}
-                        </div>
+                    {isClientCopied ? (
+                        <span className="text-sm font-black text-green-600 uppercase tracking-widest animate-pulse">Copied!</span>
+                    ) : (
+                        <>
+                        {/* Column BD: Top of Price, Light Green Theme */}
+                        {permissions.view_listing_ownership && listing.columnBD && !['available', 'sold', 'leased out', 'off market', 'on hold', 'under nego', 'undecisive seller'].includes(listing.columnBD.toLowerCase().trim()) && (
+                            <div
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCopyColumnBD(e);
+                                }}
+                                className={`mb-0.5 text-xs font-bold px-1.5 py-0.5 rounded border shadow-sm w-fit cursor-pointer transition-colors
+                                    ${isColumnBDCopied
+                                        ? 'text-green-700 bg-green-100 border-green-300'
+                                        : 'text-green-600 bg-green-50 border-green-200 hover:bg-green-100'
+                                    }
+                                `}
+                                title="Click to copy"
+                            >
+                                {isColumnBDCopied ? 'COPIED!' : listing.columnBD}
+                            </div>
+                        )}
+                        </>
                     )}
 
                     {listing.price === 0 && listing.leasePrice === 0 ? (
