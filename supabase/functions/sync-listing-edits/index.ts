@@ -34,6 +34,7 @@ const TABS = [
       postLinkSloo: "BT",
       postLinkTaoke: "BU",
       mapVerified: "BV",
+      client: "BW",
     },
   },
   {
@@ -315,6 +316,7 @@ serve(async (req) => {
       { db: "BT", key: "postLinkSloo" },
       { db: "BU", key: "postLinkTaoke" },
       { db: "MAP VERIFIED", key: "mapVerified" },
+      { db: "BW", key: "client" },
     ];
 
     for (const field of fieldMappings) {
@@ -480,6 +482,13 @@ serve(async (req) => {
         updates.push({
           range: `${tab.name}!${tab.columns.mapVerified}${rowIndex}`,
           values: [[val ?? ""]],
+        });
+      }
+
+      if (changedFields.includes("client") && tab.columns.client) {
+        updates.push({
+          range: `${tab.name}!${tab.columns.client}${rowIndex}`,
+          values: [[record["BW"] ?? ""]],
         });
       }
 

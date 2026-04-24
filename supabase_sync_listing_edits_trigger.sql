@@ -33,6 +33,7 @@ BEGIN
        OR OLD."LAT" IS DISTINCT FROM NEW."LAT"
        OR OLD."LONG" IS DISTINCT FROM NEW."LONG"
        OR OLD."FB LINK" IS DISTINCT FROM NEW."FB LINK"
+       OR OLD."BW" IS DISTINCT FROM NEW."BW"
     THEN
         has_changes := TRUE;
     END IF;
@@ -51,7 +52,8 @@ BEGIN
                 'LAT LONG', NEW."LAT LONG",
                 'LAT', NEW."LAT",
                 'LONG', NEW."LONG",
-                'FB LINK', NEW."FB LINK"
+                'FB LINK', NEW."FB LINK",
+                'BW', NEW."BW"
             ),
             'old_record', jsonb_build_object(
                 'GEO ID', OLD."GEO ID",
@@ -64,7 +66,8 @@ BEGIN
                 'LAT LONG', OLD."LAT LONG",
                 'LAT', OLD."LAT",
                 'LONG', OLD."LONG",
-                'FB LINK', OLD."FB LINK"
+                'FB LINK', OLD."FB LINK",
+                'BW', OLD."BW"
             )
         );
 
