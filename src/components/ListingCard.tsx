@@ -44,6 +44,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     const [isPhotoLinkCopied, setIsPhotoLinkCopied] = useState(false);
     const [isMapLinkCopied, setIsMapLinkCopied] = useState(false);
     const [isClientCopied, setIsClientCopied] = useState(false);
+    const [isClientEmpty, setIsClientEmpty] = useState(false);
 
     const [isExpanded, setIsExpanded] = useState(false);
     const { permissions } = usePermissions();
@@ -176,9 +177,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         const currentPrice = activeFilter === 'Lease' ? listing.leasePrice : listing.price;
         
         if (!text) {
-            // Fallback: just copy the formatted price if no client version exists
-            navigator.clipboard.writeText(formatPrice(currentPrice));
-            setIsClientCopied(true);
+            setIsClientEmpty(true);
             return;
         }
 
@@ -233,6 +232,13 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             return () => clearTimeout(timer);
         }
     }, [isClientCopied]);
+
+    useEffect(() => {
+        if (isClientEmpty) {
+            const timer = setTimeout(() => setIsClientEmpty(false), 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [isClientEmpty]);
 
     const status = (listing.statusAQ || '').toLowerCase().trim();
     const isNotAvailable = status !== 'available' && status !== '';
@@ -362,7 +368,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                 <div 
                     onClick={handleCopyClientVersion}
                     className={`w-full p-2 rounded-lg shadow-inner flex flex-col items-center justify-center gap-0.5 text-center cursor-pointer transition-all duration-200
-                        ${isClientCopied ? 'bg-green-100 shadow-md scale-[1.02]' : 'bg-gray-100 hover:bg-gray-200 shadow-inner'}
+                        ${isClientCopied ? 'bg-green-100 shadow-md scale-[1.02]' : isClientEmpty ? 'bg-red-50 shadow-md' : 'bg-gray-100 hover:bg-gray-200 shadow-inner'}
                     `}
                     title="Click to copy Client Version"
                 >
@@ -372,6 +378,8 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                 {permissions.view_pricing && <>
                     {isClientCopied ? (
                         <span className="text-sm font-black text-green-600 uppercase tracking-widest animate-pulse">Copied!</span>
+                    ) : isClientEmpty ? (
+                        <span className="text-sm font-black text-red-500 uppercase tracking-widest">Nothing to copy</span>
                     ) : (
                         <>
                         {/* Column BD: Top of Price, Light Green Theme */}
