@@ -218,8 +218,17 @@ const fetchWithRetry = async (
 };
 
 export const normalizeDbListing = (row: DbListing): Listing => {
-    const price = row['Extracted Sale Price'] || 0;
-    const leasePrice = row['Extracted Lease Price'] || 0;
+    const parseFirstPrice = (val: any): number => {
+        if (!val) return 0;
+        if (typeof val === 'number') return val;
+        // Handle strings with multiple prices (e.g., "120,000,000 / 150,000,000")
+        const cleanStr = String(val).replace(/,/g, '');
+        const match = cleanStr.match(/\d+/);
+        return match ? parseInt(match[0]) : 0;
+    };
+
+    const price = parseFirstPrice(row['Extracted Sale Price']);
+    const leasePrice = parseFirstPrice(row['Extracted Lease Price']);
 
     // Determine Sale Type Logic
     let saleType = '';

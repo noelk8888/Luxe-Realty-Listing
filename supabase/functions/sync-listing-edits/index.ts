@@ -41,7 +41,7 @@ const TABS = [
     name: "Sheet2",
     geoIdCol: "AC",
     columns: {
-      salePrice: "AS",
+      salePrice: "G",
       salePricePerSqm: "AT",
       leasePrice: "AU",
       leasePricePerSqm: "AV",

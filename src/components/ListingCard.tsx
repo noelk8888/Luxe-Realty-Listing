@@ -181,13 +181,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             return;
         }
 
-        const formattedPrice = formatPrice(currentPrice);
-
-        // Replace price patterns like P120,000,000 with the formatted current price
-        // Matches P followed by digits and commas (at least 3 characters after P to avoid matching just "P")
-        const updatedText = text.replace(/P[0-9,]{3,}/g, formattedPrice);
-        
-        navigator.clipboard.writeText(updatedText);
+        navigator.clipboard.writeText(text);
         setIsClientCopied(true);
     };
 
