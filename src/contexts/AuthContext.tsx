@@ -36,7 +36,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const SUPERADMIN_EMAILS = [
     'noelkiu@gmail.com',
     'lesliekiudmd@yahoo.com',
-    'leslie@luxerealtyph.com'
+    'leslie@luxerealtyph.com',
+    'louiekiu@gmail.com'
 ];
 
 // Mapping for what to SHOW in the UI for certain users
@@ -44,6 +45,7 @@ const MASKED_ROLES: Record<string, Role> = {
     'noelkiu@gmail.com': 'admin',
     'lesliekiudmd@yahoo.com': 'broker',
     'leslie@luxerealtyph.com': 'broker',
+    'louiekiu@gmail.com': 'broker',
 };
 
 async function fetchUserProfile(email: string): Promise<{ role: Role; displayRole: Role; fbLink: string | null; fbGroup: string | null; userName: string | null }> {
