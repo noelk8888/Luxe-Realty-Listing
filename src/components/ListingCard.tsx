@@ -181,7 +181,17 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             return;
         }
 
-        navigator.clipboard.writeText(text);
+        const formattedPrice = formatPrice(currentPrice);
+        const priceRegex = /P[0-9,]{3,}/g;
+        const matches = text.match(priceRegex);
+
+        let updatedText = text;
+        // ONLY if there is ONE PRICE ONLY, use the updated one
+        if (matches && matches.length === 1) {
+            updatedText = text.replace(priceRegex, formattedPrice);
+        }
+        
+        navigator.clipboard.writeText(updatedText);
         setIsClientCopied(true);
     };
 
