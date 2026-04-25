@@ -33,6 +33,13 @@ BEGIN
        OR OLD."LAT" IS DISTINCT FROM NEW."LAT"
        OR OLD."LONG" IS DISTINCT FROM NEW."LONG"
        OR OLD."FB LINK" IS DISTINCT FROM NEW."FB LINK"
+       OR OLD."BP" IS DISTINCT FROM NEW."BP"
+       OR OLD."BQ" IS DISTINCT FROM NEW."BQ"
+       OR OLD."BR" IS DISTINCT FROM NEW."BR"
+       OR OLD."BS" IS DISTINCT FROM NEW."BS"
+       OR OLD."BT" IS DISTINCT FROM NEW."BT"
+       OR OLD."BU" IS DISTINCT FROM NEW."BU"
+       OR OLD."BV" IS DISTINCT FROM NEW."BV"
        OR OLD."BW" IS DISTINCT FROM NEW."BW"
     THEN
         has_changes := TRUE;
@@ -53,6 +60,13 @@ BEGIN
                 'LAT', NEW."LAT",
                 'LONG', NEW."LONG",
                 'FB LINK', NEW."FB LINK",
+                'BP', NEW."BP",
+                'BQ', NEW."BQ",
+                'BR', NEW."BR",
+                'BS', NEW."BS",
+                'BT', NEW."BT",
+                'BU', NEW."BU",
+                'BV', NEW."BV",
                 'BW', NEW."BW"
             ),
             'old_record', jsonb_build_object(
@@ -67,6 +81,13 @@ BEGIN
                 'LAT', OLD."LAT",
                 'LONG', OLD."LONG",
                 'FB LINK', OLD."FB LINK",
+                'BP', OLD."BP",
+                'BQ', OLD."BQ",
+                'BR', OLD."BR",
+                'BS', OLD."BS",
+                'BT', OLD."BT",
+                'BU', OLD."BU",
+                'BV', OLD."BV",
                 'BW', OLD."BW"
             )
         );

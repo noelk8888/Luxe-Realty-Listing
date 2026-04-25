@@ -61,6 +61,7 @@ const TABS = [
       postLinkSloo: "BT",
       postLinkTaoke: "BU",
       mapVerified: "BV",
+      client: "BW",
     },
   },
 ];
@@ -498,10 +499,32 @@ serve(async (req) => {
         await sheetsBatchUpdate(token, SPREADSHEET_ID, updates);
         console.log(`Updated ${tab.name} successfully`);
 
-        // Mirror Sheet1 updates to the backup spreadsheet
-        if (tab.name === "Sheet1") {
-          try {
-            const backupGeoRange = `Sheet1!${tab.geoIdCol}:${tab.geoIdCol}`;
+        // --- BACKUP SYNC LOGIC ---
+        // LUXE DBASE (Sheet1): Backup A-BW
+        // LUXE COPY (Sheet2): Backup strictly A-Q only
+        try {
+          const colToNum = (col: string) => {
+            let num = 0;
+            for (let i = 0; i < col.length; i++) {
+              num = num * 26 + (col.charCodeAt(i) - 64);
+            }
+            return num;
+          };
+
+          const limitCol = tab.name === "Sheet1" ? "BW" : "Q";
+          const limitNum = colToNum(limitCol);
+
+          // Filter updates based on the column limit for this specific tab's backup
+          const filteredBackupUpdates = updates.filter(u => {
+            // Extract the column letter from the range (e.g., "Sheet1!AS123" -> "AS")
+            const match = u.range.match(/!([A-Z]+)/);
+            if (!match) return false;
+            const colLetter = match[1];
+            return colToNum(colLetter) <= limitNum;
+          });
+
+          if (filteredBackupUpdates.length > 0) {
+            const backupGeoRange = `${tab.name}!${tab.geoIdCol}:${tab.geoIdCol}`;
             const backupRows = await sheetsGet(token, SPREADSHEET_ID_BACKUP, backupGeoRange);
             let backupRowIndex = -1;
             for (let i = 0; i < backupRows.length; i++) {
@@ -510,20 +533,22 @@ serve(async (req) => {
                 break;
               }
             }
+
             if (backupRowIndex !== -1) {
-              // Remap ranges from primary row to backup row (row number may differ)
-              const backupUpdates = updates.map((u) => ({
+              const finalBackupUpdates = filteredBackupUpdates.map((u) => ({
                 ...u,
                 range: u.range.replace(/(\d+)$/, backupRowIndex.toString()),
               }));
-              await sheetsBatchUpdate(token, SPREADSHEET_ID_BACKUP, backupUpdates);
-              console.log(`Mirrored Sheet1 updates to backup spreadsheet (row ${backupRowIndex})`);
+              await sheetsBatchUpdate(token, SPREADSHEET_ID_BACKUP, finalBackupUpdates);
+              console.log(`Mirrored ${filteredBackupUpdates.length} updates for ${tab.name} to backup spreadsheet (row ${backupRowIndex}) [Limit: ${limitCol}]`);
             } else {
-              console.log(`GEO ID ${geoId} not found in backup Sheet1, skipping backup sync`);
+              console.log(`GEO ID ${geoId} not found in backup ${tab.name}, skipping backup sync`);
             }
-          } catch (backupErr: any) {
-            console.warn("Backup spreadsheet sync failed (non-fatal):", backupErr.message);
+          } else {
+            console.log(`No updates within ${limitCol} range for ${tab.name} backup, skipping`);
           }
+        } catch (backupErr: any) {
+          console.warn(`Backup sync failed for ${tab.name} (non-fatal):`, backupErr.message);
         }
       }
     }
