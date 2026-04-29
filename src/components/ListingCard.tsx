@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Listing } from '../types';
-import { MapPin, Building, Maximize, ChevronDown, ChevronUp, Bed, Car, Facebook, Instagram, Youtube, Receipt } from 'lucide-react';
+import { MapPin, Building, Maximize, ChevronDown, ChevronUp, Bed, Car, Facebook, Instagram, Youtube, Receipt, Calendar } from 'lucide-react';
 import { StatusDropdown } from './StatusDropdown';
 import { usePermissions } from '../contexts/PermissionsContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -96,6 +96,21 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             year: 'numeric' 
         });
     };
+    // Computed per-sqm prices: use DB value if available, otherwise calculate from price/area
+    const effectivePricePerSqm = listing.pricePerSqm > 0
+        ? listing.pricePerSqm
+        : (() => {
+            const area = listing.lotArea > 0 ? listing.lotArea : listing.floorArea;
+            return (area > 0 && listing.price > 0) ? Math.round(listing.price / area) : 0;
+        })();
+
+    const effectiveLeasePricePerSqm = listing.leasePricePerSqm > 0
+        ? listing.leasePricePerSqm
+        : (() => {
+            const area = listing.floorArea > 0 ? listing.floorArea : listing.lotArea;
+            return (area > 0 && listing.leasePrice > 0) ? Math.round(listing.leasePrice / area) : 0;
+        })();
+
     const handleCopy = (e: React.MouseEvent) => {
         e.stopPropagation();
         if (listing.summary) {
@@ -416,9 +431,9 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                             {listing.leasePrice > 0 && (
                                 <div className="flex items-baseline gap-1 text-gray-900 justify-center">
                                     <span className="text-xl font-bold">{formatPrice(listing.leasePrice)}/month</span>
-                                    {listing.leasePricePerSqm > 0 && (
+                                    {effectiveLeasePricePerSqm > 0 && (
                                         <span className="text-sm font-normal text-gray-500">
-                                            ({formatPrice(listing.leasePricePerSqm)}/sqm)
+                                            ({formatPrice(effectiveLeasePricePerSqm)}/sqm)
                                         </span>
                                     )}
                                 </div>
@@ -426,9 +441,9 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                             {listing.price > 0 && (
                                 <div className="flex items-baseline gap-2 justify-center">
                                     <span className="text-xl font-bold text-gray-900">{formatPrice(listing.price)}</span>
-                                    {listing.pricePerSqm > 0 && (
+                                    {effectivePricePerSqm > 0 && (
                                         <span className="text-sm font-normal text-gray-500">
-                                            ({formatPrice(listing.pricePerSqm)}/sqm)
+                                            ({formatPrice(effectivePricePerSqm)}/sqm)
                                         </span>
                                     )}
                                 </div>
@@ -439,9 +454,9 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                             {listing.price > 0 && (
                                 <div className="flex items-baseline gap-2 justify-center">
                                     <span className="text-xl font-bold text-gray-900">{formatPrice(listing.price)}</span>
-                                    {listing.pricePerSqm > 0 && (
+                                    {effectivePricePerSqm > 0 && (
                                         <span className="text-sm font-normal text-gray-500">
-                                            ({formatPrice(listing.pricePerSqm)}/sqm)
+                                            ({formatPrice(effectivePricePerSqm)}/sqm)
                                         </span>
                                     )}
                                 </div>
@@ -449,9 +464,9 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                             {listing.leasePrice > 0 && (
                                 <div className="flex items-baseline gap-1 text-gray-900 justify-center">
                                     <span className="text-xl font-bold">{formatPrice(listing.leasePrice)}/month</span>
-                                    {listing.leasePricePerSqm > 0 && (
+                                    {effectiveLeasePricePerSqm > 0 && (
                                         <span className="text-sm font-normal text-gray-500">
-                                            ({formatPrice(listing.leasePricePerSqm)}/sqm)
+                                            ({formatPrice(effectiveLeasePricePerSqm)}/sqm)
                                         </span>
                                     )}
                                 </div>
@@ -556,6 +571,37 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         </span>
                     )}
                 </div>
+                {permissions.view_last_update && listing.columnBC && (() => {
+                    const parts = listing.columnBC.split(' | ');
+                    const datePart = parts[0] || '';
+                    const displayDate = formatDate(datePart);
+                    if (!displayDate) return null;
+
+                    // Age-based coloring
+                    const now = new Date();
+                    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    const updateDateObj = new Date(datePart.includes(' | ') ? datePart.split(' | ')[0] : datePart);
+                    const updateDate = isNaN(updateDateObj.getTime())
+                        ? null
+                        : new Date(updateDateObj.getFullYear(), updateDateObj.getMonth(), updateDateObj.getDate());
+
+                    let colorClass = 'text-gray-500';
+                    if (updateDate) {
+                        const diffDays = Math.floor((today.getTime() - updateDate.getTime()) / (1000 * 60 * 60 * 24));
+                        if (diffDays >= 0 && diffDays <= 30) {
+                            colorClass = 'text-gray-700 font-semibold';
+                        } else if (diffDays > 180) {
+                            colorClass = 'text-orange-500';
+                        }
+                    }
+
+                    return (
+                        <div className={`flex items-center gap-2 ${colorClass}`}>
+                            <Calendar className="w-4 h-4 flex-shrink-0" />
+                            <span>Updated: {displayDate}</span>
+                        </div>
+                    );
+                })()}
             </div>
 
             {/* Removed combined BC/BD block from bottom - moved to specific locations */}
