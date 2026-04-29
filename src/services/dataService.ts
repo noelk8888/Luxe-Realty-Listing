@@ -300,29 +300,8 @@ export const normalizeDbListing = (row: DbListing): Listing => {
     const columnV = row['COMMENTS'] || '';
     const summaryWithV = columnV ? `${fullSummary}\n\n${columnV}` : fullSummary;
 
-    // Detect status from summary if status is empty or "available"
-    let statusAQ = (row['STATUS'] || '').trim();
-    if (!statusAQ || statusAQ.toLowerCase() === 'available') {
-        const upperFull = (row['MAIN'] || '').toUpperCase();
-        const upperComments = (row['COMMENTS'] || '').toUpperCase();
-        const combinedText = `${upperFull} ${upperComments}`;
-
-        // Phrases to ignore (e.g. "To be sold unfurnished")
-        let textToSearch = combinedText
-            .replace('TO BE SOLD', '')
-            .replace('TO BE LEASED', '')
-            .replace('TO BE RENTED', '');
-
-        if (textToSearch.includes('SOLD')) {
-            statusAQ = 'SOLD';
-        } else if (textToSearch.includes('LEASED') || textToSearch.includes('RENTED')) {
-            statusAQ = 'LEASED OUT';
-        } else if (combinedText.includes('TEMP HOLD') || combinedText.includes('TEMP ON HOLD')) {
-            statusAQ = 'UNDER NEGO';
-        } else if (combinedText.includes('NOT AVAILABLE')) {
-            statusAQ = 'OFF MARKET';
-        }
-    }
+    // STATUS column (Col O) is the single source of truth — never infer from description text
+    const statusAQ = (row['STATUS'] || 'Available').trim() || 'Available';
 
     // Parse Sponsored Date Range
     const rawSponsoredStart = row['SPONSOR START'] || '';
