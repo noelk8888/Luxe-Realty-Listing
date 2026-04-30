@@ -570,6 +570,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                             )}
                         </span>
                     )}
+                </div>
             </div>
 
             {/* Removed combined BC/BD block from bottom - moved to specific locations */}
