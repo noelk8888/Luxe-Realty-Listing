@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Listing } from '../types';
-import { MapPin, Building, Maximize, ChevronDown, ChevronUp, Bed, Car, Facebook, Instagram, Youtube, Receipt, Calendar } from 'lucide-react';
+import { MapPin, Building, Maximize, ChevronDown, ChevronUp, Bed, Car, Facebook, Instagram, Youtube, Receipt } from 'lucide-react';
 import { StatusDropdown } from './StatusDropdown';
 import { usePermissions } from '../contexts/PermissionsContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -570,38 +570,6 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                             )}
                         </span>
                     )}
-                </div>
-                {permissions.view_last_update && listing.columnBC && (() => {
-                    const parts = listing.columnBC.split(' | ');
-                    const datePart = parts[0] || '';
-                    const displayDate = formatDate(datePart);
-                    if (!displayDate) return null;
-
-                    // Age-based coloring
-                    const now = new Date();
-                    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                    const updateDateObj = new Date(datePart.includes(' | ') ? datePart.split(' | ')[0] : datePart);
-                    const updateDate = isNaN(updateDateObj.getTime())
-                        ? null
-                        : new Date(updateDateObj.getFullYear(), updateDateObj.getMonth(), updateDateObj.getDate());
-
-                    let colorClass = 'text-gray-500';
-                    if (updateDate) {
-                        const diffDays = Math.floor((today.getTime() - updateDate.getTime()) / (1000 * 60 * 60 * 24));
-                        if (diffDays >= 0 && diffDays <= 30) {
-                            colorClass = 'text-gray-700 font-semibold';
-                        } else if (diffDays > 180) {
-                            colorClass = 'text-orange-500';
-                        }
-                    }
-
-                    return (
-                        <div className={`flex items-center gap-2 ${colorClass}`}>
-                            <Calendar className="w-4 h-4 flex-shrink-0" />
-                            <span>Updated: {displayDate}</span>
-                        </div>
-                    );
-                })()}
             </div>
 
             {/* Removed combined BC/BD block from bottom - moved to specific locations */}
@@ -689,7 +657,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                             e.stopPropagation();
                             onEditClick(listing);
                         }}
-                        className="flex-1 text-center py-2 bg-green-50 text-green-600 rounded-lg text-xs font-bold hover:bg-green-100 transition-colors uppercase tracking-wider"
+                        className={`flex-1 text-center py-2 bg-green-50 text-green-600 rounded-lg text-xs font-bold hover:bg-green-100 transition-colors uppercase tracking-wider ${role === 'superadmin' && listing.client?.trim() ? 'italic' : ''}`}
                     >
                         EDIT
                     </button>

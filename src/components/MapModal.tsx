@@ -467,18 +467,87 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
                                                             .filter(Boolean)
                                                             .slice(0, 5);
                                                         
-                                                        const isLease = bestListing.saleType?.toUpperCase() === 'LEASE';
-                                                        const priceVal = isLease ? bestListing.leasePrice : bestListing.price;
-                                                        const formattedPrice = priceVal ? new Intl.NumberFormat('en-PH', { maximumFractionDigits: 0 }).format(priceVal) : null;
-                                                        
+                                                        const formatTooltipPrice = (val: number) =>
+                                                            `₱${new Intl.NumberFormat('en-PH', { maximumFractionDigits: 0 }).format(val)}`;
+
+                                                        // Calculate per-sqm on the fly (same logic as ListingCard)
+                                                        const salePricePerSqm = bestListing.pricePerSqm > 0
+                                                            ? bestListing.pricePerSqm
+                                                            : (() => {
+                                                                const area = bestListing.lotArea > 0 ? bestListing.lotArea : bestListing.floorArea;
+                                                                return (area > 0 && bestListing.price > 0) ? Math.round(bestListing.price / area) : 0;
+                                                            })();
+
+                                                        const leasePricePerSqm = bestListing.leasePricePerSqm > 0
+                                                            ? bestListing.leasePricePerSqm
+                                                            : (() => {
+                                                                const area = bestListing.floorArea > 0 ? bestListing.floorArea : bestListing.lotArea;
+                                                                return (area > 0 && bestListing.leasePrice > 0) ? Math.round(bestListing.leasePrice / area) : 0;
+                                                            })();
+
+                                                        // Parse update date
+                                                        const bcParts = (bestListing.columnBC || '').split(' | ');
+                                                        const datePart = bcParts[0] || '';
+                                                        const updateDateObj = new Date(datePart);
+                                                        const hasValidDate = !isNaN(updateDateObj.getTime());
+                                                        const formattedUpdateDate = hasValidDate
+                                                            ? updateDateObj.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+                                                            : '';
+
+                                                        // Age-based color
+                                                        let dateColorClass = 'text-gray-400';
+                                                        if (hasValidDate) {
+                                                            const now = new Date();
+                                                            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                                                            const updateDate = new Date(updateDateObj.getFullYear(), updateDateObj.getMonth(), updateDateObj.getDate());
+                                                            const diffDays = Math.floor((today.getTime() - updateDate.getTime()) / (1000 * 60 * 60 * 24));
+                                                            if (diffDays >= 0 && diffDays <= 30) {
+                                                                dateColorClass = 'text-gray-700 font-bold';
+                                                            } else if (diffDays > 180) {
+                                                                dateColorClass = 'text-orange-500 font-semibold';
+                                                            }
+                                                        }
+
                                                         return (
                                                             <>
                                                                 <div className="font-black text-blue-600 mb-1 border-b border-blue-50 pb-1 text-lg flex justify-between items-center gap-4">
                                                                     <span>{bestListing.id}{listings.length > 1 && <span className="text-gray-400 font-bold ml-1 text-sm">(+{listings.length - 1})</span>}</span>
-                                                                    {formattedPrice && <span className="text-gray-900">₱{formattedPrice}</span>}
                                                                 </div>
-                                                                {lines.join('\n')}
-                                                                {content.split('\n').filter(Boolean).length > 5 && '...'}
+                                                                {/* Prices */}
+                                                                {bestListing.price > 0 && (
+                                                                    <div className="text-gray-900 font-bold text-base">
+                                                                        {formatTooltipPrice(bestListing.price)}
+                                                                        {salePricePerSqm > 0 && (
+                                                                            <span className="text-xs font-normal text-gray-400 ml-1">
+                                                                                ({formatTooltipPrice(salePricePerSqm)}/sqm)
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                                {bestListing.leasePrice > 0 && (
+                                                                    <div className="text-gray-900 font-bold text-base">
+                                                                        {formatTooltipPrice(bestListing.leasePrice)}/mo
+                                                                        {leasePricePerSqm > 0 && (
+                                                                            <span className="text-xs font-normal text-gray-400 ml-1">
+                                                                                ({formatTooltipPrice(leasePricePerSqm)}/sqm)
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                                {bestListing.price === 0 && bestListing.leasePrice === 0 && (
+                                                                    <div className="text-gray-500 font-bold text-sm">Price on Request</div>
+                                                                )}
+                                                                {/* Summary lines */}
+                                                                <div className="mt-1">
+                                                                    {lines.join('\n')}
+                                                                    {content.split('\n').filter(Boolean).length > 5 && '...'}
+                                                                </div>
+                                                                {/* Update date */}
+                                                                {formattedUpdateDate && (
+                                                                    <div className={`text-xs mt-1 ${dateColorClass}`}>
+                                                                        Updated: {formattedUpdateDate}
+                                                                    </div>
+                                                                )}
                                                             </>
                                                         );
                                                     })()}

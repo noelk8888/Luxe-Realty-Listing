@@ -123,15 +123,85 @@ export const ViewingMapModal: React.FC<ViewingMapModalProps> = ({ isOpen, onClos
                                         className="custom-map-tooltip"
                                     >
                                         <div className="text-base leading-relaxed font-sans text-gray-900 whitespace-pre-wrap max-w-[280px]">
-                                            <div className="font-black text-orange-500 mb-1 border-b border-orange-50 pb-1 text-lg">
-                                                {listing.id}
-                                            </div>
-                                            {(listing.displaySummary || '')
-                                                .split('\n')
-                                                .map(l => l.trim())
-                                                .filter(Boolean)
-                                                .slice(0, 5)
-                                                .join('\n')}
+                                            {(() => {
+                                                const formatTooltipPrice = (val: number) =>
+                                                    `₱${new Intl.NumberFormat('en-PH', { maximumFractionDigits: 0 }).format(val)}`;
+
+                                                const salePricePerSqm = listing.pricePerSqm > 0
+                                                    ? listing.pricePerSqm
+                                                    : (() => {
+                                                        const area = listing.lotArea > 0 ? listing.lotArea : listing.floorArea;
+                                                        return (area > 0 && listing.price > 0) ? Math.round(listing.price / area) : 0;
+                                                    })();
+
+                                                const leasePricePerSqm = listing.leasePricePerSqm > 0
+                                                    ? listing.leasePricePerSqm
+                                                    : (() => {
+                                                        const area = listing.floorArea > 0 ? listing.floorArea : listing.lotArea;
+                                                        return (area > 0 && listing.leasePrice > 0) ? Math.round(listing.leasePrice / area) : 0;
+                                                    })();
+
+                                                const bcParts = (listing.columnBC || '').split(' | ');
+                                                const datePart = bcParts[0] || '';
+                                                const updateDateObj = new Date(datePart);
+                                                const hasValidDate = !isNaN(updateDateObj.getTime());
+                                                const formattedUpdateDate = hasValidDate
+                                                    ? updateDateObj.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+                                                    : '';
+
+                                                let dateColorClass = 'text-gray-400';
+                                                if (hasValidDate) {
+                                                    const now = new Date();
+                                                    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                                                    const ud = new Date(updateDateObj.getFullYear(), updateDateObj.getMonth(), updateDateObj.getDate());
+                                                    const diffDays = Math.floor((today.getTime() - ud.getTime()) / (1000 * 60 * 60 * 24));
+                                                    if (diffDays >= 0 && diffDays <= 30) dateColorClass = 'text-gray-700 font-bold';
+                                                    else if (diffDays > 180) dateColorClass = 'text-orange-500 font-semibold';
+                                                }
+
+                                                const summaryLines = (listing.displaySummary || '')
+                                                    .split('\n').map(l => l.trim()).filter(Boolean).slice(0, 5);
+
+                                                return (
+                                                    <>
+                                                        <div className="font-black text-orange-500 mb-1 border-b border-orange-50 pb-1 text-lg">
+                                                            {listing.id}
+                                                        </div>
+                                                        {listing.price > 0 && (
+                                                            <div className="text-gray-900 font-bold text-base">
+                                                                {formatTooltipPrice(listing.price)}
+                                                                {salePricePerSqm > 0 && (
+                                                                    <span className="text-xs font-normal text-gray-400 ml-1">
+                                                                        ({formatTooltipPrice(salePricePerSqm)}/sqm)
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                        {listing.leasePrice > 0 && (
+                                                            <div className="text-gray-900 font-bold text-base">
+                                                                {formatTooltipPrice(listing.leasePrice)}/mo
+                                                                {leasePricePerSqm > 0 && (
+                                                                    <span className="text-xs font-normal text-gray-400 ml-1">
+                                                                        ({formatTooltipPrice(leasePricePerSqm)}/sqm)
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                        {listing.price === 0 && listing.leasePrice === 0 && (
+                                                            <div className="text-gray-500 font-bold text-sm">Price on Request</div>
+                                                        )}
+                                                        <div className="mt-1">
+                                                            {summaryLines.join('\n')}
+                                                            {(listing.displaySummary || '').split('\n').filter(Boolean).length > 5 && '...'}
+                                                        </div>
+                                                        {formattedUpdateDate && (
+                                                            <div className={`text-xs mt-1 ${dateColorClass}`}>
+                                                                Updated: {formattedUpdateDate}
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                );
+                                            })()}
                                         </div>
                                     </Tooltip>
                                 </Marker>
