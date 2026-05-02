@@ -645,8 +645,8 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                             e.stopPropagation();
                             onNotesClick && onNotesClick(listing.id);
                         }}
-                        className={`flex-1 text-center py-2 bg-yellow-50 rounded-lg text-xs font-bold hover:bg-yellow-100 transition-colors uppercase tracking-wider
-                            ${listing.columnV ? 'text-yellow-700' : 'text-blue-600'}
+                        className={`flex-1 text-center py-2 bg-yellow-50 text-yellow-700 rounded-lg text-xs font-bold hover:bg-yellow-100 transition-colors uppercase tracking-wider
+                            ${listing.columnV ? 'italic' : ''}
                         `}
                     >
                         NOTES
