@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Tooltip } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
@@ -71,13 +71,30 @@ interface MapModalProps {
     onNotesClick?: (id: string) => void;
     onShowNote?: (note: string, id: string) => void;
     fullScreen?: boolean;
+    initialPropertyTypes?: string[];
+    initialSaleTypes?: string[];
+    initialCategories?: string[];
+    initialDirect?: boolean;
 }
 
 
 
 
 
-export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListing, allListings, filteredListingsIds: _filteredListingsIds, onNotesClick, onShowNote, fullScreen }) => {
+export const MapModal: React.FC<MapModalProps> = ({ 
+    isOpen, 
+    onClose, 
+    centerListing, 
+    allListings, 
+    filteredListingsIds: _filteredListingsIds, 
+    onNotesClick, 
+    onShowNote, 
+    fullScreen,
+    initialPropertyTypes = [],
+    initialSaleTypes = [],
+    initialCategories = [],
+    initialDirect = false
+}) => {
     const { permissions } = usePermissions();
     const [focusedListing, setFocusedListing] = useState<Listing | null>(null);
     const [groupedViewListings, setGroupedViewListings] = useState<Listing[] | null>(null);
@@ -87,13 +104,22 @@ export const MapModal: React.FC<MapModalProps> = ({ isOpen, onClose, centerListi
     const [similarRadius, setSimilarRadius] = useState<2 | 5>(2);
     const [showNearby, setShowNearby] = useState(true);
     const [showAllInMap, setShowAllInMap] = useState(false);
-    const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<string[]>([]);
+    const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<string[]>(initialPropertyTypes);
     const [showFilters, setShowFilters] = useState(false);
     const [usePriceFilter, setUsePriceFilter] = useState(true);
     const [useLotSizeFilter, setUseLotSizeFilter] = useState(true);
-    const [selectedSaleTypes, setSelectedSaleTypes] = useState<string[]>([]);
-    const [showOnlyDirect, setShowOnlyDirect] = useState(false);
-    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+    const [selectedSaleTypes, setSelectedSaleTypes] = useState<string[]>(initialSaleTypes);
+    const [showOnlyDirect, setShowOnlyDirect] = useState(initialDirect);
+    const [selectedCategories, setSelectedCategories] = useState<string[]>(initialCategories);
+
+    useEffect(() => {
+        if (isOpen) {
+            setSelectedPropertyTypes(initialPropertyTypes);
+            setSelectedSaleTypes(initialSaleTypes);
+            setSelectedCategories(initialCategories);
+            setShowOnlyDirect(initialDirect);
+        }
+    }, [isOpen, initialPropertyTypes, initialSaleTypes, initialCategories, initialDirect]);
 
     // Filter Helpers
     const matchesPropertyType = (item: Listing): boolean => {

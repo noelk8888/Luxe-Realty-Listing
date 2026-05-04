@@ -2681,6 +2681,15 @@ function App() {
         onNotesClick={handleSendForm}
         onShowNote={handleShowNote}
         fullScreen={role === 'superadmin' || permissions.full_screen_map}
+        initialPropertyTypes={selectedPropertyTypes}
+        initialSaleTypes={
+          selectedType === 'Sale' ? ['FOR SALE'] :
+          selectedType === 'Lease' ? ['FOR LEASE'] :
+          selectedType === 'Sale/Lease' ? ['FOR SALE', 'FOR LEASE'] :
+          []
+        }
+        initialCategories={selectedCategory ? [selectedCategory.toUpperCase()] : []}
+        initialDirect={selectedDirect}
       />
 
       <NoteModal
