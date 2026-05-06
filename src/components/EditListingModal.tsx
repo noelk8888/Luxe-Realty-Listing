@@ -76,7 +76,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
             setFbLink((fbGroup ? groupPostLink[fbGroup] : listing.facebookLink) || '');
             setMapVerified(listing.mapVerified || '');
             setMapLink(listing.mapLink || '');
-            setClientVersion(listing.client || '');
+            setClientVersion((listing.client || '').replace(/\n*\s*\[CV_UPDATED:.*?\]/i, '').trim());
             setLocationError(null);
             setError(null);
             isInitialLoad.current = true; // Mark as initial load
@@ -221,6 +221,22 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                 finalMapVerified = `Location Verified by ${groupName} on ${today} (${time})`;
             }
 
+            let finalClientVersion = clientVersion.trim();
+            const originalClientVersion = (listing.client || '').trim();
+            const strippedOriginal = originalClientVersion.replace(/\n*\s*\[CV_UPDATED:.*?\]/i, '').trim();
+
+            if (finalClientVersion) {
+                if (finalClientVersion !== strippedOriginal) {
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    finalClientVersion += `\n\n[CV_UPDATED: ${todayStr}]`;
+                } else {
+                    const match = originalClientVersion.match(/(\n*\s*\[CV_UPDATED:.*?\])/i);
+                    if (match) {
+                        finalClientVersion += match[1];
+                    }
+                }
+            }
+
             console.log('Saving listing with MAP VERIFIED:', finalMapVerified);
             await onSave(listing.id, {
                 salePrice: salePriceNum,
@@ -232,7 +248,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                 fbLink: fbLink.trim(),
                 mapVerified: finalMapVerified,
                 mapLink: mapLink.trim(),
-                client: clientVersion.trim(),
+                client: finalClientVersion,
             });
             onClose();
         } catch (err) {

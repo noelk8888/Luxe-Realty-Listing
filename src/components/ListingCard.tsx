@@ -78,6 +78,30 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         return false;
     })();
 
+    const isClientOutOfDate = (() => {
+        if (!listing.client?.trim()) return false;
+        
+        const parts = (listing.columnBC || '').split(' | ');
+        const datePart = parts[0] || '';
+        const updateDateObj = new Date(datePart);
+        const updateDate = isNaN(updateDateObj.getTime()) 
+            ? null 
+            : new Date(updateDateObj.getFullYear(), updateDateObj.getMonth(), updateDateObj.getDate());
+
+        const cvMatch = listing.client.match(/\[CV_UPDATED:\s*(.+?)\]/i);
+        if (!cvMatch) return true;
+        
+        const cvDateObj = new Date(cvMatch[1]);
+        const cvDate = isNaN(cvDateObj.getTime())
+            ? null
+            : new Date(cvDateObj.getFullYear(), cvDateObj.getMonth(), cvDateObj.getDate());
+            
+        if (!cvDate) return true;
+        if (!updateDate) return false;
+        
+        return cvDate < updateDate;
+    })();
+
     const formatPrice = (price: number) => {
         const formatted = new Intl.NumberFormat('en-PH', {
             maximumFractionDigits: 0
@@ -189,6 +213,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         e.stopPropagation();
         
         let text = (listing.client || '').trim();
+        text = text.replace(/\n*\s*\[CV_UPDATED:.*?\]/i, '').trim();
         const currentPrice = activeFilter === 'Lease' ? listing.leasePrice : listing.price;
         
         if (!text) {
@@ -658,7 +683,10 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                             e.stopPropagation();
                             onEditClick(listing);
                         }}
-                        className={`flex-1 text-center py-2 bg-green-50 text-green-600 rounded-lg text-xs font-bold hover:bg-green-100 transition-colors uppercase tracking-wider ${role === 'superadmin' && listing.client?.trim() ? 'italic' : ''}`}
+                        className={`flex-1 text-center py-2 rounded-lg text-xs font-bold transition-colors uppercase tracking-wider 
+                            ${isClientOutOfDate ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'} 
+                            ${role === 'superadmin' && listing.client?.trim() ? 'italic' : ''}
+                        `}
                     >
                         EDIT
                     </button>
