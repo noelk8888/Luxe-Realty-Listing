@@ -684,7 +684,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                             onEditClick(listing);
                         }}
                         className={`flex-1 text-center py-2 rounded-lg text-xs font-bold transition-colors uppercase tracking-wider 
-                            ${isClientOutOfDate ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'} 
+                            ${isClientOutOfDate ? 'bg-black text-white hover:bg-gray-800' : 'bg-green-50 text-green-600 hover:bg-green-100'} 
                             ${role === 'superadmin' && listing.client?.trim() ? 'italic' : ''}
                         `}
                     >
