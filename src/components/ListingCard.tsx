@@ -5,6 +5,8 @@ import { StatusDropdown } from './StatusDropdown';
 import { usePermissions } from '../contexts/PermissionsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useViewing } from '../contexts/ViewingContext';
+import { GEMINI_PROMPT_PREFIX } from '../constants/reorganizePrompt';
+import { extractClientVersion } from '../services/geminiService';
 
 interface ListingCardProps {
     listing: Listing;
@@ -45,6 +47,8 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     const [isMapLinkCopied, setIsMapLinkCopied] = useState(false);
     const [isClientCopied, setIsClientCopied] = useState(false);
     const [isClientEmpty, setIsClientEmpty] = useState(false);
+    const [isClientLoading, setIsClientLoading] = useState(false);
+    const [isClientError, setIsClientError] = useState(false);
 
     const [isExpanded, setIsExpanded] = useState(false);
     const { permissions } = usePermissions();
@@ -76,30 +80,6 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         }
 
         return false;
-    })();
-
-    const isClientOutOfDate = (() => {
-        if (!listing.client?.trim()) return false;
-        
-        const parts = (listing.columnBC || '').split(' | ');
-        const datePart = parts[0] || '';
-        const updateDateObj = new Date(datePart);
-        const updateDate = isNaN(updateDateObj.getTime()) 
-            ? null 
-            : new Date(updateDateObj.getFullYear(), updateDateObj.getMonth(), updateDateObj.getDate());
-
-        const cvMatch = listing.client.match(/\[CV_UPDATED:\s*(.+?)\]/i);
-        if (!cvMatch) return true;
-        
-        const cvDateObj = new Date(cvMatch[1]);
-        const cvDate = isNaN(cvDateObj.getTime())
-            ? null
-            : new Date(cvDateObj.getFullYear(), cvDateObj.getMonth(), cvDateObj.getDate());
-            
-        if (!cvDate) return true;
-        if (!updateDate) return false;
-        
-        return cvDate < updateDate;
     })();
 
     const formatPrice = (price: number) => {
@@ -209,30 +189,35 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         setIsMapLinkCopied(true);
     };
     
-    const handleCopyClientVersion = (e: React.MouseEvent) => {
+    const handleCopyClientVersion = async (e: React.MouseEvent) => {
         e.stopPropagation();
-        
-        let text = (listing.client || '').trim();
-        text = text.replace(/\n*\s*\[CV_UPDATED:.*?\]/i, '').trim();
-        const currentPrice = activeFilter === 'Lease' ? listing.leasePrice : listing.price;
-        
-        if (!text) {
+        // AI Client Version Generation: Kiu group and superadmin only
+        if (role !== 'superadmin' && fbGroup !== 'Kiu') return;
+        if (isClientLoading) return;
+
+        const rawText = (listing.summary || '').trim();
+        if (!rawText) {
             setIsClientEmpty(true);
             return;
         }
 
-        const formattedPrice = formatPrice(currentPrice);
-        const priceRegex = /P[0-9,]{3,}/g;
-        const matches = text.match(priceRegex);
+        setIsClientLoading(true);
+        setIsClientError(false);
+        try {
+            const result = await extractClientVersion(
+                `${GEMINI_PROMPT_PREFIX}\n\nINPUT:\n${rawText}`
+            );
+            const output2 = result.output2 || '';
+            if (!output2.trim()) throw new Error('Empty output2 from Gemini');
 
-        let updatedText = text;
-        // ONLY if there is ONE PRICE ONLY, use the updated one
-        if (matches && matches.length === 1) {
-            updatedText = text.replace(priceRegex, formattedPrice);
+            await navigator.clipboard.writeText(output2);
+            setIsClientCopied(true);
+        } catch (err) {
+            console.error('[ListingCard] Gemini extraction error:', err);
+            setIsClientError(true);
+        } finally {
+            setIsClientLoading(false);
         }
-        
-        navigator.clipboard.writeText(updatedText);
-        setIsClientCopied(true);
     };
 
     useEffect(() => {
@@ -283,6 +268,13 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             return () => clearTimeout(timer);
         }
     }, [isClientEmpty]);
+
+    useEffect(() => {
+        if (isClientError) {
+            const timer = setTimeout(() => setIsClientError(false), 2500);
+            return () => clearTimeout(timer);
+        }
+    }, [isClientError]);
 
     const status = (listing.statusAQ || '').toLowerCase().trim();
     const isNotAvailable = status !== 'available' && status !== '';
@@ -411,17 +403,28 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             <div className="mb-4 mt-0.5">
                 <div 
                     onClick={handleCopyClientVersion}
-                    className={`w-full p-2 rounded-lg shadow-inner flex flex-col items-center justify-center gap-0.5 text-center cursor-pointer transition-all duration-200
-                        ${isClientCopied ? 'bg-green-100 shadow-md scale-[1.02]' : isClientEmpty ? 'bg-red-50 shadow-md' : 'bg-gray-100 hover:bg-gray-200 shadow-inner'}
+                    className={`w-full p-2 rounded-lg shadow-inner flex flex-col items-center justify-center gap-0.5 text-center transition-all duration-200
+                        ${(role === 'superadmin' || fbGroup === 'Kiu') ? 'cursor-pointer' : 'cursor-default'}
+                        ${isClientLoading ? 'bg-blue-50 shadow-md' : isClientCopied ? 'bg-green-100 shadow-md scale-[1.02]' : isClientError ? 'bg-red-50 shadow-md' : isClientEmpty ? 'bg-red-50 shadow-md' : (role === 'superadmin' || fbGroup === 'Kiu') ? 'bg-gray-100 hover:bg-gray-200 shadow-inner' : 'bg-gray-100 shadow-inner'}
                     `}
-                    title="Click to copy Client Version"
+                    title={(role === 'superadmin' || fbGroup === 'Kiu') ? 'Click to generate & copy Client Version (via AI)' : undefined}
                 >
                 {!permissions.view_pricing && (
                     <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">Price Hidden</span>
                 )}
                 {permissions.view_pricing && <>
-                    {isClientCopied ? (
+                    {isClientLoading ? (
+                        <span className="flex items-center gap-2 text-sm font-black text-blue-500 uppercase tracking-widest">
+                            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                            </svg>
+                            Generating...
+                        </span>
+                    ) : isClientCopied ? (
                         <span className="text-sm font-black text-green-600 uppercase tracking-widest animate-pulse">Copied!</span>
+                    ) : isClientError ? (
+                        <span className="text-sm font-black text-red-500 uppercase tracking-widest">AI Error — Try Again</span>
                     ) : isClientEmpty ? (
                         <span className="text-sm font-black text-red-500 uppercase tracking-widest">Nothing to copy</span>
                     ) : (
@@ -683,10 +686,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                             e.stopPropagation();
                             onEditClick(listing);
                         }}
-                        className={`flex-1 text-center py-2 rounded-lg text-xs font-bold transition-colors uppercase tracking-wider 
-                            ${isClientOutOfDate ? 'bg-black text-white hover:bg-gray-800' : 'bg-green-50 text-green-600 hover:bg-green-100'} 
-                            ${role === 'superadmin' && listing.client?.trim() ? 'italic' : ''}
-                        `}
+                        className={`flex-1 text-center py-2 rounded-lg text-xs font-bold transition-colors uppercase tracking-wider bg-green-50 text-green-600 hover:bg-green-100`}
                     >
                         EDIT
                     </button>
