@@ -49,6 +49,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     const [isClientEmpty, setIsClientEmpty] = useState(false);
     const [isClientLoading, setIsClientLoading] = useState(false);
     const [isClientError, setIsClientError] = useState(false);
+    const [clientErrorMsg, setClientErrorMsg] = useState('');
 
     const [isExpanded, setIsExpanded] = useState(false);
     const { permissions } = usePermissions();
@@ -214,6 +215,9 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             setIsClientCopied(true);
         } catch (err) {
             console.error('[ListingCard] Gemini extraction error:', err);
+            const msg = err instanceof Error ? err.message : String(err);
+            // Show a short version: first 60 chars so it fits in the card
+            setClientErrorMsg(msg.length > 60 ? msg.slice(0, 57) + '…' : msg);
             setIsClientError(true);
         } finally {
             setIsClientLoading(false);
@@ -424,7 +428,10 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                     ) : isClientCopied ? (
                         <span className="text-sm font-black text-green-600 uppercase tracking-widest animate-pulse">Copied!</span>
                     ) : isClientError ? (
-                        <span className="text-sm font-black text-red-500 uppercase tracking-widest">AI Error — Try Again</span>
+                        <>
+                            <span className="text-xs font-black text-red-500 uppercase tracking-widest">AI Error — Try Again</span>
+                            {clientErrorMsg && <span className="text-[10px] text-red-400 font-mono leading-tight">{clientErrorMsg}</span>}
+                        </>
                     ) : isClientEmpty ? (
                         <span className="text-sm font-black text-red-500 uppercase tracking-widest">Nothing to copy</span>
                     ) : (
