@@ -16,17 +16,18 @@ export interface ReorganizedOutputs {
 }
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
-const MAX_RETRIES = 3;
-const BASE_DELAY_MS = 3000;
+const MAX_RETRIES = 4;
+const BASE_DELAY_MS = 4000;
 
 function isRetryable(error: unknown): boolean {
   if (error instanceof Error) {
     const status = (error as { httpStatus?: number }).httpStatus;
-    if (status !== undefined) return status === 429 || status >= 500;
-    const msg = error.message.toLowerCase();
-    return msg.includes('429') || msg.includes('rate limit') || msg.includes('resource exhausted');
+    // Explicit non-retryable: 400 Bad Request, 401 Unauthorized, 403 Forbidden
+    if (status !== undefined) return status !== 400 && status !== 401 && status !== 403;
+    // No httpStatus = raw fetch/network error or cold-start timeout → always retry
+    return true;
   }
-  return false;
+  return true;
 }
 
 function parseJson(text: string): ReorganizedOutputs {
@@ -59,7 +60,7 @@ async function callGeminiDirect(prompt: string, apiKey: string): Promise<string>
 
 /**
  * Extracts output2 (Client Version) from a raw listing text.
- * Retries up to 3× on 429 / 5xx.
+ * Retries up to 4× on any transient error (network, 429, 5xx, cold-start).
  */
 export async function extractClientVersion(prompt: string): Promise<ReorganizedOutputs> {
   const apiKey = GEMINI_API_KEY;
