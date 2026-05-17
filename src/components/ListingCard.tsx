@@ -142,7 +142,8 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                 }
             }
 
-            if (mapsLink && listing.mapVerified && !copyText.includes('Verified Map Location:')) copyText += `\nVerified Map Location: ${mapsLink}`;
+            const hasGooglePin = /google\s*pin\s*:/i.test(copyText) || copyText.includes('maps.app.goo.gl');
+            if (mapsLink && listing.mapVerified && !copyText.includes('Verified Map Location:') && !hasGooglePin) copyText += `\nVerified Map Location: ${mapsLink}`;
             if (notes) copyText += `\n\nThere's a NOTE in this listing. Check it in the app`;
 
             navigator.clipboard.writeText(copyText);
