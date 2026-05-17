@@ -82,13 +82,33 @@ export const ViewingMapModal: React.FC<ViewingMapModalProps> = ({ isOpen, onClos
                                 : 'All listings have map coordinates'}
                         </p>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
-                    >
-                        <X size={20} className="text-gray-400" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {validListings.length > 0 && (
+                            <button
+                                onClick={() => {
+                                    // Build Google Maps multi-stop directions URL
+                                    // Format: /maps/dir/lat1,lng1/lat2,lng2/...
+                                    const stops = validListings
+                                        .map(l => `${l.lat},${l.lng}`)
+                                        .join('/');
+                                    const url = `https://www.google.com/maps/dir/${stops}`;
+                                    window.open(url, '_blank', 'noopener,noreferrer');
+                                }}
+                                className="px-3 py-1.5 bg-white border-2 border-gray-800 text-gray-800 text-xs font-black uppercase tracking-widest rounded-lg hover:bg-gray-800 hover:text-white transition-colors"
+                                title="Open all stops in Google Maps for trip planning"
+                            >
+                                Generate
+                            </button>
+                        )}
+                        <button
+                            onClick={onClose}
+                            className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+                        >
+                            <X size={20} className="text-gray-400" />
+                        </button>
+                    </div>
                 </div>
+
 
                 {/* Map */}
                 <div className="flex-1 relative z-0">
