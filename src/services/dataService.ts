@@ -63,6 +63,14 @@ export interface DbListing {
     'BW': string | null; // Client
 }
 
+export const isDuplicateListing = (summary: string): boolean => {
+    if (!summary) return false;
+    const allLines = summary.split(/\r?\n/).map(l => l.trim());
+    const firstNonEmpty = allLines.find(line => line !== '');
+    if (!firstNonEmpty) return false;
+    return firstNonEmpty.toUpperCase().includes('DUPLICATE');
+};
+
 /**
  * Fetch listings with IndexedDB caching + progressive loading
  *
@@ -77,7 +85,7 @@ export const fetchListings = async (): Promise<Listing[]> => {
         const cached = await getCachedListings();
         if (cached) {
             console.log('✅ Using cached listings from IndexedDB');
-            return cached;
+            return cached.filter(l => !isDuplicateListing(l.summary));
         }
 
         // Cache miss or invalid - fetch from Supabase
@@ -191,7 +199,7 @@ const fetchWithRetry = async (
                 }
             }
 
-            return allData.map(normalizeDbListing);
+            return allData.map(normalizeDbListing).filter(l => !isDuplicateListing(l.summary));
 
         } catch (error: any) {
             attempt++;
@@ -259,15 +267,58 @@ export const normalizeDbListing = (row: DbListing): Listing => {
         return acc;
     }, [] as number[]);
 
+    const geoId = (row['GEO ID'] || '').trim();
+
     let displaySummary = '';
-    if (nonEmptyIndices.length >= 2) {
+    if (nonEmptyIndices.length > 0) {
         const firstIdx = nonEmptyIndices[0];
         const lastIdx = nonEmptyIndices[nonEmptyIndices.length - 1];
 
-        if (nonEmptyIndices.length === 2) {
-            displaySummary = allLines[nonEmptyIndices[1]];
+        // Strip first line ONLY if it matches the GEO ID pattern/value
+        const firstLine = allLines[firstIdx];
+        const isGeoIdLine = firstLine.toUpperCase() === geoId.toUpperCase() || 
+                            /^[ABG]\d+$/i.test(firstLine);
+        const startSlice = isGeoIdLine ? firstIdx + 1 : firstIdx;
+
+        // Strip last line ONLY if it is a photos or map link
+        const lastLine = allLines[lastIdx];
+        const isPhotoOrMapLink = lastLine.toUpperCase().startsWith('PHOTOS:') || 
+                                 lastLine.toUpperCase().startsWith('PHOTO:') || 
+                                 lastLine.includes('http://') || 
+                                 lastLine.includes('https://');
+        const endSlice = isPhotoOrMapLink ? lastIdx : lastIdx + 1;
+
+        if (startSlice < endSlice) {
+            displaySummary = allLines.slice(startSlice, endSlice)
+                .filter(line => {
+                    const cleanLine = line.trim().toLowerCase();
+                    
+                    // Do not include if starts with "google pin:" or "google location"
+                    if (cleanLine.startsWith('google pin:') || cleanLine.startsWith('google location')) {
+                        return false;
+                    }
+                    
+                    // Do not include if includes maps link
+                    const hasMapLink = cleanLine.includes('maps.google') || 
+                                       cleanLine.includes('google.com/maps') || 
+                                       cleanLine.includes('goo.gl/maps') ||
+                                       cleanLine.includes('maps.app.goo.gl');
+                    
+                    // Do not include if includes photos link
+                    const hasPhotosLink = cleanLine.includes('photos.app.goo.gl') || 
+                                          cleanLine.includes('drive.google.com') ||
+                                          (cleanLine.includes('photo') && (cleanLine.includes('http://') || cleanLine.includes('https://')));
+                    
+                    if (hasMapLink || hasPhotosLink) {
+                        return false;
+                    }
+                    
+                    return true;
+                })
+                .join('\n')
+                .trim();
         } else {
-            displaySummary = allLines.slice(firstIdx + 1, lastIdx).join('\n').trim();
+            displaySummary = '';
         }
     } else {
         displaySummary = '';

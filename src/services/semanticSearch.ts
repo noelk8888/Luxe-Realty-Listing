@@ -11,7 +11,7 @@
 
 import { supabase } from '../lib/supabase';
 import type { Listing } from '../types';
-import { normalizeDbListing, type DbListing } from './dataService';
+import { normalizeDbListing, isDuplicateListing, type DbListing } from './dataService';
 
 /**
  * Check if semantic search is available (always true now with Edge Functions)
@@ -93,7 +93,9 @@ export async function semanticSearch(
     }
 
     // Normalize the database results to Listing format
-    const listings = (data || []).map((row: DbListing) => normalizeDbListing(row));
+    const listings = (data || [])
+      .map((row: DbListing) => normalizeDbListing(row))
+      .filter((l: Listing) => !isDuplicateListing(l.summary));
     console.log(`✨ Semantic search found ${listings.length} results`);
 
     if (listings.length > 0) {
