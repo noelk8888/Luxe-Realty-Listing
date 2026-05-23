@@ -119,7 +119,8 @@ export const MapModal: React.FC<MapModalProps> = ({
             setSelectedCategories(initialCategories);
             setShowOnlyDirect(initialDirect);
         }
-    }, [isOpen, initialPropertyTypes, initialSaleTypes, initialCategories, initialDirect]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen]);
 
     // Filter Helpers
     const matchesPropertyType = (item: Listing): boolean => {
