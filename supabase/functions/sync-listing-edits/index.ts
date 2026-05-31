@@ -35,6 +35,7 @@ const TABS = [
       postLinkTaoke: "BU",
       mapVerified: "BV",
       client: "BW",
+      summary: "AA",
     },
   },
   {
@@ -62,6 +63,7 @@ const TABS = [
       postLinkTaoke: "BU",
       mapVerified: "BV",
       client: "BW",
+      summary: "A",
     },
   },
 ];
@@ -193,6 +195,38 @@ serve(async (req) => {
     const body = await req.json();
     console.log("Webhook payload:", JSON.stringify(body));
 
+    if (body.action === "find_rows") {
+      const ids: string[] = body.ids || [];
+      console.log("Finding rows for IDs:", ids);
+      
+      const email = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_EMAIL");
+      const privateKey = Deno.env.get("GOOGLE_PRIVATE_KEY")?.replace(/\\n/g, "\n");
+
+      if (!email || !privateKey) {
+        throw new Error("Missing GOOGLE_SERVICE_ACCOUNT_EMAIL or GOOGLE_PRIVATE_KEY secrets");
+      }
+
+      const token = await getAccessToken(email, privateKey);
+      const result: Record<string, number> = {};
+      
+      for (const tab of TABS) {
+        const geoRange = `${tab.name}!${tab.geoIdCol}:${tab.geoIdCol}`;
+        const rows = await sheetsGet(token, SPREADSHEET_ID, geoRange);
+        
+        for (let i = 0; i < rows.length; i++) {
+          const cellValue = rows[i]?.[0]?.toString().trim();
+          if (cellValue && ids.includes(cellValue)) {
+            result[cellValue] = i + 1; // Sheets rows are 1-based
+          }
+        }
+      }
+      
+      return new Response(
+        JSON.stringify({ success: true, rows: result }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Support both direct payload and wrapped { record, old_record } format
     const record = body.record ?? body;
     const oldRecord = body.old_record ?? {};
@@ -318,6 +352,7 @@ serve(async (req) => {
       { db: "BU", key: "postLinkTaoke" },
       { db: "MAP VERIFIED", key: "mapVerified" },
       { db: "BW", key: "client" },
+      { db: "MAIN", key: "summary" },
     ];
 
     for (const field of fieldMappings) {
@@ -490,6 +525,13 @@ serve(async (req) => {
         updates.push({
           range: `${tab.name}!${tab.columns.client}${rowIndex}`,
           values: [[record["BW"] ?? ""]],
+        });
+      }
+
+      if (changedFields.includes("summary") && tab.columns.summary) {
+        updates.push({
+          range: `${tab.name}!${tab.columns.summary}${rowIndex}`,
+          values: [[getColValue(record, "MAIN") ?? ""]],
         });
       }
 

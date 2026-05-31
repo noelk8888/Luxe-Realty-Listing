@@ -146,6 +146,23 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             if (mapsLink && listing.mapVerified && !copyText.includes('Verified Map Location:') && !hasGooglePin) copyText += `\nVerified Map Location: ${mapsLink}`;
             if (notes) copyText += `\n\nThere's a NOTE in this listing. Check it in the app`;
 
+            // Prepend updated date if available
+            if (listing.columnBC) {
+                const parts = listing.columnBC.split(' | ');
+                const datePart = parts[0]?.trim();
+                if (datePart) {
+                    const date = new Date(datePart);
+                    if (!isNaN(date.getTime())) {
+                        const formattedDate = date.toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                        });
+                        copyText = `${formattedDate} update\n${copyText}`;
+                    }
+                }
+            }
+
             navigator.clipboard.writeText(copyText);
             setIsCopied(true);
         }

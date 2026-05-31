@@ -42,6 +42,7 @@ BEGIN
        OR OLD."MAP VERIFIED" IS DISTINCT FROM NEW."MAP VERIFIED"
        OR OLD."BW" IS DISTINCT FROM NEW."BW"
        OR OLD."MONTHLY DUES" IS DISTINCT FROM NEW."MONTHLY DUES"
+       OR OLD."MAIN" IS DISTINCT FROM NEW."MAIN"
     THEN
         has_changes := TRUE;
     END IF;
@@ -69,7 +70,8 @@ BEGIN
                 'BU', NEW."BU",
                 'MAP VERIFIED', NEW."MAP VERIFIED",
                 'BW', NEW."BW",
-                'MONTHLY DUES', NEW."MONTHLY DUES"
+                'MONTHLY DUES', NEW."MONTHLY DUES",
+                'MAIN', NEW."MAIN"
             ),
             'old_record', jsonb_build_object(
                 'GEO ID', OLD."GEO ID",
@@ -91,7 +93,8 @@ BEGIN
                 'BU', OLD."BU",
                 'MAP VERIFIED', OLD."MAP VERIFIED",
                 'BW', OLD."BW",
-                'MONTHLY DUES', OLD."MONTHLY DUES"
+                'MONTHLY DUES', OLD."MONTHLY DUES",
+                'MAIN', OLD."MAIN"
             )
         );
 
