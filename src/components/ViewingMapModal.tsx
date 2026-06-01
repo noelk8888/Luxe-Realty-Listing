@@ -61,11 +61,11 @@ export const ViewingMapModal: React.FC<ViewingMapModalProps> = ({ isOpen, onClos
 
     return (
         <div
-            className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[99999] flex items-center justify-center"
             onClick={onClose}
         >
             <div
-                className="bg-white rounded-2xl w-full max-w-4xl h-[75vh] shadow-2xl border border-gray-100 overflow-hidden flex flex-col"
+                className="bg-white w-full h-full overflow-hidden flex flex-col"
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header */}

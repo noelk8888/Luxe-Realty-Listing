@@ -331,23 +331,21 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                     onUpdate={onStatusUpdate}
                 />
             ) : (
-                permissions.change_status && (
-                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-[50]">
-                        <div className={`bg-white border-2 px-6 py-1.5 rounded-2xl shadow-md flex items-center justify-center min-w-[160px] 
-                            ${isUndecisiveSeller ? 'border-amber-800' : 
-                              isUnderNego ? 'border-blue-500' : 
-                              isNotAvailable ? 'border-red-600' : 
-                              'border-green-600'}`}>
-                            <span className={`text-[12px] font-black uppercase tracking-[0.25em] 
-                                ${isUndecisiveSeller ? 'text-amber-800' : 
-                                  isUnderNego ? 'text-blue-500' : 
-                                  isNotAvailable ? 'text-red-600' : 
-                                  'text-green-600'}`}>
-                                {listing.statusAQ || 'Available'}
-                            </span>
-                        </div>
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-[50]">
+                    <div className={`bg-white border-2 px-6 py-1.5 rounded-2xl shadow-md flex items-center justify-center min-w-[160px] 
+                        ${isUndecisiveSeller ? 'border-amber-800' : 
+                          isUnderNego ? 'border-blue-500' : 
+                          isNotAvailable ? 'border-red-600' : 
+                          'border-green-600'}`}>
+                        <span className={`text-[12px] font-black uppercase tracking-[0.25em] 
+                            ${isUndecisiveSeller ? 'text-amber-800' : 
+                              isUnderNego ? 'text-blue-500' : 
+                              isNotAvailable ? 'text-red-600' : 
+                              'text-green-600'}`}>
+                            {listing.statusAQ || 'Available'}
+                        </span>
                     </div>
-                )
+                </div>
             )}
             <div className="flex justify-between items-start mb-1">
                 <div className="flex flex-col gap-1.5 flex-1 mr-4">
