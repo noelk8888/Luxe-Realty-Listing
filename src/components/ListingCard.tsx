@@ -42,7 +42,6 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
 }) => {
     const [isCopied, setIsCopied] = useState(false);
     const [isColumnKCopied, setIsColumnKCopied] = useState(false);
-    const [isColumnBDCopied, setIsColumnBDCopied] = useState(false);
     const [isPhotoLinkCopied, setIsPhotoLinkCopied] = useState(false);
     const [isMapLinkCopied, setIsMapLinkCopied] = useState(false);
     const [isClientCopied, setIsClientCopied] = useState(false);
@@ -185,13 +184,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         }
     };
 
-    const handleCopyColumnBD = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (listing.columnBD) {
-            navigator.clipboard.writeText(listing.columnBD);
-            setIsColumnBDCopied(true);
-        }
-    };
+
 
     const handleCopyPhotoLink = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -258,12 +251,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         }
     }, [isColumnKCopied]);
 
-    useEffect(() => {
-        if (isColumnBDCopied) {
-            const timer = setTimeout(() => setIsColumnBDCopied(false), 2000);
-            return () => clearTimeout(timer);
-        }
-    }, [isColumnBDCopied]);
+
 
     useEffect(() => {
         if (isPhotoLinkCopied) {
@@ -324,29 +312,21 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         <div
             className={`${cardClassName} ${isDisabled && !isSelected ? 'opacity-50' : ''} p-5`}
         >
-            {permissions.edit_listing && canEditStatus && onStatusUpdate ? (
-                <StatusDropdown
-                    currentStatus={listing.statusAQ || 'Available'}
-                    listingId={listing.id}
-                    onUpdate={onStatusUpdate}
-                />
-            ) : (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-[50]">
-                    <div className={`bg-white border-2 px-6 py-1.5 rounded-2xl shadow-md flex items-center justify-center min-w-[160px] 
-                        ${isUndecisiveSeller ? 'border-amber-800' : 
-                          isUnderNego ? 'border-blue-500' : 
-                          isNotAvailable ? 'border-red-600' : 
-                          'border-green-600'}`}>
-                        <span className={`text-[12px] font-black uppercase tracking-[0.25em] 
-                            ${isUndecisiveSeller ? 'text-amber-800' : 
-                              isUnderNego ? 'text-blue-500' : 
-                              isNotAvailable ? 'text-red-600' : 
-                              'text-green-600'}`}>
-                            {listing.statusAQ || 'Available'}
-                        </span>
-                    </div>
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-[50]">
+                <div className={`bg-white border-2 px-6 py-1.5 rounded-2xl shadow-md flex items-center justify-center min-w-[160px] 
+                    ${isUndecisiveSeller ? 'border-amber-800' : 
+                      isUnderNego ? 'border-blue-500' : 
+                      isNotAvailable ? 'border-red-600' : 
+                      'border-green-600'}`}>
+                    <span className={`text-[12px] font-black uppercase tracking-[0.25em] 
+                        ${isUndecisiveSeller ? 'text-amber-800' : 
+                          isUnderNego ? 'text-blue-500' : 
+                          isNotAvailable ? 'text-red-600' : 
+                          'text-green-600'}`}>
+                        {listing.statusAQ || 'Available'}
+                    </span>
                 </div>
-            )}
+            </div>
             <div className="flex justify-between items-start mb-1">
                 <div className="flex flex-col gap-1.5 flex-1 mr-4">
                     {permissions.view_col_k && listing.columnK && (
@@ -457,19 +437,9 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         {/* Column BD: Top of Price, Light Green Theme */}
                         {permissions.view_listing_ownership && listing.columnBD && !['available', 'sold', 'leased out', 'off market', 'on hold', 'under nego', 'undecisive seller'].includes(listing.columnBD.toLowerCase().trim()) && (
                             <div
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleCopyColumnBD(e);
-                                }}
-                                className={`mb-0.5 text-xs font-bold px-1.5 py-0.5 rounded border shadow-sm w-fit cursor-pointer transition-colors
-                                    ${isColumnBDCopied
-                                        ? 'text-green-700 bg-green-100 border-green-300'
-                                        : 'text-green-600 bg-green-50 border-green-200 hover:bg-green-100'
-                                    }
-                                `}
-                                title="Click to copy"
+                                className="mb-0.5 text-xs font-bold px-1.5 py-0.5 rounded border border-green-200 bg-green-50 text-green-600 shadow-sm w-fit cursor-default"
                             >
-                                {isColumnBDCopied ? 'COPIED!' : listing.columnBD}
+                                {listing.columnBD}
                             </div>
                         )}
                         </>
