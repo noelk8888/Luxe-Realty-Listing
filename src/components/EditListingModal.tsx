@@ -88,7 +88,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
             return;
         }
         setUpdateDate(true);
-    }, [salePrice, leasePrice, monthlyDues]);
+    }, [monthlyDues]);
 
     // Auto-clear verification if coordinates change
     useEffect(() => {
@@ -257,47 +257,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="px-5 py-4 space-y-3">
-                    {/* Sale Price */}
-                    {permissions.edit_sale_price && (
-                    <div className="flex items-center gap-3">
-                        <label className="text-sm font-bold text-gray-700 whitespace-nowrap w-36 shrink-0">
-                            Sale Price (PHP)
-                        </label>
-                        <div className="flex-1">
-                            <input
-                                type="text"
-                                value={salePrice ? formatNumberInput(salePrice) : ''}
-                                onChange={(e) => setSalePrice(e.target.value.replace(/,/g, ''))}
-                                placeholder="e.g. 5,000,000"
-                                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                            {salePricePerSqm > 0 && (
-                                <p className="text-xs text-gray-500 mt-0.5">= P{salePricePerSqm.toLocaleString()}/sqm</p>
-                            )}
-                        </div>
-                    </div>
-                    )}
 
-                    {/* Lease Price */}
-                    {permissions.edit_lease_price && (
-                    <div className="flex items-center gap-3">
-                        <label className="text-sm font-bold text-gray-700 whitespace-nowrap w-36 shrink-0">
-                            Lease Price (PHP/mo)
-                        </label>
-                        <div className="flex-1">
-                            <input
-                                type="text"
-                                value={leasePrice ? formatNumberInput(leasePrice) : ''}
-                                onChange={(e) => setLeasePrice(e.target.value.replace(/,/g, ''))}
-                                placeholder="e.g. 50,000"
-                                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                            {leasePricePerSqm > 0 && (
-                                <p className="text-xs text-gray-500 mt-0.5">= P{leasePricePerSqm.toLocaleString()}/sqm</p>
-                            )}
-                        </div>
-                    </div>
-                    )}
 
                     {/* Monthly Dues */}
                     {permissions.edit_monthly_dues && (
