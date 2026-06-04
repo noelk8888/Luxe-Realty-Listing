@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Listing } from '../types';
 import { MapPin, Building, Maximize, ChevronDown, ChevronUp, Bed, Car, Facebook, Instagram, Youtube, Receipt } from 'lucide-react';
-import { StatusDropdown } from './StatusDropdown';
 import { usePermissions } from '../contexts/PermissionsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useViewing } from '../contexts/ViewingContext';
@@ -21,7 +20,7 @@ interface ListingCardProps {
     isPopupView?: boolean;
     onBack?: () => void;
     backButtonVariant?: 'red' | 'blue' | 'gray';
-    onStatusUpdate?: (id: string, status: string) => Promise<void>;
+
     onEditClick?: (listing: Listing) => void;
 }
 
@@ -37,7 +36,6 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     isPopupView = false,
     onBack,
     backButtonVariant = 'blue',
-    onStatusUpdate,
     onEditClick,
 }) => {
     const [isCopied, setIsCopied] = useState(false);
@@ -52,35 +50,10 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
 
     const [isExpanded, setIsExpanded] = useState(false);
     const { permissions } = usePermissions();
-    const { fbGroup, role, userName } = useAuth();
+    const { fbGroup, role } = useAuth();
     const { addToViewing, removeFromViewing, isInViewing, isFull } = useViewing();
 
-    // STATUS CHANGE ACCESS CONTROL:
-    // 1. Superadmin: Full access (always bypasses permission flag)
-    // 2. Admin/Editor: Full access IF 'change_status' permission is ON
-    // 3. Broker: Access only if 'change_status' is ON AND they belong to the listing's ownership (Group or Name match)
-    // 4. Implicit Ownership: Empty columnBD defaults to 'Luxe' group
-    const canEditStatus = (() => {
-        if (role === 'superadmin') return true;
 
-        const hasChangePerm = permissions.change_status;
-        if (!hasChangePerm) return false;
-
-        if (role === 'admin' || role === 'editor') return true;
-
-        if (role === 'broker') {
-            const ownerString = (listing.columnBD || 'Luxe').toLowerCase();
-            const userGroup = (fbGroup || '').toLowerCase();
-            const name = (userName || '').toLowerCase();
-
-            const isGroupMatch = userGroup && ownerString.includes(userGroup);
-            const isNameMatch = name && ownerString.includes(name);
-
-            return !!(isGroupMatch || isNameMatch);
-        }
-
-        return false;
-    })();
 
     const formatPrice = (price: number) => {
         const formatted = new Intl.NumberFormat('en-PH', {

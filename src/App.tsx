@@ -1208,49 +1208,7 @@ function App() {
     });
   };
 
-  const handleStatusUpdate = async (listingId: string, newStatus: string) => {
-    console.log('Updating status:', { listingId, newStatus });
 
-    const today = new Date();
-    const dateStr = today.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: '2-digit', 
-      year: 'numeric' 
-    });
-    const authorName = fbGroup || (user?.user_metadata?.full_name || user?.email || '');
-    const dateUpdated = `${dateStr} | STATUS | ${authorName}`.replace(/\|\s*$/, '').trim();
-
-    const { data, error } = await supabase
-      .from('KIU Properties')
-      .update({ STATUS: newStatus, 'DATE UPDATED': dateUpdated })
-      .eq('"GEO ID"', listingId)
-      .select('"GEO ID", STATUS');
-
-    console.log('Update result:', { data, error });
-
-    if (error) {
-      console.error('Failed to update status:', error);
-      alert(`Failed to update status: ${error.message}`);
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      console.warn('No rows updated — check RLS policies or listing ID');
-      alert('Update failed: no matching listing found or permission denied.');
-      return;
-    }
-
-    // Update local state
-    const updateListing = (l: Listing) =>
-      l.id === listingId ? { ...l, status: newStatus, statusAQ: newStatus, columnBC: dateUpdated } : l;
-
-    setAllListings(prev => prev.map(updateListing));
-    setResults(prev => prev.map(updateListing));
-
-    // Invalidate cache so next reload reflects the change
-    // Don't await — IndexedDB can hang on iOS Safari
-    clearCache().catch(() => { });
-  };
 
   // Handle listing edits (price, notes)
   const handleEditClick = (listing: Listing) => {
@@ -2631,7 +2589,6 @@ function App() {
                       onMapClick={handleMapClick}
                       index={(currentPage - 1) * ITEMS_PER_PAGE + idx + 1}
                       activeFilter={selectedType}
-                      onStatusUpdate={handleStatusUpdate}
                       onEditClick={handleEditClick}
                     />
                   ))}

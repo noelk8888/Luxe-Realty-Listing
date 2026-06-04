@@ -129,41 +129,12 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
 
     if (!isOpen || !listing) return null;
 
-    const formatNumberInput = (value: string): string => {
-        // Remove non-numeric characters except decimal point
-        const cleaned = value.replace(/[^0-9.]/g, '');
-        // Format with commas
-        const parts = cleaned.split('.');
-        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-        return parts.join('.');
-    };
-
     const parseNumber = (value: string): number => {
         return parseFloat(value.replace(/,/g, '')) || 0;
     };
 
-    // Calculate sale price per sqm - prioritize LOT AREA (land being sold)
-    const calculateSalePricePerSqm = (price: number): number => {
-        const area = listing.lotArea > 0 ? listing.lotArea : listing.floorArea;
-        if (area > 0 && price > 0) {
-            return Math.round(price / area);
-        }
-        return 0;
-    };
-
-    // Calculate lease price per sqm - prioritize FLOOR AREA (space being rented)
-    const calculateLeasePricePerSqm = (price: number): number => {
-        const area = listing.floorArea > 0 ? listing.floorArea : listing.lotArea;
-        if (area > 0 && price > 0) {
-            return Math.round(price / area);
-        }
-        return 0;
-    };
-
     const salePriceNum = parseNumber(salePrice);
     const leasePriceNum = parseNumber(leasePrice);
-    const salePricePerSqm = calculateSalePricePerSqm(salePriceNum);
-    const leasePricePerSqm = calculateLeasePricePerSqm(leasePriceNum);
 
     // Parse lat/long from the input for preview
     const parsedCoords = (() => {
