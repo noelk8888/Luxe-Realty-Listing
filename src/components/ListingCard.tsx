@@ -296,7 +296,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                           isUnderNego ? 'text-blue-500' : 
                           isNotAvailable ? 'text-red-600' : 
                           'text-green-600'}`}>
-                        {listing.statusAQ || 'Available'}
+                        {(listing.statusAQ?.toUpperCase() === 'OFF THE MARKET' ? 'OFF MARKET' : listing.statusAQ) || 'Available'}
                     </span>
                 </div>
             </div>
