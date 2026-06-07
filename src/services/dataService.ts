@@ -65,10 +65,22 @@ export interface DbListing {
 
 export const isDuplicateListing = (summary: string): boolean => {
     if (!summary) return false;
-    const allLines = summary.split(/\r?\n/).map(l => l.trim());
-    const firstNonEmpty = allLines.find(line => line !== '');
-    if (!firstNonEmpty) return false;
-    return firstNonEmpty.toUpperCase().includes('DUPLICATE');
+    const allLines = summary.split(/\r?\n/).map(l => l.trim()).filter(line => line !== '');
+    if (allLines.length === 0) return false;
+    
+    // Check first line
+    if (allLines[0].toUpperCase().includes('DUPLICATE')) return true;
+    
+    // If the first line is a GEO ID (e.g. matches A/B/G + digits or is a row placeholder), check the second line
+    if (allLines.length > 1) {
+        const firstLine = allLines[0];
+        const isGeoId = /^[A-Z\d-]+$/i.test(firstLine);
+        if (isGeoId && allLines[1].toUpperCase().includes('DUPLICATE')) {
+            return true;
+        }
+    }
+    
+    return false;
 };
 
 /**
