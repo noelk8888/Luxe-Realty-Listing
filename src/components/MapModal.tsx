@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Tooltip } from 'react-leaflet';
+import { supabase } from '../lib/supabase';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -75,6 +76,7 @@ interface MapModalProps {
     initialSaleTypes?: string[];
     initialCategories?: string[];
     initialDirect?: boolean;
+    rowNumbers?: Record<string, number>;
 }
 
 
@@ -93,11 +95,69 @@ export const MapModal: React.FC<MapModalProps> = ({
     initialPropertyTypes = [],
     initialSaleTypes = [],
     initialCategories = [],
-    initialDirect = false
+    initialDirect = false,
+    rowNumbers = {},
 }) => {
     const { permissions } = usePermissions();
     const [focusedListing, setFocusedListing] = useState<Listing | null>(null);
     const [groupedViewListings, setGroupedViewListings] = useState<Listing[] | null>(null);
+    const [localRowNumbers, setLocalRowNumbers] = useState<Record<string, number>>({});
+    const localRowNumbersRef = useRef<Record<string, number>>({});
+
+    useEffect(() => {
+        localRowNumbersRef.current = { ...rowNumbers, ...localRowNumbers };
+    }, [rowNumbers, localRowNumbers]);
+
+    // Fetch row numbers dynamically for listings being viewed in map popups/overlays
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const idsToFetch: string[] = [];
+        if (focusedListing && !localRowNumbersRef.current[focusedListing.id]) {
+            idsToFetch.push(focusedListing.id);
+        }
+        if (groupedViewListings) {
+            groupedViewListings.forEach(l => {
+                if (!localRowNumbersRef.current[l.id] && !idsToFetch.includes(l.id)) {
+                    idsToFetch.push(l.id);
+                }
+            });
+        }
+
+        if (idsToFetch.length === 0) return;
+
+        let isMounted = true;
+        const fetchLocalRowNumbers = async () => {
+            try {
+                const { data, error } = await supabase.functions.invoke('sync-listing-edits', {
+                    body: {
+                        action: 'find_rows',
+                        ids: idsToFetch
+                    }
+                });
+
+                if (error) {
+                    console.error('Error invoking sync-listing-edits in MapModal:', error);
+                    return;
+                }
+
+                if (data && data.success && data.rows && isMounted) {
+                    setLocalRowNumbers(prev => ({
+                        ...prev,
+                        ...data.rows
+                    }));
+                }
+            } catch (err) {
+                console.error('Failed to fetch row numbers in MapModal:', err);
+            }
+        };
+
+        fetchLocalRowNumbers();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [isOpen, focusedListing, groupedViewListings]);
 
     // Toggle states for map controls
     const [showSimilar, setShowSimilar] = useState(true);
@@ -903,6 +963,7 @@ export const MapModal: React.FC<MapModalProps> = ({
                                                 backButtonVariant={variant}
                                                 onNotesClick={handleNotesClick}
                                                 onShowNote={onShowNote}
+                                                rowNumber={rowNumbers?.[listing.id] || localRowNumbers[listing.id]}
                                             />
                                         </div>
                                     );
@@ -938,6 +999,7 @@ export const MapModal: React.FC<MapModalProps> = ({
                                     backButtonVariant={focusedListing.id === centerListing.id ? 'red' : (similarListingIds.has(focusedListing.id) ? 'blue' : 'gray')}
                                     onNotesClick={handleNotesClick}
                                     onShowNote={onShowNote}
+                                    rowNumber={rowNumbers?.[focusedListing.id] || localRowNumbers[focusedListing.id]}
                                 />
                             </div>
                         </div>

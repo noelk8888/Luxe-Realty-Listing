@@ -404,6 +404,12 @@ function App() {
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [rowNumbers, setRowNumbers] = useState<Record<string, number>>({});
+  const rowNumbersRef = useRef<Record<string, number>>({});
+
+  useEffect(() => {
+    rowNumbersRef.current = rowNumbers;
+  }, [rowNumbers]);
 
   // Dynamic Placeholder Text
   const [placeholderText, setPlaceholderText] = useState('"Lot in Caloocan"');
@@ -1034,6 +1040,49 @@ function App() {
   );
 
   const finalResults = paginatedResults;
+
+  const visibleIdsKey = paginatedResults?.map(l => l.id).join(',') || '';
+
+  useEffect(() => {
+    if (!visibleIdsKey) return;
+    const ids = visibleIdsKey.split(',').filter(Boolean);
+    if (ids.length === 0) return;
+
+    const idsToFetch = ids.filter(id => rowNumbersRef.current[id] === undefined);
+    if (idsToFetch.length === 0) return;
+
+    let isMounted = true;
+    const fetchRowNumbers = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('sync-listing-edits', {
+          body: {
+            action: 'find_rows',
+            ids: idsToFetch
+          }
+        });
+
+        if (error) {
+          console.error('Error invoking sync-listing-edits for find_rows:', error);
+          return;
+        }
+
+        if (data && data.success && data.rows && isMounted) {
+          setRowNumbers(prev => ({
+            ...prev,
+            ...data.rows
+          }));
+        }
+      } catch (err) {
+        console.error('Failed to fetch row numbers:', err);
+      }
+    };
+
+    fetchRowNumbers();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [visibleIdsKey]);
 
   // Relevance sort = null sortConfig (uses original array order from searchEngine)
   const handleSort = (key: 'price' | 'pricePerSqm' | 'relevance' | 'lotArea' | 'floorArea' | 'bedrooms' | 'parking') => {
@@ -2590,6 +2639,7 @@ function App() {
                       index={(currentPage - 1) * ITEMS_PER_PAGE + idx + 1}
                       activeFilter={selectedType}
                       onEditClick={handleEditClick}
+                      rowNumber={rowNumbers[listing.id]}
                     />
                   ))}
                 </div>
@@ -2644,6 +2694,7 @@ function App() {
         }
         initialCategories={selectedCategory ? [selectedCategory.toUpperCase()] : []}
         initialDirect={selectedDirect}
+        rowNumbers={rowNumbers}
       />
 
       <NoteModal

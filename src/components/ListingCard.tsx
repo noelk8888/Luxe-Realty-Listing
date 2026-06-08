@@ -22,6 +22,7 @@ interface ListingCardProps {
     backButtonVariant?: 'red' | 'blue' | 'gray';
 
     onEditClick?: (listing: Listing) => void;
+    rowNumber?: number | null;
 }
 
 export const ListingCard: React.FC<ListingCardProps> = React.memo(({
@@ -37,6 +38,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     onBack,
     backButtonVariant = 'blue',
     onEditClick,
+    rowNumber,
 }) => {
     const [isCopied, setIsCopied] = useState(false);
     const [isColumnKCopied, setIsColumnKCopied] = useState(false);
@@ -779,6 +781,12 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                     </div>
                 );
 })()}
+
+            {rowNumber && (
+                <div className="mt-1 text-[10px] text-gray-400 font-semibold uppercase tracking-wider text-center">
+                    Row #{rowNumber}
+                </div>
+            )}
 
         </div >
     );
