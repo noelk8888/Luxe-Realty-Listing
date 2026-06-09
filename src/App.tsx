@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, ArrowUp, ArrowDown, Facebook, Instagram, Youtube, Eye } from 'lucide-react';
+import { Search, ArrowUp, ArrowDown, Facebook, Instagram, Youtube, Eye, Share2, Check } from 'lucide-react';
 import { DualRangeSlider } from './components/DualRangeSlider';
 import { fetchListings, refreshListings } from './services/dataService';
 import { searchListings } from './services/searchEngine';
@@ -38,9 +38,9 @@ function App() {
   const LS_KEY = 'luxe_notes_last_seen';
   const [hasNewNote, setHasNewNote] = useState(false);
 
-  const [query, setQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [hasSearched, setHasSearched] = useState(false);
+  const [query, setQuery] = useState(() => new URLSearchParams(window.location.search).get('q') || '');
+  const [debouncedQuery, setDebouncedQuery] = useState(() => new URLSearchParams(window.location.search).get('q') || '');
+  const [hasSearched, setHasSearched] = useState(() => !!new URLSearchParams(window.location.search).get('q'));
   const [loading, setLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -50,42 +50,82 @@ function App() {
   const lastRefreshTimeRef = useRef<number>(Date.now());
   const [allListings, setAllListings] = useState<Listing[]>([]);
   const [results, setResults] = useState<Listing[]>([]);
-  const [selectedType, setSelectedType] = useState<string | null>(null); // Default null (No filter)
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null); // 'Residential' | 'Commercial' | 'Industrial' | 'Agricultural' | null
-  const [selectedDirect, setSelectedDirect] = useState<boolean>(false);
-  const [showAllListings, setShowAllListings] = useState<boolean>(true);
+  const [selectedType, setSelectedType] = useState<string | null>(() => new URLSearchParams(window.location.search).get('type')); // Default null (No filter)
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(() => new URLSearchParams(window.location.search).get('category')); // 'Residential' | 'Commercial' | 'Industrial' | 'Agricultural' | null
+  const [selectedDirect, setSelectedDirect] = useState<boolean>(() => new URLSearchParams(window.location.search).get('direct') === 'true');
+  const [showAllListings, setShowAllListings] = useState<boolean>(() => {
+    const showAllVal = new URLSearchParams(window.location.search).get('showAll');
+    return showAllVal !== null ? showAllVal === 'true' : true;
+  });
 
   // Area Filter State
-  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
-  const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
-  const [selectedCity, setSelectedCity] = useState<string | null>(null);
-  const [selectedBarangay, setSelectedBarangay] = useState<string | null>(null);
-  const [selectedBedrooms, setSelectedBedrooms] = useState<string[]>([]);
-  const [selectedParking, setSelectedParking] = useState<string[]>([]);
-  const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<string[]>([]);
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(() => new URLSearchParams(window.location.search).get('region'));
+  const [selectedProvince, setSelectedProvince] = useState<string | null>(() => new URLSearchParams(window.location.search).get('province'));
+  const [selectedCity, setSelectedCity] = useState<string | null>(() => new URLSearchParams(window.location.search).get('city'));
+  const [selectedBarangay, setSelectedBarangay] = useState<string | null>(() => new URLSearchParams(window.location.search).get('barangay'));
+  const [selectedBedrooms, setSelectedBedrooms] = useState<string[]>(() => {
+    const val = new URLSearchParams(window.location.search).get('bedrooms');
+    return val ? val.split(',') : [];
+  });
+  const [selectedParking, setSelectedParking] = useState<string[]>(() => {
+    const val = new URLSearchParams(window.location.search).get('parking');
+    return val ? val.split(',') : [];
+  });
+  const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<string[]>(() => {
+    const val = new URLSearchParams(window.location.search).get('propertyTypes');
+    return val ? val.split(',') : [];
+  });
 
-  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const key = params.get('sortKey');
+    const dir = params.get('sortDir');
+    return key && dir ? { key, direction: dir as 'asc' | 'desc' } : null;
+  });
 
   // Price Range State
   const [isPriceFilterOpen, setIsPriceFilterOpen] = useState(false);
-  const [priceRange, setPriceRange] = useState<[number, number] | null>(null);
-  const [useExactPrice, setUseExactPrice] = useState<boolean>(false);
-  const [manualPrice, setManualPrice] = useState<string>('');
+  const [priceRange, setPriceRange] = useState<[number, number] | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const min = params.get('priceMin');
+    const max = params.get('priceMax');
+    return min && max ? [parseFloat(min), parseFloat(max)] : null;
+  });
+  const [useExactPrice, setUseExactPrice] = useState<boolean>(() => new URLSearchParams(window.location.search).get('useExactPrice') === 'true');
+  const [manualPrice, setManualPrice] = useState<string>(() => new URLSearchParams(window.location.search).get('manualPrice') || '');
 
   const [isPricePerSqmFilterOpen, setIsPricePerSqmFilterOpen] = useState(false);
-  const [pricePerSqmRange, setPricePerSqmRange] = useState<[number, number] | null>(null);
-  const [useExactPricePerSqm, setUseExactPricePerSqm] = useState<boolean>(false);
-  const [manualPricePerSqm, setManualPricePerSqm] = useState<string>('');
+  const [pricePerSqmRange, setPricePerSqmRange] = useState<[number, number] | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const min = params.get('ppsMin');
+    const max = params.get('ppsMax');
+    return min && max ? [parseFloat(min), parseFloat(max)] : null;
+  });
+  const [useExactPricePerSqm, setUseExactPricePerSqm] = useState<boolean>(() => new URLSearchParams(window.location.search).get('useExactPricePerSqm') === 'true');
+  const [manualPricePerSqm, setManualPricePerSqm] = useState<string>(() => new URLSearchParams(window.location.search).get('manualPricePerSqm') || '');
 
   const [isLotAreaFilterOpen, setIsLotAreaFilterOpen] = useState(false);
-  const [lotAreaRange, setLotAreaRange] = useState<[number, number] | null>(null);
-  const [useExactLotArea, setUseExactLotArea] = useState<boolean>(false);
-  const [manualLotArea, setManualLotArea] = useState<string>('');
+  const [lotAreaRange, setLotAreaRange] = useState<[number, number] | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const min = params.get('lotMin');
+    const max = params.get('lotMax');
+    return min && max ? [parseFloat(min), parseFloat(max)] : null;
+  });
+  const [useExactLotArea, setUseExactLotArea] = useState<boolean>(() => new URLSearchParams(window.location.search).get('useExactLotArea') === 'true');
+  const [manualLotArea, setManualLotArea] = useState<string>(() => new URLSearchParams(window.location.search).get('manualLotArea') || '');
 
   const [isFloorAreaFilterOpen, setIsFloorAreaFilterOpen] = useState(false);
-  const [floorAreaRange, setFloorAreaRange] = useState<[number, number] | null>(null);
-  const [useExactFloorArea, setUseExactFloorArea] = useState<boolean>(false);
-  const [manualFloorArea, setManualFloorArea] = useState<string>('');
+  const [floorAreaRange, setFloorAreaRange] = useState<[number, number] | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const min = params.get('floorMin');
+    const max = params.get('floorMax');
+    return min && max ? [parseFloat(min), parseFloat(max)] : null;
+  });
+  const [useExactFloorArea, setUseExactFloorArea] = useState<boolean>(() => new URLSearchParams(window.location.search).get('useExactFloorArea') === 'true');
+  const [manualFloorArea, setManualFloorArea] = useState<string>(() => new URLSearchParams(window.location.search).get('manualFloorArea') || '');
+
+  // Share Toast notification state
+  const [showShareToast, setShowShareToast] = useState(false);
 
   // Graceful handling of Access Denied flash (especially during sign-out)
   useEffect(() => {
@@ -551,40 +591,112 @@ function App() {
   //   return () => clearTimeout(timerId);
   // }, [showRefreshPrompt, refreshCountdown]);
 
-  // Post-load search if URL had query
+  // Copy current URL to clipboard and trigger toast success message
+  const handleShareLink = () => {
+    navigator.clipboard.writeText(window.location.href)
+      .then(() => {
+        setShowShareToast(true);
+        setTimeout(() => setShowShareToast(false), 2500);
+      })
+      .catch((err) => {
+        console.error('Failed to copy link: ', err);
+      });
+  };
+
+  // Synchronize all filter and sort states with URL parameters
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const q = params.get('q');
-    if (!loading && q && !hasSearched) {
-      setHasSearched(true);
-      setQuery(q);
+    // Only synchronize once initial loading is done, to prevent overwriting URL parameters with empty values on mount
+    if (loading) return;
 
-      // Keyword search only (semantic search disabled)
-      const performSearch = async () => {
-        let keywordResults = searchListings(allListings, q, 0); // Always use broad match
+    const params = new URLSearchParams();
 
-        console.log('🔍 Using keyword search only');
-        setResults(keywordResults);
-      };
+    if (debouncedQuery) params.set('q', debouncedQuery);
+    if (selectedType) params.set('type', selectedType);
+    if (selectedCategory) params.set('category', selectedCategory);
+    if (selectedDirect) params.set('direct', 'true');
+    if (!showAllListings) params.set('showAll', 'false');
 
-      performSearch();
+    if (selectedRegion) params.set('region', selectedRegion);
+    if (selectedProvince) params.set('province', selectedProvince);
+    if (selectedCity) params.set('city', selectedCity);
+    if (selectedBarangay) params.set('barangay', selectedBarangay);
+
+    if (priceRange) {
+      params.set('priceMin', priceRange[0].toString());
+      params.set('priceMax', priceRange[1].toString());
     }
-  }, [loading, allListings, hasSearched]);
+    if (useExactPrice) params.set('useExactPrice', 'true');
+    if (manualPrice) params.set('manualPrice', manualPrice);
 
-  const updateUrlParams = (q: string) => {
-    const params = new URLSearchParams(window.location.search);
-    if (q) params.set('q', q);
-    else params.delete('q');
+    if (pricePerSqmRange) {
+      params.set('ppsMin', pricePerSqmRange[0].toString());
+      params.set('ppsMax', pricePerSqmRange[1].toString());
+    }
+    if (useExactPricePerSqm) params.set('useExactPricePerSqm', 'true');
+    if (manualPricePerSqm) params.set('manualPricePerSqm', manualPricePerSqm);
 
-    const newUrl = `${window.location.pathname}?${params.toString()}`;
-    window.history.replaceState({}, '', newUrl);
-  }
+    if (lotAreaRange) {
+      params.set('lotMin', lotAreaRange[0].toString());
+      params.set('lotMax', lotAreaRange[1].toString());
+    }
+    if (useExactLotArea) params.set('useExactLotArea', 'true');
+    if (manualLotArea) params.set('manualLotArea', manualLotArea);
+
+    if (floorAreaRange) {
+      params.set('floorMin', floorAreaRange[0].toString());
+      params.set('floorMax', floorAreaRange[1].toString());
+    }
+    if (useExactFloorArea) params.set('useExactFloorArea', 'true');
+    if (manualFloorArea) params.set('manualFloorArea', manualFloorArea);
+
+    if (selectedBedrooms.length > 0) params.set('bedrooms', selectedBedrooms.join(','));
+    if (selectedParking.length > 0) params.set('parking', selectedParking.join(','));
+    if (selectedPropertyTypes.length > 0) params.set('propertyTypes', selectedPropertyTypes.join(','));
+
+    if (sortConfig) {
+      params.set('sortKey', sortConfig.key);
+      params.set('sortDir', sortConfig.direction);
+    }
+
+    const currentQuery = window.location.search;
+    const newQuery = params.toString() ? `?${params.toString()}` : '';
+    if (currentQuery !== newQuery) {
+      const newUrl = `${window.location.pathname}${newQuery}`;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [
+    loading,
+    debouncedQuery,
+    selectedType,
+    selectedCategory,
+    selectedDirect,
+    showAllListings,
+    selectedRegion,
+    selectedProvince,
+    selectedCity,
+    selectedBarangay,
+    priceRange,
+    useExactPrice,
+    manualPrice,
+    pricePerSqmRange,
+    useExactPricePerSqm,
+    manualPricePerSqm,
+    lotAreaRange,
+    useExactLotArea,
+    manualLotArea,
+    floorAreaRange,
+    useExactFloorArea,
+    manualFloorArea,
+    selectedBedrooms,
+    selectedParking,
+    selectedPropertyTypes,
+    sortConfig
+  ]);
 
   // Effect: Re-search when debouncedQuery changes (always uses smart/broad match)
   useEffect(() => {
     if (debouncedQuery.trim() || hasSearched) {
       setHasSearched(true);
-      updateUrlParams(debouncedQuery);
 
       // Keyword search only (semantic search disabled)
       const performSearch = async () => {
@@ -1836,6 +1948,18 @@ function App() {
                     {isRefreshing ? 'REFRESHING...' : 'REFRESH'}
                   </span>
                 </button>
+
+                {/* Share Button (Desktop Only) */}
+                <button
+                  onClick={handleShareLink}
+                  className="hidden sm:flex items-center gap-2 bg-white px-4 py-3 rounded-2xl border border-gray-100 shadow-xl hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 h-[calc(100%-4px)]"
+                  title="Copy shareable link with current filters"
+                >
+                  <Share2 className="w-5 h-5 text-blue-600 animate-pulse" style={{ animationDuration: '3s' }} />
+                  <span className="text-xs sm:text-sm font-bold uppercase tracking-wide whitespace-nowrap select-none text-blue-600">
+                    SHARE
+                  </span>
+                </button>
               </div>
 
               {/* Mobile Only: Slider Toggle & Refresh */}
@@ -1869,6 +1993,16 @@ function App() {
                   {role === 'viewer' && (
                     <span className="text-[10px] font-bold text-gray-600 uppercase">Refresh Listings</span>
                   )}
+                </button>
+
+                {/* Mobile Share Button */}
+                <button
+                  onClick={handleShareLink}
+                  className="ml-2 p-2 rounded-lg bg-white shadow-md flex items-center justify-center gap-1.5 active:scale-95 transition-all duration-200"
+                  title="Share link"
+                >
+                  <Share2 className="w-4 h-4 text-blue-600" />
+                  <span className="text-[10px] font-bold text-blue-600 uppercase">Share</span>
                 </button>
               </div>
 
@@ -2798,6 +2932,21 @@ function App() {
               >
                 REFRESH NOW
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share Toast Notification */}
+      {showShareToast && (
+        <div className="fixed bottom-24 right-6 z-[999] animate-toast-slide-in">
+          <div className="flex items-center gap-3 bg-white/95 backdrop-blur-md px-5 py-4 rounded-2xl border border-gray-100 shadow-2xl transition-all duration-300">
+            <div className="w-9 h-9 rounded-full bg-green-50 flex items-center justify-center shadow-inner">
+              <Check className="w-5 h-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-gray-900 leading-none">Link copied!</p>
+              <p className="text-xs text-gray-500 mt-1">Filtered results are ready to share.</p>
             </div>
           </div>
         </div>

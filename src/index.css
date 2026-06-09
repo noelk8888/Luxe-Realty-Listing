@@ -61,3 +61,20 @@ input[type="range"]::-moz-range-thumb {
     border-top-color: #e5e7eb !important;
 }
 
+/* Share toast slide-in from bottom-right animation */
+@keyframes toast-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-toast-slide-in {
+  animation: toast-slide-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+
