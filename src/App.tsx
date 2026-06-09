@@ -2841,6 +2841,7 @@ function App() {
       <EditListingModal
         isOpen={showEditModal}
         listing={editingListing}
+        rowNumber={editingListing ? rowNumbers[editingListing.id] : undefined}
         onClose={() => {
           setShowEditModal(false);
           setEditingListing(null);

@@ -21,6 +21,7 @@ interface EditListingModalProps {
         sourceTab?: string;
     }) => Promise<void>;
     groupName?: string;
+    rowNumber?: number | null;
 }
 
 export const EditListingModal: React.FC<EditListingModalProps> = ({
@@ -28,7 +29,8 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
     listing,
     onClose,
     onSave,
-    groupName = 'Kiu'
+    groupName = 'Kiu',
+    rowNumber
 }) => {
     const [salePrice, setSalePrice] = useState('');
     const [leasePrice, setLeasePrice] = useState('');
@@ -215,8 +217,10 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
                     <div>
-                        <h2 className="text-lg font-bold text-gray-900">Update Listing</h2>
-                        <p className="text-xs text-gray-500 mt-0.5">{listing.id} - {listing.columnK || listing.building || listing.city}</p>
+                        <h2 className="text-lg font-bold text-gray-900">
+                            Update Listing {listing.id} {rowNumber ? `Row #${rowNumber}` : ''}
+                        </h2>
+                        <p className="text-xs text-gray-500 mt-0.5">{listing.columnK || listing.building || listing.city}</p>
                     </div>
                     <button
                         onClick={onClose}
