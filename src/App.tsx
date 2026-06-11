@@ -1925,7 +1925,7 @@ function App() {
                   <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors duration-200 ${showAllListings ? 'border-blue-600 bg-white' : 'border-gray-300 bg-gray-50'}`}>
                     {showAllListings && <div className="w-3 h-3 bg-blue-600 rounded-full" />}
                   </div>
-                  <span className={`text-xs sm:text-sm font-bold uppercase tracking-wide whitespace-nowrap select-none ${showAllListings ? 'text-blue-600' : 'text-gray-400'}`}>SHOW ALL</span>
+                  <span className={`text-xs sm:text-sm font-bold uppercase tracking-wide whitespace-nowrap select-none ${showAllListings ? 'text-blue-600' : 'text-gray-400'}`}>ALL</span>
                 </div>
                 )}
 
@@ -1933,17 +1933,9 @@ function App() {
                 <button
                   onClick={handleRefresh}
                   disabled={isRefreshing}
-                  className="hidden sm:flex items-center gap-2 bg-white px-4 py-3 rounded-2xl border border-gray-100 shadow-xl hover:shadow-2xl transition-all duration-300 h-[calc(100%-4px)] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="hidden sm:flex items-center bg-white px-4 py-3 rounded-2xl border border-gray-100 shadow-xl hover:shadow-2xl transition-all duration-300 h-[calc(100%-4px)] disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Refresh data from server"
                 >
-                  <svg
-                    className={`w-5 h-5 ${isRefreshing ? 'animate-spin text-blue-600' : 'text-gray-600'}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
                   <span className={`text-xs sm:text-sm font-bold uppercase tracking-wide whitespace-nowrap select-none ${isRefreshNeeded ? 'text-red-600 animate-pulse' : 'text-gray-600'}`}>
                     {isRefreshing ? 'REFRESHING...' : 'REFRESH'}
                   </span>
@@ -1952,10 +1944,9 @@ function App() {
                 {/* Share Button (Desktop Only) */}
                 <button
                   onClick={handleShareLink}
-                  className="hidden sm:flex items-center gap-2 bg-white px-4 py-3 rounded-2xl border border-gray-100 shadow-xl hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 h-[calc(100%-4px)]"
+                  className="hidden sm:flex items-center bg-white px-4 py-3 rounded-2xl border border-gray-100 shadow-xl hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 h-[calc(100%-4px)]"
                   title="Copy shareable link with current filters"
                 >
-                  <Share2 className="w-5 h-5 text-blue-600 animate-pulse" style={{ animationDuration: '3s' }} />
                   <span className="text-xs sm:text-sm font-bold uppercase tracking-wide whitespace-nowrap select-none text-blue-600">
                     SHARE
                   </span>
@@ -1972,7 +1963,7 @@ function App() {
                 >
                   <div className={`absolute top-1/2 -translate-y-1/2 w-6 h-6 rounded-full shadow-md transition-all duration-300 ${!showAllListings ? 'left-0 bg-blue-600' : 'left-[calc(100%-1.5rem)] bg-blue-600'}`} />
                 </div>
-                <span className={`text-xs font-bold ${showAllListings ? 'text-blue-600' : 'text-gray-400'}`}>SHOW ALL</span>
+                <span className={`text-xs font-bold ${showAllListings ? 'text-blue-600' : 'text-gray-400'}`}>ALL</span>
                 </>)}
 
                 {/* Mobile Refresh Button */}
