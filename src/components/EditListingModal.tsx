@@ -90,7 +90,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
             return;
         }
         setUpdateDate(true);
-    }, [monthlyDues]);
+    }, [salePrice, leasePrice, monthlyDues]);
 
     // Auto-clear verification if coordinates change
     useEffect(() => {
@@ -131,12 +131,41 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
 
     if (!isOpen || !listing) return null;
 
+    const formatNumberInput = (value: string): string => {
+        // Remove non-numeric characters except decimal point
+        const cleaned = value.replace(/[^0-9.]/g, '');
+        // Format with commas
+        const parts = cleaned.split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return parts.join('.');
+    };
+
     const parseNumber = (value: string): number => {
         return parseFloat(value.replace(/,/g, '')) || 0;
     };
 
+    // Calculate sale price per sqm - prioritize LOT AREA (land being sold)
+    const calculateSalePricePerSqm = (price: number): number => {
+        const area = listing.lotArea > 0 ? listing.lotArea : listing.floorArea;
+        if (area > 0 && price > 0) {
+            return Math.round(price / area);
+        }
+        return 0;
+    };
+
+    // Calculate lease price per sqm - prioritize FLOOR AREA (space being rented)
+    const calculateLeasePricePerSqm = (price: number): number => {
+        const area = listing.floorArea > 0 ? listing.floorArea : listing.lotArea;
+        if (area > 0 && price > 0) {
+            return Math.round(price / area);
+        }
+        return 0;
+    };
+
     const salePriceNum = parseNumber(salePrice);
     const leasePriceNum = parseNumber(leasePrice);
+    const salePricePerSqm = calculateSalePricePerSqm(salePriceNum);
+    const leasePricePerSqm = calculateLeasePricePerSqm(leasePriceNum);
 
     // Parse lat/long from the input for preview
     const parsedCoords = (() => {
@@ -232,6 +261,43 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="px-5 py-4 space-y-3">
+                    {/* Sale Price */}
+                    {permissions.edit_sale_price && (
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">
+                            Sale Price (PHP)
+                        </label>
+                        <input
+                            type="text"
+                            value={salePrice ? formatNumberInput(salePrice) : ''}
+                            onChange={(e) => setSalePrice(e.target.value.replace(/,/g, ''))}
+                            placeholder="e.g. 5,000,000"
+                            className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                        {salePricePerSqm > 0 && (
+                            <p className="text-xs text-gray-500 mt-0.5">= P{salePricePerSqm.toLocaleString()}/sqm</p>
+                        )}
+                    </div>
+                    )}
+
+                    {/* Lease Price */}
+                    {permissions.edit_lease_price && (
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">
+                            Lease Price (PHP/mo)
+                        </label>
+                        <input
+                            type="text"
+                            value={leasePrice ? formatNumberInput(leasePrice) : ''}
+                            onChange={(e) => setLeasePrice(e.target.value.replace(/,/g, ''))}
+                            placeholder="e.g. 50,000"
+                            className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                        {leasePricePerSqm > 0 && (
+                            <p className="text-xs text-gray-500 mt-0.5">= P{leasePricePerSqm.toLocaleString()}/sqm</p>
+                        )}
+                    </div>
+                    )}
 
 
                     {/* Monthly Dues */}

@@ -247,8 +247,37 @@ export const normalizeDbListing = (row: DbListing): Listing => {
         return match ? parseInt(match[0]) : 0;
     };
 
-    const price = parseFirstPrice(row['Extracted Sale Price']);
-    const leasePrice = parseFirstPrice(row['Extracted Lease Price']);
+    let price = parseFirstPrice(row['Extracted Sale Price']);
+    let leasePrice = parseFirstPrice(row['Extracted Lease Price']);
+
+    // Summary Logic
+    const rawSummary = (row['MAIN'] || '').trim();
+    const allLines = rawSummary.split(/\r?\n/).map(l => l.trim());
+    const fullSummary = rawSummary;
+
+    // Determine Sale Type from Text Header first to override bad extractions
+    let textSaleType = '';
+    const headerLine = allLines.find(line => {
+        const upper = line.toUpperCase();
+        return upper.includes('FOR LEASE') || upper.includes('FOR SALE') || upper.includes('FOR SALE/LEASE') || upper.includes('FOR SALE / LEASE');
+    });
+
+    if (headerLine) {
+        const upper = headerLine.toUpperCase();
+        if (upper.includes('FOR SALE/LEASE') || upper.includes('FOR SALE / LEASE') || (upper.includes('FOR SALE') && upper.includes('FOR LEASE'))) {
+            textSaleType = 'SALE/LEASE';
+        } else if (upper.includes('FOR LEASE')) {
+            textSaleType = 'FOR LEASE';
+        } else if (upper.includes('FOR SALE')) {
+            textSaleType = 'FOR SALE';
+        }
+    }
+
+    if (textSaleType === 'FOR LEASE') {
+        price = 0;
+    } else if (textSaleType === 'FOR SALE') {
+        leasePrice = 0;
+    }
 
     // Determine Sale Type Logic
     let saleType = '';
@@ -258,6 +287,8 @@ export const normalizeDbListing = (row: DbListing): Listing => {
         saleType = 'FOR SALE';
     } else if (leasePrice > 0) {
         saleType = 'FOR LEASE';
+    } else if (textSaleType) {
+        saleType = textSaleType;
     }
 
     // Category Logic
@@ -267,11 +298,6 @@ export const normalizeDbListing = (row: DbListing): Listing => {
     if (row['INDUSTRIAL'] && row['INDUSTRIAL'].trim()) categories.push('INDUSTRIAL');
     if (row['AGRICULTURAL'] && row['AGRICULTURAL'].trim()) categories.push('AGRICULTURAL');
     const category = categories.join(', ');
-
-    // Summary Logic
-    const rawSummary = (row['MAIN'] || '').trim();
-    const allLines = rawSummary.split(/\r?\n/).map(l => l.trim());
-    const fullSummary = rawSummary;
 
     // Find non-empty content
     const nonEmptyIndices = allLines.reduce((acc, line, idx) => {
