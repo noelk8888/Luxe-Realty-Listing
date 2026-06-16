@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import type { User, Session } from '@supabase/supabase-js';
 import { clearCache } from '../services/listingsCache';
 
-export type Role = 'superadmin' | 'admin' | 'editor' | 'broker' | 'viewer' | null;
+export type Role = 'superadmin' | 'admin' | 'editor' | 'broker' | 'v1' | 'v2' | null;
 
 export interface GroupBranding {
     brandName: string | null;
@@ -66,11 +66,12 @@ async function fetchUserProfile(email: string): Promise<{ role: Role; displayRol
     const dbRole = (data?.role as string || '').toUpperCase();
     
     // Calculate Internal Role
-    let role: Role = 'viewer';
+    let role: Role = 'v1';
     if (dbRole === 'ADMIN') role = 'admin';
     else if (dbRole === 'SUPERADMIN') role = 'superadmin';
     else if (dbRole === 'EDITOR') role = 'editor';
     else if (dbRole === 'BROKER') role = 'broker';
+    else if (dbRole === 'V2') role = 'v2';
 
     // Elevation via hardcoded list or env var
     const saEmailsEnv = (import.meta.env.VITE_SUPERADMIN_EMAILS || '')

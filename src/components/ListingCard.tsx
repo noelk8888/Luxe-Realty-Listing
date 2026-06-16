@@ -116,12 +116,10 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                 }
             }
 
-            const hasGooglePin = /google\s*pin\s*:/i.test(copyText);
-            if (mapsLink && listing.mapVerified && !copyText.includes('Verified Map Location:') && !hasGooglePin) copyText += `\nVerified Map Location: ${mapsLink}`;
-            if (notes) copyText += `\n\nThere's a NOTE in this listing. Check it in the app`;
+            let footer = '';
 
-            // Prepend updated date if available, or fallback to "Last Update Unknown"
-            let datePrefix = 'Last Update Unknown\n';
+            // Update date
+            let datePrefix = 'Last Update Unknown';
             if (listing.columnBC) {
                 const parts = listing.columnBC.split(' | ');
                 const datePart = parts[0]?.trim();
@@ -133,11 +131,24 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                             day: 'numeric',
                             year: 'numeric'
                         });
-                        datePrefix = `${formattedDate} update\n`;
+                        datePrefix = `${formattedDate} update`;
                     }
                 }
             }
-            copyText = `${datePrefix}${copyText}`;
+            footer += datePrefix;
+
+            // Map link
+            const hasGooglePin = /google\s*pin\s*:/i.test(copyText);
+            if (mapsLink && listing.mapVerified && !copyText.includes('Verified Map Location:') && !hasGooglePin) {
+                footer += `\nVerified Map Location: ${mapsLink}`;
+            }
+
+            // Note
+            if (notes) {
+                footer += `\nThere's a NOTE in this listing. Check it in the app`;
+            }
+
+            copyText = `${copyText}\n\n${footer}`;
 
             navigator.clipboard.writeText(copyText);
             setIsCopied(true);

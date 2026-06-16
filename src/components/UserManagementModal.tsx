@@ -5,7 +5,7 @@ import type { Feature } from '../contexts/PermissionsContext';
 import { useAuth } from '../contexts/AuthContext';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-type AppRole = 'SUPERADMIN' | 'ADMIN' | 'EDITOR' | 'BROKER' | 'VIEWER';
+type AppRole = 'SUPERADMIN' | 'ADMIN' | 'EDITOR' | 'BROKER' | 'V1' | 'V2';
 type Tab = 'users' | 'permissions' | 'groups';
 
 interface FbGroup {
@@ -37,14 +37,15 @@ interface UserManagementModalProps {
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const ROLES: AppRole[] = ['ADMIN', 'EDITOR', 'BROKER', 'VIEWER'];
+const ROLES: AppRole[] = ['ADMIN', 'EDITOR', 'BROKER', 'V1', 'V2'];
 
 const ROLE_ORDER: Record<string, number> = {
     SUPERADMIN: 0,
     ADMIN: 0,
     EDITOR: 1,
     BROKER: 2,
-    VIEWER: 3,
+    V1: 3,
+    V2: 4,
 };
 
 // Hardcoded masking for "Stealth" users
@@ -59,7 +60,8 @@ const ROLE_BADGE: Record<AppRole, string> = {
     ADMIN:  'bg-purple-50 text-purple-700 border border-purple-200',
     EDITOR: 'bg-amber-50 text-amber-700 border border-amber-200',
     BROKER: 'bg-blue-50 text-blue-700 border border-blue-200',
-    VIEWER: 'bg-gray-100 text-gray-500 border border-gray-200',
+    V1: 'bg-gray-100 text-gray-500 border border-gray-200',
+    V2: 'bg-gray-100 text-gray-500 border border-gray-200',
 };
 
 const ROLE_TOGGLE_COLORS: Record<AppRole, string> = {
@@ -67,7 +69,8 @@ const ROLE_TOGGLE_COLORS: Record<AppRole, string> = {
     ADMIN:  'bg-purple-500',
     EDITOR: 'bg-amber-500',
     BROKER: 'bg-blue-500',
-    VIEWER: 'bg-gray-400',
+    V1: 'bg-gray-400',
+    V2: 'bg-gray-400',
 };
 
 const FEATURES: { key: Feature; label: string; group: string; active: boolean }[] = [
@@ -164,7 +167,7 @@ const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
         // Misc
         export_data: false, manage_users: false,
     },
-    VIEWER: {
+    V1: {
         add_listing: false, edit_listing: false, delete_listing: false,
         telegram_send: false, batch_review: false, ai_extract: false,
         // Listing Card
@@ -173,6 +176,21 @@ const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
         show_all: false, view_fb_link: false, view_map: true, view_copy: false, view_notes: false,
         change_status: false, geo_id_click: true, view_last_update: true, copy_photo_link: false,
         viewing_listing: false, full_screen_map: false, map_preview: true,
+        // Edit Section
+        edit_sale_price: false, edit_lease_price: false, edit_notes: false, edit_monthly_dues: false,
+        edit_coordinates: false, geocoding: false, edit_fb_link: false, edit_update_date: false,
+        // Misc
+        export_data: false, manage_users: false,
+    },
+    V2: {
+        add_listing: false, edit_listing: false, delete_listing: false,
+        telegram_send: false, batch_review: false, ai_extract: false,
+        // Listing Card
+        view_col_k: false, view_listing_ownership: false, view_pricing: false,
+        view_photos: false, view_col_aa: false, view_col_ac: false,
+        show_all: false, view_fb_link: false, view_map: false, view_copy: false, view_notes: false,
+        change_status: false, geo_id_click: false, view_last_update: true, copy_photo_link: false,
+        viewing_listing: false, full_screen_map: false, map_preview: false,
         // Edit Section
         edit_sale_price: false, edit_lease_price: false, edit_notes: false, edit_monthly_dues: false,
         edit_coordinates: false, geocoding: false, edit_fb_link: false, edit_update_date: false,
@@ -191,7 +209,8 @@ function buildDefaultPermState(): PermState {
             ADMIN:   ROLE_DEFAULTS.ADMIN[f.key],
             EDITOR:  ROLE_DEFAULTS.EDITOR[f.key],
             BROKER:  ROLE_DEFAULTS.BROKER[f.key],
-            VIEWER:  ROLE_DEFAULTS.VIEWER[f.key],
+            V1:  ROLE_DEFAULTS.V1[f.key],
+            V2:  ROLE_DEFAULTS.V2[f.key],
         };
     }
     return state;
@@ -218,8 +237,8 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
     const currentRole = (currentRoleRaw || '').toUpperCase() as AppRole;
     const isSuperAdmin = currentRole === 'SUPERADMIN';
     const visibleRoles: AppRole[] = currentRole === 'ADMIN'
-        ? ['EDITOR', 'BROKER', 'VIEWER']
-        : ['ADMIN', 'EDITOR', 'BROKER', 'VIEWER'];
+        ? ['EDITOR', 'BROKER', 'V1', 'V2']
+        : ['ADMIN', 'EDITOR', 'BROKER', 'V1', 'V2'];
 
     const [activeTab, setActiveTab] = useState<Tab>('users');
 
@@ -227,7 +246,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
     const [users, setUsers] = useState<AppUser[]>([]);
     const [usersLoading, setUsersLoading] = useState(true);
     const [editingEmail, setEditingEmail] = useState<string | null>(null);
-    const [editRole, setEditRole] = useState<AppRole>('VIEWER');
+    const [editRole, setEditRole] = useState<AppRole>('V1');
     const [editName, setEditName] = useState('');
     const [editFbLink, setEditFbLink] = useState('');
     const [editFbGroup, setEditFbGroup] = useState('');
@@ -239,7 +258,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
     const [showAddForm, setShowAddForm] = useState(false);
     const [newEmail, setNewEmail] = useState('');
     const [newName, setNewName] = useState('');
-    const [newRole, setNewRole] = useState<AppRole>('VIEWER');
+    const [newRole, setNewRole] = useState<AppRole>('V1');
     const [newFbLink, setNewFbLink] = useState('');
     const [newFbGroup, setNewFbGroup] = useState('');
     const [addingUser, setAddingUser] = useState(false);
@@ -308,14 +327,18 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
         if (error) {
             setError('Failed to load users: ' + error.message);
         } else {
-            const formattedUsers = (data ?? []).map(u => ({
-                ...u,
-                role: (u.role as string).toUpperCase() as AppRole
-            }));
+            const formattedUsers = (data ?? []).map(u => {
+                let r = (u.role as string).toUpperCase();
+                if (r === 'VIEWER') r = 'V1';
+                return {
+                    ...u,
+                    role: r as AppRole
+                };
+            });
 
             // Custom sort logic:
             // 1. "Luxe" group members always on top
-            // 2. Then by Role (ADMIN > EDITOR > BROKER > VIEWER)
+            // 2. Then by Role (ADMIN > EDITOR > BROKER > V1 > V2)
             // 3. Then by Name (alphabetical)
             formattedUsers.sort((a, b) => {
                 const aGroup = (a.fb_group || '').trim().toLowerCase();
@@ -396,7 +419,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
         if (error) {
             setError(error.code === '23505' ? `${emailTrimmed} is already in the system.` : 'Failed to add user: ' + error.message);
         } else {
-            setNewEmail(''); setNewName(''); setNewRole('VIEWER'); setNewFbLink(''); setNewFbGroup('');
+            setNewEmail(''); setNewName(''); setNewRole('V1'); setNewFbLink(''); setNewFbGroup('');
             setShowAddForm(false);
             showSuccess(`Added ${emailTrimmed} as ${newRole}`);
             await fetchUsers();
@@ -499,7 +522,9 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
             setPerms(prev => {
                 const next = { ...prev };
                 for (const row of data) {
-                    const role = (row.role as string).toUpperCase() as AppRole;
+                    let roleStr = (row.role as string).toUpperCase();
+                    if (roleStr === 'VIEWER') roleStr = 'V1';
+                    const role = roleStr as AppRole;
                     const feature = row.feature as Feature;
                     if (next[feature] && ROLES.includes(role)) {
                         next[feature] = { ...next[feature], [role]: row.enabled };
@@ -637,7 +662,8 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                             <option value="ADMIN">ADMIN</option>
                                             <option value="EDITOR">EDITOR</option>
                                             <option value="BROKER">BROKER</option>
-                                            <option value="VIEWER">VIEWER</option>
+                                            <option value="V1">V1</option>
+                                            <option value="V2">V2</option>
                                         </select>
                                     </div>
                                     <div>
@@ -721,7 +747,8 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                                 <option value="ADMIN">ADMIN</option>
                                                                 <option value="EDITOR">EDITOR</option>
                                                                 <option value="BROKER">BROKER</option>
-                                                                <option value="VIEWER">VIEWER</option>
+                                                                <option value="V1">V1</option>
+                                                                <option value="V2">V2</option>
                                                             </select>
                                                         </td>
                                                         <td className="px-5 py-2.5 hidden sm:table-cell" />

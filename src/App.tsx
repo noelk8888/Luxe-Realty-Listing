@@ -1388,6 +1388,10 @@ function App() {
     mapVerified: string;
     mapLink: string;
     sourceTab?: string;
+    residential: boolean;
+    commercial: boolean;
+    industrial: boolean;
+    agricultural: boolean;
   }) => {
     console.log('Editing listing:', { listingId, updates });
 
@@ -1473,6 +1477,10 @@ function App() {
         'LAT': parsedLat !== null ? parsedLat.toString() : (listing.lat?.toString() || null),
         'LONG': parsedLng !== null ? parsedLng.toString() : (listing.lng?.toString() || null),
         'MAP VERIFIED': updates.mapVerified !== undefined ? (updates.mapVerified || null) : (listing.mapVerified || null),
+        'RESIDENTIAL': updates.residential ? 'TRUE' : null,
+        'COMMERCIAL': updates.commercial ? 'TRUE' : null,
+        'INDUSTRIAL': updates.industrial ? 'TRUE' : null,
+        'AGRICULTURAL': updates.agricultural ? 'TRUE' : null,
         ...(updates.mapLink !== undefined && { 'MAP LINK': updates.mapLink || null }),
         ...(updates.fbLink !== undefined && {
           [fbGroup === 'Nexia' ? 'BQ'
@@ -1637,7 +1645,8 @@ function App() {
               {(displayRole === 'admin' || displayRole === 'superadmin') ? 'ADMIN'
                 : displayRole === 'editor' ? 'EDITOR'
                 : displayRole === 'broker' ? 'BROKER'
-                : 'VIEWER'}
+                : displayRole === 'v2' ? 'V2'
+                : 'V1'}
             </span>
             {(role === 'superadmin' || role === 'admin') && (
               <button
@@ -1981,7 +1990,7 @@ function App() {
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
-                  {role === 'viewer' && (
+                  {(role === 'v1' || role === 'v2') && (
                     <span className="text-[10px] font-bold text-gray-600 uppercase">Refresh Listings</span>
                   )}
                 </button>

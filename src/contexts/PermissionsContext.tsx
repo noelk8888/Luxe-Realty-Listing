@@ -57,7 +57,7 @@ const ALL_FEATURES: Feature[] = [
 ];
 
 // ── Role defaults ─────────────────────────────────────────────────────────────
-const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'viewer', Record<Feature, boolean>> = {
+const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'v1' | 'v2', Record<Feature, boolean>> = {
     admin: {
         add_listing: true, edit_listing: true, delete_listing: true,
         telegram_send: true, batch_review: true, ai_extract: true,
@@ -103,7 +103,7 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'viewer', Record<Fea
         full_screen_map: false,
         map_preview: true, viewing_listing: false,
     },
-    viewer: {
+    v1: {
         add_listing: false, edit_listing: false, delete_listing: false,
         telegram_send: false, batch_review: false, ai_extract: false,
         geocoding: false, view_pricing: false,
@@ -118,6 +118,21 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'viewer', Record<Fea
         full_screen_map: false,
         map_preview: true, viewing_listing: false,
     },
+    v2: {
+        add_listing: false, edit_listing: false, delete_listing: false,
+        telegram_send: false, batch_review: false, ai_extract: false,
+        geocoding: false, view_pricing: false,
+        view_photos: false, export_data: false, manage_users: false,
+        view_fb_link: false,
+        view_col_k: false, view_listing_ownership: false, view_col_aa: false, view_col_ac: false,
+        view_map: false, view_copy: false, view_notes: false,
+        change_status: false, geo_id_click: false,
+        edit_sale_price: false, edit_lease_price: false, edit_notes: false,
+        edit_coordinates: false, edit_fb_link: false, edit_update_date: false,
+        show_all: false, view_last_update: true, edit_monthly_dues: false, copy_photo_link: false,
+        full_screen_map: false,
+        map_preview: false, viewing_listing: false,
+    },
 };
 
 const ALL_ENABLED = Object.fromEntries(ALL_FEATURES.map(f => [f, true])) as Record<Feature, boolean>;
@@ -125,9 +140,9 @@ const ALL_DENIED  = Object.fromEntries(ALL_FEATURES.map(f => [f, false])) as Rec
 
 async function resolvePermissions(email: string, role: string): Promise<Record<Feature, boolean>> {
     if (role === 'superadmin') return ALL_ENABLED;
-    if (!['admin', 'editor', 'broker', 'viewer'].includes(role)) return ALL_DENIED;
+    if (!['admin', 'editor', 'broker', 'v1', 'v2'].includes(role)) return ALL_DENIED;
 
-    const typedRole = role as 'admin' | 'editor' | 'broker' | 'viewer';
+    const typedRole = role as 'admin' | 'editor' | 'broker' | 'v1' | 'v2';
     const perms: Record<Feature, boolean> = { ...ROLE_DEFAULTS[typedRole] };
 
     // Apply role-level DB overrides

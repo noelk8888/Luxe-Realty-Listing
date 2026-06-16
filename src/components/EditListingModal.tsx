@@ -19,6 +19,10 @@ interface EditListingModalProps {
         mapVerified: string;
         mapLink: string;
         sourceTab?: string;
+        residential: boolean;
+        commercial: boolean;
+        industrial: boolean;
+        agricultural: boolean;
     }) => Promise<void>;
     groupName?: string;
     rowNumber?: number | null;
@@ -48,6 +52,12 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
     const [locationError, setLocationError] = useState<string | null>(null);
     const [mapVerified, setMapVerified] = useState('');
     const [mapLink, setMapLink] = useState('');
+    
+    // Type Categories
+    const [residential, setResidential] = useState(false);
+    const [commercial, setCommercial] = useState(false);
+    const [industrial, setIndustrial] = useState(false);
+    const [agricultural, setAgricultural] = useState(false);
     const { permissions } = usePermissions();
     const { fbGroup, user, role, userName } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -76,6 +86,14 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
             setFbLink((fbGroup ? groupPostLink[fbGroup] : listing.facebookLink) || '');
             setMapVerified(listing.mapVerified || '');
             setMapLink(listing.mapLink || '');
+            
+            // Set initial types
+            const catStr = listing.category || '';
+            setResidential(catStr.includes('RESIDENTIAL'));
+            setCommercial(catStr.includes('COMMERCIAL'));
+            setIndustrial(catStr.includes('INDUSTRIAL'));
+            setAgricultural(catStr.includes('AGRICULTURAL'));
+            
             setLocationError(null);
             setError(null);
             isInitialLoad.current = true; // Mark as initial load
@@ -231,6 +249,10 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                 fbLink: fbLink.trim(),
                 mapVerified: finalMapVerified,
                 mapLink: mapLink.trim(),
+                residential,
+                commercial,
+                industrial,
+                agricultural,
             });
             onClose();
         } catch (err) {
@@ -264,18 +286,23 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                     {/* Sale Price */}
                     {permissions.edit_sale_price && (
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">
-                            Sale Price (PHP)
-                        </label>
-                        <input
-                            type="text"
-                            value={salePrice ? formatNumberInput(salePrice) : ''}
-                            onChange={(e) => setSalePrice(e.target.value.replace(/,/g, ''))}
-                            placeholder="e.g. 5,000,000"
-                            className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
+                        <div className="flex items-center gap-3">
+                            <label className="w-1/3 text-sm font-bold text-gray-700">
+                                Sale Price (PHP)
+                            </label>
+                            <input
+                                type="text"
+                                value={salePrice ? formatNumberInput(salePrice) : ''}
+                                onChange={(e) => setSalePrice(e.target.value.replace(/,/g, ''))}
+                                placeholder="e.g. 5,000,000"
+                                className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                        </div>
                         {salePricePerSqm > 0 && (
-                            <p className="text-xs text-gray-500 mt-0.5">= P{salePricePerSqm.toLocaleString()}/sqm</p>
+                            <div className="flex">
+                                <div className="w-1/3"></div>
+                                <p className="flex-1 text-xs text-gray-500 mt-0.5 pl-1">= P{salePricePerSqm.toLocaleString()}/sqm</p>
+                            </div>
                         )}
                     </div>
                     )}
@@ -283,27 +310,76 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                     {/* Lease Price */}
                     {permissions.edit_lease_price && (
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">
-                            Lease Price (PHP/mo)
-                        </label>
-                        <input
-                            type="text"
-                            value={leasePrice ? formatNumberInput(leasePrice) : ''}
-                            onChange={(e) => setLeasePrice(e.target.value.replace(/,/g, ''))}
-                            placeholder="e.g. 50,000"
-                            className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
+                        <div className="flex items-center gap-3">
+                            <label className="w-1/3 text-sm font-bold text-gray-700">
+                                Lease Price (PHP/mo)
+                            </label>
+                            <input
+                                type="text"
+                                value={leasePrice ? formatNumberInput(leasePrice) : ''}
+                                onChange={(e) => setLeasePrice(e.target.value.replace(/,/g, ''))}
+                                placeholder="e.g. 50,000"
+                                className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                        </div>
                         {leasePricePerSqm > 0 && (
-                            <p className="text-xs text-gray-500 mt-0.5">= P{leasePricePerSqm.toLocaleString()}/sqm</p>
+                            <div className="flex">
+                                <div className="w-1/3"></div>
+                                <p className="flex-1 text-xs text-gray-500 mt-0.5 pl-1">= P{leasePricePerSqm.toLocaleString()}/sqm</p>
+                            </div>
                         )}
                     </div>
                     )}
 
+                    {/* Type / Categories */}
+                    <div className="flex items-center gap-3">
+                        <label className="w-1/3 text-sm font-bold text-gray-700">
+                            Type
+                        </label>
+                        <div className="flex-1 flex flex-wrap gap-x-4 gap-y-2">
+                            <label className="flex items-center gap-1.5 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={residential}
+                                    onChange={(e) => setResidential(e.target.checked)}
+                                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="text-xs font-bold text-gray-700">RESIDENTIAL</span>
+                            </label>
+                            <label className="flex items-center gap-1.5 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={commercial}
+                                    onChange={(e) => setCommercial(e.target.checked)}
+                                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="text-xs font-bold text-gray-700">COMMERCIAL</span>
+                            </label>
+                            <label className="flex items-center gap-1.5 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={industrial}
+                                    onChange={(e) => setIndustrial(e.target.checked)}
+                                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="text-xs font-bold text-gray-700">INDUSTRIAL</span>
+                            </label>
+                            <label className="flex items-center gap-1.5 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={agricultural}
+                                    onChange={(e) => setAgricultural(e.target.checked)}
+                                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="text-xs font-bold text-gray-700">AGRICULTURAL</span>
+                            </label>
+                        </div>
+                    </div>
 
                     {/* Monthly Dues */}
                     {permissions.edit_monthly_dues && (
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">
+                    <div className="flex items-center gap-3">
+                        <label className="w-1/3 text-sm font-bold text-gray-700">
                             Monthly Dues (PHP)
                         </label>
                         <input
@@ -311,7 +387,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                             value={monthlyDues}
                             onChange={(e) => setMonthlyDues(e.target.value)}
                             placeholder="e.g. 2,681.92/month"
-                            className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                     </div>
                     )}
