@@ -137,9 +137,17 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             }
             footer += datePrefix;
 
+            // Remove existing Verified Map Location from copyText to move it to footer
+            const verifiedMapRegex = /\n?Verified Map Location:.*?(\n|$)/gi;
+            const existingMapLineMatch = copyText.match(verifiedMapRegex);
+            copyText = copyText.replace(verifiedMapRegex, '').trimEnd();
+
             // Map link
             const hasGooglePin = /google\s*pin\s*:/i.test(copyText);
-            if (mapsLink && listing.mapVerified && !copyText.includes('Verified Map Location:') && !hasGooglePin) {
+            if (existingMapLineMatch) {
+                // If it was already in the text, append it exactly
+                footer += `\n${existingMapLineMatch[0].trim()}`;
+            } else if (mapsLink && listing.mapVerified && !hasGooglePin) {
                 footer += `\nVerified Map Location: ${mapsLink}`;
             }
 
