@@ -93,6 +93,7 @@ const FEATURES: { key: Feature; label: string; group: string; active: boolean }[
     { key: 'viewing_listing',       label: 'Viewing Button',    group: 'Listing Card',  active: true  },
     { key: 'full_screen_map',       label: 'Neighbor Map FS',   group: 'Listing Card',  active: true  },
     { key: 'map_preview',           label: 'Map Preview',       group: 'Listing Card',  active: true  },
+    { key: 'preview_pic',           label: 'Preview Pic',       group: 'Listing Card',  active: true  },
     // ── Edit Section ──────────────────────────────────────────────────────────
     { key: 'edit_sale_price',       label: 'Sale Price',        group: 'Edit Section',  active: true  },
     { key: 'edit_lease_price',      label: 'Lease Price',       group: 'Edit Section',  active: true  },
@@ -114,6 +115,7 @@ const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
         show_all: true, view_fb_link: true, view_map: true, view_copy: true, view_notes: true,
         change_status: true, geo_id_click: true, view_last_update: true, copy_photo_link: false, edit_listing: true,
         viewing_listing: true, full_screen_map: true, map_preview: true,
+        preview_pic: true,
         // Edit Section
         edit_sale_price: true, edit_lease_price: true, edit_notes: true, edit_monthly_dues: true,
         edit_coordinates: true, geocoding: true, edit_fb_link: true, edit_update_date: true,
@@ -129,6 +131,7 @@ const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
         show_all: true, view_fb_link: true, view_map: true, view_copy: true, view_notes: true,
         change_status: true, geo_id_click: true, view_last_update: true, copy_photo_link: false, edit_listing: true,
         viewing_listing: true, full_screen_map: true, map_preview: true,
+        preview_pic: true,
         // Edit Section
         edit_sale_price: true, edit_lease_price: true, edit_notes: true, edit_monthly_dues: true,
         edit_coordinates: true, geocoding: true, edit_fb_link: true, edit_update_date: true,
@@ -146,6 +149,7 @@ const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
         show_all: true, view_fb_link: true, view_map: true, view_copy: true, view_notes: true,
         change_status: true, geo_id_click: true, view_last_update: true, copy_photo_link: false,
         viewing_listing: false, full_screen_map: false, map_preview: true,
+        preview_pic: true,
         // Edit Section
         edit_sale_price: true, edit_lease_price: true, edit_notes: true, edit_monthly_dues: true,
         edit_coordinates: true, geocoding: true, edit_fb_link: true, edit_update_date: true,
@@ -161,6 +165,7 @@ const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
         show_all: true, view_fb_link: true, view_map: true, view_copy: true, view_notes: true,
         change_status: true, geo_id_click: true, view_last_update: true, copy_photo_link: false,
         viewing_listing: false, full_screen_map: false, map_preview: true,
+        preview_pic: true,
         // Edit Section
         edit_sale_price: false, edit_lease_price: false, edit_notes: false, edit_monthly_dues: false,
         edit_coordinates: true, geocoding: true, edit_fb_link: true, edit_update_date: true,
@@ -176,6 +181,7 @@ const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
         show_all: false, view_fb_link: false, view_map: true, view_copy: false, view_notes: false,
         change_status: false, geo_id_click: true, view_last_update: true, copy_photo_link: false,
         viewing_listing: false, full_screen_map: false, map_preview: true,
+        preview_pic: true,
         // Edit Section
         edit_sale_price: false, edit_lease_price: false, edit_notes: false, edit_monthly_dues: false,
         edit_coordinates: false, geocoding: false, edit_fb_link: false, edit_update_date: false,
@@ -191,6 +197,7 @@ const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
         show_all: false, view_fb_link: false, view_map: false, view_copy: false, view_notes: false,
         change_status: false, geo_id_click: false, view_last_update: true, copy_photo_link: false,
         viewing_listing: false, full_screen_map: false, map_preview: false,
+        preview_pic: false,
         // Edit Section
         edit_sale_price: false, edit_lease_price: false, edit_notes: false, edit_monthly_dues: false,
         edit_coordinates: false, geocoding: false, edit_fb_link: false, edit_update_date: false,

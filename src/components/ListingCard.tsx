@@ -25,6 +25,20 @@ interface ListingCardProps {
     rowNumber?: number | null;
 }
 
+const getImageUrl = (photoLink: string | undefined): { isGooglePhotos: boolean; directUrl?: string } => {
+    if (!photoLink) return { isGooglePhotos: false };
+    const cleanLink = photoLink.trim();
+    if (!cleanLink.startsWith('http')) return { isGooglePhotos: false };
+
+    const isGooglePhotos = cleanLink.includes('photos.app.goo.gl') || cleanLink.includes('photos.google.com');
+    if (!isGooglePhotos) {
+        return { isGooglePhotos: false, directUrl: cleanLink };
+    }
+    return { isGooglePhotos: true };
+};
+
+const failedPhotoExtractions = new Set<string>();
+
 export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     listing,
     isSelected = false,
@@ -49,6 +63,10 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     const [isClientLoading, setIsClientLoading] = useState(false);
     const [isClientError, setIsClientError] = useState(false);
     const [clientErrorMsg, setClientErrorMsg] = useState('');
+
+    const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+    const [isPhotoLoading, setIsPhotoLoading] = useState(false);
+    const [photoError, setPhotoError] = useState(false);
 
     const [isExpanded, setIsExpanded] = useState(false);
     const { permissions } = usePermissions();
@@ -282,129 +300,137 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         }
     }, [isClientError]);
 
+    useEffect(() => {
+        if (!permissions.view_photos || !listing.photoLink) {
+            setPhotoUrl(null);
+            setIsPhotoLoading(false);
+            setPhotoError(false);
+            return;
+        }
+
+        const { isGooglePhotos, directUrl } = getImageUrl(listing.photoLink);
+        if (!isGooglePhotos) {
+            setPhotoUrl(directUrl || null);
+            setIsPhotoLoading(false);
+            setPhotoError(false);
+            return;
+        }
+
+        const cacheKey = `gphoto_thumb_${listing.id}`;
+        
+        const cached = localStorage.getItem(cacheKey);
+        if (cached && cached !== 'FAILED') {
+            setPhotoUrl(cached);
+            setIsPhotoLoading(false);
+            setPhotoError(false);
+            return;
+        } else if (cached === 'FAILED') {
+            localStorage.removeItem(cacheKey);
+        }
+
+        if (failedPhotoExtractions.has(listing.id)) {
+            setPhotoError(true);
+            setIsPhotoLoading(false);
+            return;
+        }
+
+        let isMounted = true;
+        setIsPhotoLoading(true);
+        setPhotoError(false);
+
+        const resolvePhoto = async () => {
+            try {
+                const proxyUrl = `/api/photo-proxy?url=${encodeURIComponent(listing.photoLink!)}`;
+                const res = await fetch(proxyUrl);
+                if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+                const html = await res.text();
+                
+                const regex = /https:\/\/[a-zA-Z0-9\.\-]+\.googleusercontent\.com\/pw\/[a-zA-Z0-9_\-]+/g;
+                const matches = html.match(regex);
+                if (matches && matches.length > 0) {
+                    const resolvedUrl = matches[0] + '=w600';
+                    if (isMounted) {
+                        localStorage.setItem(cacheKey, resolvedUrl);
+                        setPhotoUrl(resolvedUrl);
+                        setIsPhotoLoading(false);
+                    }
+                    return;
+                }
+                throw new Error('No image URLs found in response');
+            } catch (err) {
+                console.error(`[ListingCard] Failed to extract photo for ${listing.id}:`, err);
+                if (isMounted) {
+                    failedPhotoExtractions.add(listing.id);
+                    setPhotoError(true);
+                    setIsPhotoLoading(false);
+                }
+            }
+        };
+
+        resolvePhoto();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [listing.id, listing.photoLink, permissions.view_photos]);
+
     const status = (listing.statusAQ || '').toLowerCase().trim();
     const isNotAvailable = status !== 'available' && status !== '';
     const isUnderNego = status === 'under nego';
     const isUndecisiveSeller = status === 'undecisive seller';
     // Removed red outline per user request: "UPDATE - no red outline on all NOT AVAILABLE situations"
     const cardClassName = `
-                group relative bg-white rounded-3xl transition-all duration-500
-                ${isUndecisiveSeller ? 'border-t-4 border-t-amber-800' : isUnderNego ? 'border-t-4 border-t-blue-500' : isNotAvailable ? 'border-t-4 border-t-red-600' : ''}
+                group relative bg-white rounded-3xl transition-all duration-300
+                border-t-4
+                ${isUndecisiveSeller ? 'border-t-amber-100 hover:border-t-amber-700'
+                    : isUnderNego    ? 'border-t-blue-100  hover:border-t-blue-600'
+                    : isNotAvailable ? 'border-t-red-100   hover:border-t-red-600'
+                    :                  'border-t-green-100 hover:border-t-green-600'}
                 ${isSelected
             ? 'ring-4 ring-blue-500 ring-offset-4 shadow-2xl scale-[1.02] z-10'
             : isUndecisiveSeller
-                ? 'bg-white border-gray-100 hover:border-amber-700 hover:shadow-amber-100'
+                ? 'bg-white border-gray-100 hover:shadow-amber-100'
                 : isUnderNego
-                ? 'bg-white border-gray-100 hover:border-blue-300 hover:shadow-blue-100'
+                ? 'bg-white border-gray-100 hover:shadow-blue-100'
                 : isNotAvailable
-                ? 'bg-white border-gray-100 hover:border-red-300 hover:shadow-red-100'  // NOT AVAILABLE hover - red tint
-                : 'border border-gray-100 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-50'
+                ? 'bg-white border-gray-100 hover:shadow-red-100'
+                : 'border border-gray-100 hover:shadow-xl hover:shadow-green-50'
         }
     `;
 
-    return (
-        <div
-            className={`${cardClassName} ${isDisabled && !isSelected ? 'opacity-50' : ''} p-5`}
-        >
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-[50]">
-                <div className={`bg-white border-2 px-6 py-1.5 rounded-2xl shadow-md flex items-center justify-center min-w-[160px] 
-                    ${isUndecisiveSeller ? 'border-amber-800' : 
-                      isUnderNego ? 'border-blue-500' : 
-                      isNotAvailable ? 'border-red-600' : 
-                      'border-green-600'}`}>
-                    <span className={`text-[12px] font-black uppercase tracking-[0.25em] 
-                        ${isUndecisiveSeller ? 'text-amber-800' : 
-                          isUnderNego ? 'text-blue-500' : 
-                          isNotAvailable ? 'text-red-600' : 
-                          'text-green-600'}`}>
-                        {(listing.statusAQ?.toUpperCase() === 'OFF THE MARKET' ? 'OFF MARKET' : listing.statusAQ) || 'Available'}
-                    </span>
-                </div>
-            </div>
-            <div className="flex justify-between items-start mb-1">
-                <div className="flex flex-col gap-1.5 flex-1 mr-4">
-                    {permissions.view_col_k && listing.columnK && (
-                        <div
-                            onClick={handleCopyColumnK}
-                            className={`text-sm font-extrabold leading-tight cursor-pointer transition-colors
-                                ${isColumnKCopied ? 'text-green-600' : 'text-gray-900 hover:text-blue-600'}
-                            `}
-                            title="Click to copy"
-                        >
-                            {isColumnKCopied ? 'COPIED!' : `${index ? `${index}. ` : ''}${listing.columnK}`}
-                        </div>
-                    )}
+    const renderPriceModule = (isOverlay: boolean) => {
+        let bgClass = '';
+        if (isClientLoading) {
+            bgClass = isOverlay
+                ? 'backdrop-blur-md bg-blue-100/55 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
+                : 'bg-blue-50 shadow-md';
+        } else if (isClientCopied) {
+            bgClass = isOverlay
+                ? 'backdrop-blur-md bg-green-100/55 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)] scale-[1.02]'
+                : 'bg-green-100 shadow-md scale-[1.02]';
+        } else if (isClientError || isClientEmpty) {
+            bgClass = isOverlay
+                ? 'backdrop-blur-md bg-red-100/55 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
+                : 'bg-red-50 shadow-md';
+        } else if (role === 'superadmin' || fbGroup === 'Kiu') {
+            bgClass = isOverlay
+                ? 'backdrop-blur-md bg-white/55 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
+                : 'bg-gray-100 hover:bg-gray-200 shadow-inner';
+        } else {
+            bgClass = isOverlay
+                ? 'backdrop-blur-md bg-white/55 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
+                : 'bg-gray-100 shadow-inner';
+        }
 
-
-                </div>
-                <div className="flex items-center gap-2">
-                    {fbGroup && permissions.view_fb_link && (() => {
-                        const groupPostLink: Record<string, string | undefined> = {
-                            'Luxe': listing.postLinkLuxe,
-                            'Nexia': listing.postLinkNexia,
-                            'Adolf': listing.postLinkAdolf,
-                            'PCO': listing.postLinkPco,
-                            'SLoo': listing.postLinkSloo,
-                            'Taoke': listing.postLinkTaoke,
-                            'Kiu': listing.facebookLink,
-                        };
-                        const url = (fbGroup && groupPostLink[fbGroup]) || '';
-                        if (!url) return null;
-                        const socmed = url.includes('instagram.com')
-                            ? { icon: <Instagram size={18} />, hover: 'hover:bg-[#E4405F]', title: 'Instagram' }
-                            : url.includes('tiktok.com')
-                            ? { icon: <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" /></svg>, hover: 'hover:bg-black', title: 'TikTok' }
-                            : url.includes('youtube.com') || url.includes('youtu.be')
-                            ? { icon: <Youtube size={18} />, hover: 'hover:bg-[#FF0000]', title: 'YouTube' }
-                            : url.includes('m.me') || url.includes('messenger.com')
-                            ? { icon: <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.03 2 11c0 2.87 1.43 5.39 3.75 7.03v3.74c0 .8.88 1.28 1.59.87l2.48-1.24c.71.13 1.45.2 2.18.2 5.52 0 10-4.03 10-9S17.52 2 12 2zm1 14.24-2.5-2.73-4.86 2.73 5.35-5.68 2.5 2.73 4.86-2.73-5.35 5.68z" /></svg>, hover: 'hover:bg-blue-500', title: 'Messenger' }
-                            : { icon: <Facebook size={18} />, hover: 'hover:bg-[#1877F2]', title: 'Facebook' };
-                        return (
-                            <a
-                                href={url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className={`flex items-center justify-center w-8 h-8 rounded-full bg-gray-300 text-gray-600 ${socmed.hover} hover:text-white transition-colors`}
-                                title={socmed.title}
-                            >
-                                {socmed.icon}
-                            </a>
-                        );
-                    })()}
-                    <div className="flex flex-col items-end">
-                        {permissions.view_col_ac && (
-                        <span
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                if (!permissions.geo_id_click) return;
-                                if (isPopupView && onBack) {
-                                    onBack();
-                                } else if (onMapClick) {
-                                    onMapClick(listing);
-                                }
-                            }}
-                            className={`text-2xl font-bold text-black font-sans transition-colors tracking-tighter ${permissions.geo_id_click ? 'cursor-pointer hover:text-blue-600 hover:underline' : 'cursor-default'} ${isPopupView ? 'underline' : ''}`}
-                            title={permissions.geo_id_click ? (isPopupView ? "Back" : "View on Map") : undefined}
-                        >
-                            {listing.id}
-                        </span>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            {/* Removed combined BC/BD block from bottom - moved to specific locations */}
-
-            <div className="mb-4 mt-0.5">
-                <div 
-                    onClick={handleCopyClientVersion}
-                    className={`w-full p-2 rounded-lg shadow-inner flex flex-col items-center justify-center gap-0.5 text-center transition-all duration-200
-                        ${(role === 'superadmin' || fbGroup === 'Kiu') ? 'cursor-pointer' : 'cursor-default'}
-                        ${isClientLoading ? 'bg-blue-50 shadow-md' : isClientCopied ? 'bg-green-100 shadow-md scale-[1.02]' : isClientError ? 'bg-red-50 shadow-md' : isClientEmpty ? 'bg-red-50 shadow-md' : (role === 'superadmin' || fbGroup === 'Kiu') ? 'bg-gray-100 hover:bg-gray-200 shadow-inner' : 'bg-gray-100 shadow-inner'}
-                    `}
-                    title={(role === 'superadmin' || fbGroup === 'Kiu') ? 'Click to generate & copy Client Version (via AI)' : undefined}
-                >
+        return (
+            <div 
+                onClick={handleCopyClientVersion}
+                className={`w-full px-3 py-2.5 rounded-2xl flex flex-col items-center justify-center gap-0.5 text-center transition-all duration-200
+                    ${(role === 'superadmin' || fbGroup === 'Kiu') ? 'cursor-pointer' : 'cursor-default'}
+                    ${bgClass}
+                `}
+                title={(role === 'superadmin' || fbGroup === 'Kiu') ? 'Click to generate & copy Client Version (via AI)' : undefined}
+            >
                 {!permissions.view_pricing && (
                     <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">Price Hidden</span>
                 )}
@@ -491,8 +517,238 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         </>
                     )}
                 </>}
+            </div>
+        );
+    };
+
+    return (
+        <div
+            className={`${cardClassName} ${isDisabled && !isSelected ? 'opacity-50' : ''} p-5`}
+        >
+            {/* Header Row: owner name left when preview_pic on, status pill left otherwise — GEO-ID always right */}
+            <div className="flex items-center justify-between mb-3">
+                {/* Left side: owner name (preview_pic ON) OR status pill (preview_pic OFF) */}
+                {permissions.preview_pic && listing.photoLink && !photoError ? (
+                    /* preview_pic ON — show owner name on the left, same line as GEO-ID */
+                    permissions.view_col_k && listing.columnK ? (
+                        <div
+                            onClick={handleCopyColumnK}
+                            className={`text-sm font-extrabold leading-tight cursor-pointer transition-colors truncate mr-3
+                                ${isColumnKCopied ? 'text-green-600' : 'text-gray-900 hover:text-blue-600'}
+                            `}
+                            title="Click to copy"
+                        >
+                            {isColumnKCopied ? 'COPIED!' : `${index ? `${index}. ` : ''}${listing.columnK}`}
+                        </div>
+                    ) : <div />
+                ) : (
+                    /* preview_pic OFF — show status pill on the left */
+                    <div className={`bg-white border-2 px-6 py-1.5 rounded-2xl shadow-sm flex items-center justify-center min-w-[140px] 
+                        ${isUndecisiveSeller ? 'border-amber-800' : 
+                          isUnderNego ? 'border-blue-500' : 
+                          isNotAvailable ? 'border-red-600' : 
+                          'border-green-600'}`}>
+                        <span className={`text-[12px] font-black uppercase tracking-[0.25em] 
+                            ${isUndecisiveSeller ? 'text-amber-800' : 
+                              isUnderNego ? 'text-blue-500' : 
+                              isNotAvailable ? 'text-red-600' : 
+                              'text-green-600'}`}>
+                            {(listing.statusAQ?.toUpperCase() === 'OFF THE MARKET' ? 'OFF MARKET' : listing.statusAQ) || 'Available'}
+                        </span>
+                    </div>
+                )}
+
+                {/* Right: Social Media Links and Listing ID */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                    {fbGroup && permissions.view_fb_link && (() => {
+                        const groupPostLink: Record<string, string | undefined> = {
+                            'Luxe': listing.postLinkLuxe,
+                            'Nexia': listing.postLinkNexia,
+                            'Adolf': listing.postLinkAdolf,
+                            'PCO': listing.postLinkPco,
+                            'SLoo': listing.postLinkSloo,
+                            'Taoke': listing.postLinkTaoke,
+                            'Kiu': listing.facebookLink,
+                        };
+                        const url = (fbGroup && groupPostLink[fbGroup]) || '';
+                        if (!url) return null;
+                        const socmed = url.includes('instagram.com')
+                            ? { icon: <Instagram size={18} />, hover: 'hover:bg-[#E4405F]', title: 'Instagram' }
+                            : url.includes('tiktok.com')
+                            ? { icon: <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" /></svg>, hover: 'hover:bg-black', title: 'TikTok' }
+                            : url.includes('youtube.com') || url.includes('youtu.be')
+                            ? { icon: <Youtube size={18} />, hover: 'hover:bg-[#FF0000]', title: 'YouTube' }
+                            : url.includes('m.me') || url.includes('messenger.com')
+                            ? { icon: <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.03 2 11c0 2.87 1.43 5.39 3.75 7.03v3.74c0 .8.88 1.28 1.59.87l2.48-1.24c.71.13 1.45.2 2.18.2 5.52 0 10-4.03 10-9S17.52 2 12 2zm1 14.24-2.5-2.73-4.86 2.73 5.35-5.68 2.5 2.73 4.86-2.73-5.35 5.68z" /></svg>, hover: 'hover:bg-blue-500', title: 'Messenger' }
+                            : { icon: <Facebook size={18} />, hover: 'hover:bg-[#1877F2]', title: 'Facebook' };
+                        return (
+                            <a
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className={`flex items-center justify-center w-8 h-8 rounded-full bg-gray-300 text-gray-600 ${socmed.hover} hover:text-white transition-colors`}
+                                title={socmed.title}
+                            >
+                                {socmed.icon}
+                            </a>
+                        );
+                    })()}
+
+                    {permissions.view_col_ac && (
+                        <span
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (!permissions.geo_id_click) return;
+                                if (isPopupView && onBack) {
+                                    onBack();
+                                } else if (onMapClick) {
+                                    onMapClick(listing);
+                                }
+                            }}
+                            className={`text-2xl font-black text-black font-sans transition-colors tracking-tighter ${permissions.geo_id_click ? 'cursor-pointer hover:text-blue-600 hover:underline' : 'cursor-default'} ${isPopupView ? 'underline' : ''}`}
+                            title={permissions.geo_id_click ? (isPopupView ? "Back" : "View on Map") : undefined}
+                        >
+                            {listing.id}
+                        </span>
+                    )}
                 </div>
-                {/* Column BD removed from here */}
+            </div>
+
+            {/* Owner name — only shown as own row when preview_pic is OFF (otherwise it's in the header) */}
+            {permissions.view_col_k && listing.columnK && !(permissions.preview_pic && listing.photoLink && !photoError) && (
+                <div
+                    onClick={handleCopyColumnK}
+                    className={`text-sm font-extrabold leading-tight cursor-pointer transition-colors mb-3
+                        ${isColumnKCopied ? 'text-green-600' : 'text-gray-900 hover:text-blue-600'}
+                    `}
+                    title="Click to copy"
+                >
+                    {isColumnKCopied ? 'COPIED!' : `${index ? `${index}. ` : ''}${listing.columnK}`}
+                </div>
+            )}
+
+            {/* Photo Preview Module with Overlaid Price + iOS-glass Status Badge */}
+            {permissions.view_photos && permissions.preview_pic && listing.photoLink && !photoError ? (
+                <div className="mt-0.5 mb-4">
+                    {isPhotoLoading ? (
+                        <div className="w-full aspect-[4/3] rounded-2xl bg-gray-100 animate-pulse flex items-center justify-center border border-gray-100 relative">
+                            <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Loading Photo...</span>
+                            <div className="absolute bottom-2 left-2 right-2 z-10">
+                                {renderPriceModule(true)}
+                            </div>
+                        </div>
+                    ) : photoUrl ? (
+                        <div className="w-full aspect-[4/3] rounded-3xl overflow-hidden bg-gray-100 relative group/photo shadow-sm border border-gray-100">
+                            <a
+                                href={listing.photoLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="block w-full h-full"
+                            >
+                                <img
+                                    src={photoUrl}
+                                    alt={`Listing ${listing.id}`}
+                                    className="w-full h-full object-cover group-hover/photo:scale-105 transition-transform duration-500"
+                                    loading="lazy"
+                                    onError={() => {
+                                        setPhotoError(true);
+                                        setPhotoUrl(null);
+                                        failedPhotoExtractions.add(listing.id);
+                                    }}
+                                />
+                            </a>
+
+                            {/* iOS frosted-glass status badge — top-left overlay */}
+                            <div className="absolute top-4 left-4 z-20">
+                                <div className={`
+                                    inline-flex items-center px-4 py-2 rounded-full
+                                    backdrop-blur-md border border-white/65
+                                    shadow-[0_2px_14px_rgba(0,0,0,0.22)]
+                                    ${
+                                        isUndecisiveSeller
+                                            ? 'bg-amber-100/65 ring-1 ring-amber-400/70'
+                                            : isUnderNego
+                                            ? 'bg-blue-100/65 ring-1 ring-blue-400/70'
+                                            : isNotAvailable
+                                            ? 'bg-red-100/65 ring-1 ring-red-400/70'
+                                            : 'bg-emerald-100/65 ring-1 ring-green-400/70'
+                                    }
+                                `}>
+                                    {/* Coloured dot */}
+                                    <span className={`w-2 h-2 rounded-full mr-2 flex-shrink-0 shadow-sm ${
+                                        isUndecisiveSeller ? 'bg-amber-500' :
+                                        isUnderNego      ? 'bg-blue-500'  :
+                                        isNotAvailable   ? 'bg-red-500'   :
+                                        'bg-emerald-500'
+                                    }`} />
+                                    <span className={`text-[12px] font-black uppercase tracking-[0.22em] ${
+                                        isUndecisiveSeller ? 'text-amber-900' :
+                                        isUnderNego      ? 'text-blue-900'  :
+                                        isNotAvailable   ? 'text-red-900'   :
+                                        'text-emerald-900'
+                                    }`}>
+                                        {(listing.statusAQ?.toUpperCase() === 'OFF THE MARKET' ? 'OFF MARKET' : listing.statusAQ) || 'Available'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Price overlay — bottom */}
+                            <div className="absolute bottom-2 left-2 right-2 z-10">
+                                {renderPriceModule(true)}
+                            </div>
+                        </div>
+                    ) : (
+                        /* Fallback to normal price box if photoUrl resolution failed but no error triggered yet */
+                        <div className="mb-4 mt-0.5">
+                            {renderPriceModule(false)}
+                        </div>
+                    )}
+                </div>
+            ) : permissions.view_photos && listing.photoLink && !photoError && !permissions.preview_pic ? (
+                /* Photo visible but preview_pic off — show photo without glass badge */
+                <div className="mt-0.5 mb-4">
+                    {isPhotoLoading ? (
+                        <div className="w-full aspect-[4/3] rounded-2xl bg-gray-100 animate-pulse flex items-center justify-center border border-gray-100 relative">
+                            <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Loading Photo...</span>
+                            <div className="absolute bottom-2 left-2 right-2 z-10">{renderPriceModule(true)}</div>
+                        </div>
+                    ) : photoUrl ? (
+                        <div className="w-full aspect-[4/3] rounded-3xl overflow-hidden bg-gray-100 relative group/photo shadow-sm border border-gray-100">
+                            <a href={listing.photoLink} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="block w-full h-full">
+                                <img src={photoUrl} alt={`Listing ${listing.id}`} className="w-full h-full object-cover group-hover/photo:scale-105 transition-transform duration-500" loading="lazy"
+                                    onError={() => { setPhotoError(true); setPhotoUrl(null); failedPhotoExtractions.add(listing.id); }} />
+                            </a>
+                            <div className="absolute bottom-2 left-2 right-2 z-10">{renderPriceModule(true)}</div>
+                        </div>
+                    ) : (
+                        <div className="mb-4 mt-0.5">{renderPriceModule(false)}</div>
+                    )}
+                </div>
+            ) : permissions.preview_pic && (!listing.photoLink || photoError) ? (
+                <div className="mt-0.5 mb-4">
+                    <div className="w-full aspect-[4/3] rounded-3xl bg-gradient-to-br from-gray-100 to-gray-200 relative flex flex-col items-center justify-center border border-gray-200 shadow-inner overflow-hidden">
+                        <div className="absolute inset-0 opacity-30"
+                            style={{ backgroundImage: 'radial-gradient(circle, #9ca3af 1px, transparent 1px)', backgroundSize: '18px 18px' }} />
+                        <div className="relative z-10 flex flex-col items-center gap-2">
+                            <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 18h16.5A1.5 1.5 0 0021.75 16.5V7.5A1.5 1.5 0 0020.25 6H3.75A1.5 1.5 0 002.25 7.5v9A1.5 1.5 0 003.75 18z" />
+                            </svg>
+                            <span className="text-sm font-black uppercase tracking-[0.2em] text-gray-400">Photos to Follow</span>
+                        </div>
+                        <div className="absolute bottom-2 left-2 right-2 z-10">
+                            {renderPriceModule(true)}
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <div className="mb-4 mt-0.5">
+                    {renderPriceModule(false)}
+                </div>
+            )}
+
+            <div className="mb-4 mt-0.5">
                 {permissions.view_col_aa && listing.displaySummary && (
                     <div className="relative">
                         <div
@@ -632,7 +888,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         </button>
                     )
                 ) : null}
-                {permissions.view_photos && listing.photoLink && (
+                {permissions.view_photos && listing.photoLink && !permissions.preview_pic && (
                     <a
                         href={listing.photoLink}
                         target="_blank"

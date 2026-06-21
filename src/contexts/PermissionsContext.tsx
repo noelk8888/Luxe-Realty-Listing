@@ -38,7 +38,8 @@ export type Feature =
     | 'copy_photo_link'
     | 'full_screen_map'
     | 'map_preview'
-    | 'viewing_listing';
+    | 'viewing_listing'
+    | 'preview_pic';
 
 const ALL_FEATURES: Feature[] = [
     'add_listing', 'edit_listing', 'delete_listing',
@@ -53,7 +54,8 @@ const ALL_FEATURES: Feature[] = [
     'edit_coordinates', 'edit_fb_link', 'edit_update_date',
     'show_all', 'view_last_update', 'edit_monthly_dues', 'copy_photo_link',
     'full_screen_map',
-    'map_preview', 'viewing_listing'
+    'map_preview', 'viewing_listing',
+    'preview_pic'
 ];
 
 // ── Role defaults ─────────────────────────────────────────────────────────────
@@ -72,6 +74,7 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'v1' | 'v2', Record<
         show_all: true, view_last_update: true, edit_monthly_dues: true, copy_photo_link: false,
         full_screen_map: true,
         map_preview: true, viewing_listing: true,
+        preview_pic: true,
     },
     editor: {
         add_listing: true, edit_listing: true, delete_listing: false,
@@ -87,6 +90,7 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'v1' | 'v2', Record<
         show_all: true, view_last_update: true, edit_monthly_dues: true, copy_photo_link: false,
         full_screen_map: false,
         map_preview: true, viewing_listing: false,
+        preview_pic: true,
     },
     broker: {
         add_listing: true, edit_listing: true, delete_listing: false,
@@ -102,6 +106,7 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'v1' | 'v2', Record<
         show_all: true, view_last_update: true, edit_monthly_dues: false, copy_photo_link: false,
         full_screen_map: false,
         map_preview: true, viewing_listing: false,
+        preview_pic: true,
     },
     v1: {
         add_listing: false, edit_listing: false, delete_listing: false,
@@ -117,6 +122,7 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'v1' | 'v2', Record<
         show_all: false, view_last_update: true, edit_monthly_dues: false, copy_photo_link: false,
         full_screen_map: false,
         map_preview: true, viewing_listing: false,
+        preview_pic: true,
     },
     v2: {
         add_listing: false, edit_listing: false, delete_listing: false,
@@ -132,6 +138,7 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'v1' | 'v2', Record<
         show_all: false, view_last_update: true, edit_monthly_dues: false, copy_photo_link: false,
         full_screen_map: false,
         map_preview: false, viewing_listing: false,
+        preview_pic: false,
     },
 };
 
