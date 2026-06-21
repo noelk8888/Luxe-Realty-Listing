@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useViewing } from '../contexts/ViewingContext';
 import { GEMINI_PROMPT_PREFIX } from '../constants/reorganizePrompt';
 import { extractClientVersion } from '../services/geminiService';
+import kiuLogo from '../assets/kiu_logo.png';
 
 interface ListingCardProps {
     listing: Listing;
@@ -398,38 +399,55 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         }
     `;
 
-    // Watermark: always Luxe logo, top-right corner of photo/placeholder
-    const renderWatermark = () => (
-        <div className="absolute top-3 right-3 z-20 pointer-events-none">
-            <img
-                src="/luxe-logo.png"
-                alt="Luxe Realty"
-                className="h-9 w-auto opacity-60 drop-shadow-md object-contain"
-            />
-        </div>
-    );
+    // Watermark: group logo (or group name text) in top-right corner of photo/placeholder
+    const renderWatermark = () => {
+        const logoSrc = fbGroup === 'Luxe' ? '/luxe-logo.png'
+            : fbGroup === 'Kiu' ? kiuLogo
+            : null;
+        if (logoSrc) {
+            return (
+                <div className="absolute top-3 right-3 z-20 pointer-events-none">
+                    <img
+                        src={logoSrc}
+                        alt={fbGroup || ''}
+                        className="h-9 w-auto opacity-60 drop-shadow-md object-contain"
+                    />
+                </div>
+            );
+        }
+        if (fbGroup) {
+            return (
+                <div className="absolute top-3 right-3 z-20 pointer-events-none">
+                    <span className="text-[11px] font-black uppercase tracking-[0.18em] text-white opacity-75 drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)]">
+                        {fbGroup}
+                    </span>
+                </div>
+            );
+        }
+        return null;
+    };
 
     const renderPriceModule = (isOverlay: boolean) => {
         let bgClass = '';
         if (isClientLoading) {
             bgClass = isOverlay
-                ? 'backdrop-blur-md bg-blue-100/74 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
+                ? 'backdrop-blur-md bg-blue-100/75 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
                 : 'bg-blue-50 shadow-md';
         } else if (isClientCopied) {
             bgClass = isOverlay
-                ? 'backdrop-blur-md bg-green-100/74 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)] scale-[1.02]'
+                ? 'backdrop-blur-md bg-green-100/75 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)] scale-[1.02]'
                 : 'bg-green-100 shadow-md scale-[1.02]';
         } else if (isClientError || isClientEmpty) {
             bgClass = isOverlay
-                ? 'backdrop-blur-md bg-red-100/74 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
+                ? 'backdrop-blur-md bg-red-100/75 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
                 : 'bg-red-50 shadow-md';
         } else if (role === 'superadmin' || fbGroup === 'Kiu') {
             bgClass = isOverlay
-                ? 'backdrop-blur-md bg-white/74 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
+                ? 'backdrop-blur-md bg-white/75 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
                 : 'bg-gray-100 hover:bg-gray-200 shadow-inner';
         } else {
             bgClass = isOverlay
-                ? 'backdrop-blur-md bg-white/74 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
+                ? 'backdrop-blur-md bg-white/75 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
                 : 'bg-gray-100 shadow-inner';
         }
 
