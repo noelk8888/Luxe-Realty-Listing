@@ -398,27 +398,38 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         }
     `;
 
+    // Watermark: always Luxe logo, top-right corner of photo/placeholder
+    const renderWatermark = () => (
+        <div className="absolute top-3 right-3 z-20 pointer-events-none">
+            <img
+                src="/luxe-logo.png"
+                alt="Luxe Realty"
+                className="h-9 w-auto opacity-60 drop-shadow-md object-contain"
+            />
+        </div>
+    );
+
     const renderPriceModule = (isOverlay: boolean) => {
         let bgClass = '';
         if (isClientLoading) {
             bgClass = isOverlay
-                ? 'backdrop-blur-md bg-blue-100/55 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
+                ? 'backdrop-blur-md bg-blue-100/74 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
                 : 'bg-blue-50 shadow-md';
         } else if (isClientCopied) {
             bgClass = isOverlay
-                ? 'backdrop-blur-md bg-green-100/55 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)] scale-[1.02]'
+                ? 'backdrop-blur-md bg-green-100/74 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)] scale-[1.02]'
                 : 'bg-green-100 shadow-md scale-[1.02]';
         } else if (isClientError || isClientEmpty) {
             bgClass = isOverlay
-                ? 'backdrop-blur-md bg-red-100/55 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
+                ? 'backdrop-blur-md bg-red-100/74 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
                 : 'bg-red-50 shadow-md';
         } else if (role === 'superadmin' || fbGroup === 'Kiu') {
             bgClass = isOverlay
-                ? 'backdrop-blur-md bg-white/55 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
+                ? 'backdrop-blur-md bg-white/74 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
                 : 'bg-gray-100 hover:bg-gray-200 shadow-inner';
         } else {
             bgClass = isOverlay
-                ? 'backdrop-blur-md bg-white/55 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
+                ? 'backdrop-blur-md bg-white/74 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
                 : 'bg-gray-100 shadow-inner';
         }
 
@@ -475,7 +486,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                                 <div className="flex items-baseline gap-1 text-gray-900 justify-center">
                                     <span className="text-xl font-bold">{formatPrice(listing.leasePrice)}/month</span>
                                     {effectiveLeasePricePerSqm > 0 && (
-                                        <span className="text-sm font-normal text-gray-500">
+                                        <span className="text-sm font-normal text-gray-800/80">
                                             ({formatPrice(effectiveLeasePricePerSqm)}/sqm)
                                         </span>
                                     )}
@@ -485,7 +496,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                                 <div className="flex items-baseline gap-2 justify-center">
                                     <span className="text-xl font-bold text-gray-900">{formatPrice(listing.price)}</span>
                                     {effectivePricePerSqm > 0 && (
-                                        <span className="text-sm font-normal text-gray-500">
+                                        <span className="text-sm font-normal text-gray-800/80">
                                             ({formatPrice(effectivePricePerSqm)}/sqm)
                                         </span>
                                     )}
@@ -498,7 +509,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                                 <div className="flex items-baseline gap-2 justify-center">
                                     <span className="text-xl font-bold text-gray-900">{formatPrice(listing.price)}</span>
                                     {effectivePricePerSqm > 0 && (
-                                        <span className="text-sm font-normal text-gray-500">
+                                        <span className="text-sm font-normal text-gray-800/80">
                                             ({formatPrice(effectivePricePerSqm)}/sqm)
                                         </span>
                                     )}
@@ -508,7 +519,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                                 <div className="flex items-baseline gap-1 text-gray-900 justify-center">
                                     <span className="text-xl font-bold">{formatPrice(listing.leasePrice)}/month</span>
                                     {effectiveLeasePricePerSqm > 0 && (
-                                        <span className="text-sm font-normal text-gray-500">
+                                        <span className="text-sm font-normal text-gray-800/80">
                                             ({formatPrice(effectiveLeasePricePerSqm)}/sqm)
                                         </span>
                                     )}
@@ -528,7 +539,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             {/* Header Row: owner name left when preview_pic on, status pill left otherwise — GEO-ID always right */}
             <div className="flex items-center justify-between mb-3">
                 {/* Left side: owner name (preview_pic ON) OR status pill (preview_pic OFF) */}
-                {permissions.preview_pic && listing.photoLink && !photoError ? (
+                {permissions.preview_pic ? (
                     /* preview_pic ON — show owner name on the left, same line as GEO-ID */
                     permissions.view_col_k && listing.columnK ? (
                         <div
@@ -616,7 +627,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             </div>
 
             {/* Owner name — only shown as own row when preview_pic is OFF (otherwise it's in the header) */}
-            {permissions.view_col_k && listing.columnK && !(permissions.preview_pic && listing.photoLink && !photoError) && (
+            {permissions.view_col_k && listing.columnK && !permissions.preview_pic && (
                 <div
                     onClick={handleCopyColumnK}
                     className={`text-sm font-extrabold leading-tight cursor-pointer transition-colors mb-3
@@ -668,12 +679,12 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                                     shadow-[0_2px_14px_rgba(0,0,0,0.22)]
                                     ${
                                         isUndecisiveSeller
-                                            ? 'bg-amber-100/65 ring-1 ring-amber-400/70'
+                                            ? 'bg-amber-100/50 ring-1 ring-amber-400/70'
                                             : isUnderNego
-                                            ? 'bg-blue-100/65 ring-1 ring-blue-400/70'
+                                            ? 'bg-blue-100/50 ring-1 ring-blue-400/70'
                                             : isNotAvailable
-                                            ? 'bg-red-100/65 ring-1 ring-red-400/70'
-                                            : 'bg-emerald-100/65 ring-1 ring-green-400/70'
+                                            ? 'bg-red-100/50 ring-1 ring-red-400/70'
+                                            : 'bg-emerald-100/50 ring-1 ring-green-400/70'
                                     }
                                 `}>
                                     {/* Coloured dot */}
@@ -693,6 +704,9 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                                     </span>
                                 </div>
                             </div>
+
+                            {/* Watermark — top-right */}
+                            {renderWatermark()}
 
                             {/* Price overlay — bottom */}
                             <div className="absolute bottom-2 left-2 right-2 z-10">
@@ -731,6 +745,40 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                     <div className="w-full aspect-[4/3] rounded-3xl bg-gradient-to-br from-gray-100 to-gray-200 relative flex flex-col items-center justify-center border border-gray-200 shadow-inner overflow-hidden">
                         <div className="absolute inset-0 opacity-30"
                             style={{ backgroundImage: 'radial-gradient(circle, #9ca3af 1px, transparent 1px)', backgroundSize: '18px 18px' }} />
+                        {/* STATUS badge — top-left, same position as photo overlay */}
+                        <div className="absolute top-4 left-4 z-20">
+                            <div className={`
+                                inline-flex items-center px-4 py-2 rounded-full
+                                backdrop-blur-md border border-white/65
+                                shadow-[0_2px_14px_rgba(0,0,0,0.22)]
+                                ${
+                                    isUndecisiveSeller
+                                        ? 'bg-amber-100/50 ring-1 ring-amber-400/70'
+                                        : isUnderNego
+                                        ? 'bg-blue-100/50 ring-1 ring-blue-400/70'
+                                        : isNotAvailable
+                                        ? 'bg-red-100/50 ring-1 ring-red-400/70'
+                                        : 'bg-emerald-100/50 ring-1 ring-green-400/70'
+                                }
+                            `}>
+                                <span className={`w-2 h-2 rounded-full mr-2 flex-shrink-0 shadow-sm ${
+                                    isUndecisiveSeller ? 'bg-amber-500' :
+                                    isUnderNego      ? 'bg-blue-500'  :
+                                    isNotAvailable   ? 'bg-red-500'   :
+                                    'bg-emerald-500'
+                                }`} />
+                                <span className={`text-[12px] font-black uppercase tracking-[0.22em] ${
+                                    isUndecisiveSeller ? 'text-amber-900' :
+                                    isUnderNego      ? 'text-blue-900'  :
+                                    isNotAvailable   ? 'text-red-900'   :
+                                    'text-emerald-900'
+                                }`}>
+                                    {(listing.statusAQ?.toUpperCase() === 'OFF THE MARKET' ? 'OFF MARKET' : listing.statusAQ) || 'Available'}
+                                </span>
+                            </div>
+                        </div>
+                        {/* Watermark — top-right */}
+                        {renderWatermark()}
                         <div className="relative z-10 flex flex-col items-center gap-2">
                             <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 18h16.5A1.5 1.5 0 0021.75 16.5V7.5A1.5 1.5 0 0020.25 6H3.75A1.5 1.5 0 002.25 7.5v9A1.5 1.5 0 003.75 18z" />
