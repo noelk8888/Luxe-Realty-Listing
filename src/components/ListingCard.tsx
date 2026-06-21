@@ -431,23 +431,23 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         let bgClass = '';
         if (isClientLoading) {
             bgClass = isOverlay
-                ? 'backdrop-blur-md bg-blue-100/75 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
+                ? 'backdrop-blur-md bg-blue-100/65 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
                 : 'bg-blue-50 shadow-md';
         } else if (isClientCopied) {
             bgClass = isOverlay
-                ? 'backdrop-blur-md bg-green-100/75 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)] scale-[1.02]'
+                ? 'backdrop-blur-md bg-green-100/65 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)] scale-[1.02]'
                 : 'bg-green-100 shadow-md scale-[1.02]';
         } else if (isClientError || isClientEmpty) {
             bgClass = isOverlay
-                ? 'backdrop-blur-md bg-red-100/75 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
+                ? 'backdrop-blur-md bg-red-100/65 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
                 : 'bg-red-50 shadow-md';
         } else if (role === 'superadmin' || fbGroup === 'Kiu') {
             bgClass = isOverlay
-                ? 'backdrop-blur-md bg-white/75 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
+                ? 'backdrop-blur-md bg-white/65 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
                 : 'bg-gray-100 hover:bg-gray-200 shadow-inner';
         } else {
             bgClass = isOverlay
-                ? 'backdrop-blur-md bg-white/75 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
+                ? 'backdrop-blur-md bg-white/70 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
                 : 'bg-gray-100 shadow-inner';
         }
 
