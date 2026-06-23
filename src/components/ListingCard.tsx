@@ -1266,7 +1266,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                 );
 })()}
 
-            {rowNumber && (
+            {rowNumber && permissions.view_last_update && (
                 <div className="mt-1 text-[10px] text-gray-400 font-semibold uppercase tracking-wider text-center">
                     Row #{rowNumber}
                 </div>

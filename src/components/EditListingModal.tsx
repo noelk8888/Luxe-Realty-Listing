@@ -269,7 +269,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                 <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
                     <div>
                         <h2 className="text-lg font-bold text-gray-900">
-                            Update Listing {listing.id} {rowNumber ? `Row #${rowNumber}` : ''}
+                            Update Listing {listing.id} {rowNumber && permissions.view_last_update ? `Row #${rowNumber}` : ''}
                         </h2>
                         <p className="text-xs text-gray-500 mt-0.5">{listing.columnK || listing.building || listing.city}</p>
                     </div>
