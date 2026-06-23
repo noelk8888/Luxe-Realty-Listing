@@ -38,6 +38,57 @@ const getImageUrl = (photoLink: string | undefined): { isGooglePhotos: boolean; 
     return { isGooglePhotos: true };
 };
 
+const getV1V2Status = (listing: Listing): string => {
+    // 1. Check if we can find a transaction type header line in listing.summary
+    const lines = (listing.summary || '')
+        .split(/\r?\n/)
+        .map(l => l.trim())
+        .filter(l => l.length > 0);
+    
+    // Find the first line that is NOT the ID or a link, and contains sale/lease/rent/business keywords
+    const headerLine = lines.find(line => {
+        const clean = line.replace(/^\*+|\*+$/g, '').trim().toUpperCase();
+        // Exclude lines containing links or GEO IDs
+        if (clean.includes('HTTP://') || clean.includes('HTTPS://')) return false;
+        if (clean === listing.id.toUpperCase() || /^[ABG]\d+$/i.test(clean)) return false;
+        
+        return (
+            clean.includes('FOR SALE') || 
+            clean.includes('FOR LEASE') || 
+            clean.includes('FOR RENT') || 
+            clean.includes('SALE/LEASE') ||
+            clean.includes('SALE / LEASE') ||
+            clean.includes('LEASE/SALE') ||
+            clean.includes('LEASE / SALE') ||
+            clean.includes('BUSINESS FOR SALE') ||
+            clean.includes('BUSINESSES FOR SALE')
+        );
+    });
+
+    if (headerLine) {
+        // Strip the asterisks and return in uppercase
+        return headerLine.replace(/^\*+|\*+$/g, '').trim().toUpperCase();
+    }
+
+    // 2. Fall back to saleType
+    if (listing.saleType) {
+        const typeUpper = listing.saleType.toUpperCase();
+        if (typeUpper === 'SALE/LEASE') return 'FOR SALE/LEASE';
+        return typeUpper;
+    }
+
+    // 3. Fall back to price checking
+    if (listing.price > 0 && listing.leasePrice > 0) {
+        return 'FOR SALE/LEASE';
+    } else if (listing.price > 0) {
+        return 'FOR SALE';
+    } else if (listing.leasePrice > 0) {
+        return 'FOR LEASE';
+    }
+
+    return 'AVAILABLE';
+};
+
 const failedPhotoExtractions = new Set<string>();
 
 export const ListingCard: React.FC<ListingCardProps> = React.memo(({
@@ -660,7 +711,14 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                                 'text-green-600'
                             }`}
                         >
-                            {index ? `${index}. ` : ''}{(listing.statusAQ?.toUpperCase() === 'OFF THE MARKET' ? 'OFF MARKET' : listing.statusAQ) || 'Available'}
+                            {index ? `${index}. ` : ''}{(() => {
+                                const rawStatus = (listing.statusAQ?.toUpperCase() === 'OFF THE MARKET' ? 'OFF MARKET' : listing.statusAQ) || 'Available';
+                                const isAvailable = rawStatus.toUpperCase() === 'AVAILABLE';
+                                if (isAvailable && (role === 'v1' || role === 'v2')) {
+                                    return getV1V2Status(listing);
+                                }
+                                return rawStatus;
+                            })()}
                         </div>
                     )
                 ) : (
@@ -675,7 +733,14 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                               isUnderNego ? 'text-blue-500' : 
                               isNotAvailable ? 'text-red-600' : 
                               'text-green-600'}`}>
-                            {(listing.statusAQ?.toUpperCase() === 'OFF THE MARKET' ? 'OFF MARKET' : listing.statusAQ) || 'Available'}
+                            {(() => {
+                                const rawStatus = (listing.statusAQ?.toUpperCase() === 'OFF THE MARKET' ? 'OFF MARKET' : listing.statusAQ) || 'Available';
+                                const isAvailable = rawStatus.toUpperCase() === 'AVAILABLE';
+                                if (isAvailable && (role === 'v1' || role === 'v2')) {
+                                    return getV1V2Status(listing);
+                                }
+                                return rawStatus;
+                            })()}
                         </span>
                     </div>
                 )}
@@ -845,7 +910,14 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                                             isNotAvailable   ? 'text-red-900'   :
                                             'text-emerald-900'
                                         }`}>
-                                            {(listing.statusAQ?.toUpperCase() === 'OFF THE MARKET' ? 'OFF MARKET' : listing.statusAQ) || 'Available'}
+                                            {(() => {
+                                                const rawStatus = (listing.statusAQ?.toUpperCase() === 'OFF THE MARKET' ? 'OFF MARKET' : listing.statusAQ) || 'Available';
+                                                const isAvailable = rawStatus.toUpperCase() === 'AVAILABLE';
+                                                if (isAvailable && (role === 'v1' || role === 'v2')) {
+                                                    return getV1V2Status(listing);
+                                                }
+                                                return rawStatus;
+                                            })()}
                                         </span>
                                     </div>
                                 </div>
@@ -937,7 +1009,14 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                                         isNotAvailable   ? 'text-red-900'   :
                                         'text-emerald-900'
                                     }`}>
-                                        {(listing.statusAQ?.toUpperCase() === 'OFF THE MARKET' ? 'OFF MARKET' : listing.statusAQ) || 'Available'}
+                                        {(() => {
+                                            const rawStatus = (listing.statusAQ?.toUpperCase() === 'OFF THE MARKET' ? 'OFF MARKET' : listing.statusAQ) || 'Available';
+                                            const isAvailable = rawStatus.toUpperCase() === 'AVAILABLE';
+                                            if (isAvailable && (role === 'v1' || role === 'v2')) {
+                                                return getV1V2Status(listing);
+                                            }
+                                            return rawStatus;
+                                        })()}
                                     </span>
                                 </div>
                             </div>
