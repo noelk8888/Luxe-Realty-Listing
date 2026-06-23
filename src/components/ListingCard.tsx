@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { Listing } from '../types';
 import { MapPin, Building, Maximize, ChevronDown, ChevronUp, Bed, Car, Facebook, Instagram, Youtube, Receipt } from 'lucide-react';
 import { usePermissions } from '../contexts/PermissionsContext';
@@ -73,6 +73,44 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     const { permissions } = usePermissions();
     const { fbGroup, role } = useAuth();
     const { addToViewing, removeFromViewing, isInViewing, isFull } = useViewing();
+
+    // Discreet Listing Concealment & Reveal state
+    const [isRevealed, setIsRevealed] = useState(false);
+    const revealTimeoutRef = useRef<any>(null);
+
+    const isDiscreetListing = (() => {
+        const summaryUpper = (listing.summary || '').toUpperCase();
+        const forbiddenWords = [
+            'DISCREET',
+            'DO NOT POST ONLINE',
+            'DO NOT SHARE ONLINE',
+            'NO POSTING ONLINE',
+            'NO ONLINE POSTING'
+        ];
+        return forbiddenWords.some(word => summaryUpper.includes(word));
+    })();
+
+    const isDiscreetConcealed = isDiscreetListing && role !== 'superadmin' && !isRevealed;
+
+    const handleCardClick = () => {
+        if (isDiscreetConcealed) {
+            setIsRevealed(true);
+            if (revealTimeoutRef.current) {
+                clearTimeout(revealTimeoutRef.current);
+            }
+            revealTimeoutRef.current = setTimeout(() => {
+                setIsRevealed(false);
+            }, 5 * 60 * 1000); // 5 minutes
+        }
+    };
+
+    useEffect(() => {
+        return () => {
+            if (revealTimeoutRef.current) {
+                clearTimeout(revealTimeoutRef.current);
+            }
+        };
+    }, []);
 
     const hasForbiddenPreviewWords = (() => {
         const summaryUpper = (listing.summary || '').toUpperCase();
@@ -454,6 +492,19 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     };
 
     const renderPriceModule = (isOverlay: boolean) => {
+        if (isDiscreetConcealed) {
+            const bgClass = isOverlay
+                ? 'backdrop-blur-md bg-white/70 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
+                : 'bg-gray-100 shadow-inner';
+            return (
+                <div 
+                    className={`w-full px-3 py-2.5 rounded-2xl flex flex-col items-center justify-center gap-0.5 text-center transition-all duration-200 ${bgClass}`}
+                >
+                    <span className="text-sm font-bold text-gray-800 uppercase tracking-widest">DISCREET LISTING</span>
+                </div>
+            );
+        }
+
         let bgClass = '';
         if (isClientLoading) {
             bgClass = isOverlay
@@ -578,7 +629,8 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
 
     return (
         <div
-            className={`${cardClassName} ${isDisabled && !isSelected ? 'opacity-50' : ''} p-5`}
+            className={`${cardClassName} ${isDisabled && !isSelected ? 'opacity-50' : ''} p-5 ${isDiscreetConcealed ? 'cursor-pointer hover:shadow-md transition-all duration-300' : ''}`}
+            onClick={handleCardClick}
         >
             {/* Header Row: owner name left when preview_pic on, status pill left otherwise — GEO-ID always right */}
             <div className="flex items-center justify-between mb-3">
@@ -707,7 +759,21 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         </div>
                     ) : photoUrl ? (
                         <div className="w-full aspect-[4/3] rounded-3xl overflow-hidden bg-gray-100 relative group/photo shadow-sm border border-gray-100">
-                            {permissions.view_photos ? (
+                            {isDiscreetConcealed ? (
+                                <div className="w-full h-full relative cursor-pointer select-none">
+                                    <img
+                                        src={photoUrl}
+                                        alt="Discreet Listing Preview"
+                                        className="w-full h-full object-cover blur-2xl select-none pointer-events-none"
+                                        loading="lazy"
+                                    />
+                                    <div className="absolute inset-0 bg-black/5 hover:bg-black/10 transition-colors flex items-center justify-center p-4">
+                                        <div className="bg-white/85 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-white/40 transform hover:scale-[1.03] transition-all">
+                                            <span className="text-xs font-bold text-gray-700 tracking-wider">Click card to reveal details</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : permissions.view_photos ? (
                                 <a
                                     href={listing.photoLink}
                                     target="_blank"
@@ -807,10 +873,26 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         </div>
                     ) : photoUrl ? (
                         <div className="w-full aspect-[4/3] rounded-3xl overflow-hidden bg-gray-100 relative group/photo shadow-sm border border-gray-100">
-                            <a href={listing.photoLink} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="block w-full h-full">
-                                <img src={photoUrl} alt={`Listing ${listing.id}`} className="w-full h-full object-cover group-hover/photo:scale-105 transition-transform duration-500" loading="lazy"
-                                    onError={() => { setPhotoError(true); setPhotoUrl(null); failedPhotoExtractions.add(listing.id); }} />
-                            </a>
+                            {isDiscreetConcealed ? (
+                                <div className="w-full h-full relative cursor-pointer select-none">
+                                    <img
+                                        src={photoUrl}
+                                        alt="Discreet Listing Preview"
+                                        className="w-full h-full object-cover blur-2xl select-none pointer-events-none"
+                                        loading="lazy"
+                                    />
+                                    <div className="absolute inset-0 bg-black/5 hover:bg-black/10 transition-colors flex items-center justify-center p-4">
+                                        <div className="bg-white/85 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-white/40 transform hover:scale-[1.03] transition-all">
+                                            <span className="text-xs font-bold text-gray-700 tracking-wider">Click card to reveal details</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <a href={listing.photoLink} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="block w-full h-full">
+                                    <img src={photoUrl} alt={`Listing ${listing.id}`} className="w-full h-full object-cover group-hover/photo:scale-105 transition-transform duration-500" loading="lazy"
+                                        onError={() => { setPhotoError(true); setPhotoUrl(null); failedPhotoExtractions.add(listing.id); }} />
+                                </a>
+                            )}
                             <div className="absolute bottom-2 left-2 right-2 z-10">{renderPriceModule(true)}</div>
                         </div>
                     ) : (
