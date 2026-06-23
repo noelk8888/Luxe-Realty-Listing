@@ -2900,6 +2900,10 @@ function App() {
       {/* Footer */}
       <footer className="w-full py-6 bg-white border-t border-gray-100 mt-12">
         <div className="max-w-4xl mx-auto px-4 flex flex-col items-center gap-4">
+          <div className="text-center text-[15px] sm:text-[18px] text-gray-400 max-w-2xl leading-relaxed">
+            <p className="font-semibold text-gray-500 mb-1 tracking-wider">CONFIDENTIALITY NOTICE</p>
+            <p>This site is exclusively for the privileged few. All listings are strictly confidential—do not distribute or share without prior notice. Prices and property details are subject to change at any time without notice.</p>
+          </div>
           {(groupBranding?.messengerUrl || groupBranding?.facebookUrl || groupBranding?.instagramUrl || groupBranding?.tiktokUrl || groupBranding?.youtubeUrl) && (
             <div className="flex items-center justify-center gap-3">
               {groupBranding.messengerUrl && (
@@ -2933,10 +2937,6 @@ function App() {
               )}
             </div>
           )}
-          <div className="text-center text-[10px] sm:text-xs text-gray-400 max-w-2xl leading-relaxed">
-            <p className="font-semibold text-gray-500 mb-1 tracking-wider">CONFIDENTIALITY NOTICE</p>
-            <p>This site is exclusively for the privileged few. All listings are strictly confidential—do not distribute or share without prior notice. Prices and property details are subject to change at any time without notice.</p>
-          </div>
         </div>
       </footer>
 
