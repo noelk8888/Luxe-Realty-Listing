@@ -770,10 +770,10 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                                         className="w-full h-full object-cover blur-2xl select-none pointer-events-none"
                                         loading="lazy"
                                     />
-                                    <div className="absolute inset-0 bg-black/5 hover:bg-black/10 transition-colors flex items-center justify-center p-4">
-                                        <div className="bg-white/85 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-white/40 transform hover:scale-[1.03] transition-all">
-                                            <span className="text-xs font-bold text-gray-700 tracking-wider">Click card to reveal details</span>
-                                        </div>
+                                    <div className="absolute inset-0 bg-black/20 hover:bg-black/30 transition-colors flex items-center justify-center p-4">
+                                        <span className="text-[11px] sm:text-xs font-black text-white uppercase tracking-widest drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] select-none">
+                                            Click card to reveal details
+                                        </span>
                                     </div>
                                 </div>
                             ) : permissions.view_photos ? (
@@ -884,10 +884,10 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                                         className="w-full h-full object-cover blur-2xl select-none pointer-events-none"
                                         loading="lazy"
                                     />
-                                    <div className="absolute inset-0 bg-black/5 hover:bg-black/10 transition-colors flex items-center justify-center p-4">
-                                        <div className="bg-white/85 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-white/40 transform hover:scale-[1.03] transition-all">
-                                            <span className="text-xs font-bold text-gray-700 tracking-wider">Click card to reveal details</span>
-                                        </div>
+                                    <div className="absolute inset-0 bg-black/20 hover:bg-black/30 transition-colors flex items-center justify-center p-4">
+                                        <span className="text-[11px] sm:text-xs font-black text-white uppercase tracking-widest drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] select-none">
+                                            Click card to reveal details
+                                        </span>
                                     </div>
                                 </div>
                             ) : (
