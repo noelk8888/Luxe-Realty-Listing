@@ -92,19 +92,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
 
     const hasForbiddenPreviewWords = (() => {
         const summaryUpper = (listing.summary || '').toUpperCase();
-        const forbiddenFacadeWords = [
-            'FACADE',
-            'G11705',
-            'DON\'T POST THE FACADE ONLINE',
-            'DON’T POST THE FACADE ONLINE',
-            '11B MONS ST., BRGY. STA LUCIA, SAN JUAN CITY',
-            '11B MONS ST, BRGY STA LUCIA, SAN JUAN CITY'
-        ];
-        return forbiddenFacadeWords.some(word => {
-            const cleanWord = word.replace(/\*/g, '');
-            const cleanSummary = summaryUpper.replace(/\*/g, '');
-            return cleanSummary.includes(cleanWord);
-        });
+        return summaryUpper.includes('FACADE');
     })();
 
     const isFacadeAllowed = (() => {
