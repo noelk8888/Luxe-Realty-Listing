@@ -62,7 +62,7 @@ const ALL_FEATURES: Feature[] = [
 const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'v1' | 'v2', Record<Feature, boolean>> = {
     admin: {
         add_listing: true, edit_listing: true, delete_listing: true,
-        telegram_send: true, batch_review: true, ai_extract: true,
+        telegram_send: true, batch_review: true, ai_extract: false,
         geocoding: true, view_pricing: true,
         view_photos: true, export_data: true, manage_users: true,
         view_fb_link: true,
@@ -78,7 +78,7 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'v1' | 'v2', Record<
     },
     editor: {
         add_listing: true, edit_listing: true, delete_listing: false,
-        telegram_send: false, batch_review: true, ai_extract: true,
+        telegram_send: false, batch_review: true, ai_extract: false,
         geocoding: true, view_pricing: true,
         view_photos: true, export_data: true, manage_users: false,
         view_fb_link: true,
@@ -94,7 +94,7 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'v1' | 'v2', Record<
     },
     broker: {
         add_listing: true, edit_listing: true, delete_listing: false,
-        telegram_send: false, batch_review: false, ai_extract: true,
+        telegram_send: false, batch_review: false, ai_extract: false,
         geocoding: true, view_pricing: true,
         view_photos: true, export_data: false, manage_users: false,
         view_fb_link: true,
@@ -189,6 +189,9 @@ async function resolvePermissions(email: string, role: string): Promise<Record<F
             }
         }
     }
+
+    // Price Click AI Text is exclusively for superadmins
+    perms.ai_extract = false;
 
     return perms;
 }

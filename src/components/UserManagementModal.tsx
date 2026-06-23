@@ -78,7 +78,6 @@ const FEATURES: { key: Feature; label: string; group: string; active: boolean }[
     { key: 'view_col_k',            label: 'Owner/Cobroker',    group: 'Listing Card',  active: true  },
     { key: 'view_listing_ownership', label: 'Listing Ownership', group: 'Listing Card', active: true  },
     { key: 'view_pricing',          label: 'View Pricing',      group: 'Listing Card',  active: true  },
-    { key: 'ai_extract',            label: 'Price Click AI Text', group: 'Listing Card', active: true  },
     { key: 'view_photos',           label: 'Photo Button',      group: 'Listing Card',  active: true  },
     { key: 'view_col_aa',           label: 'Listing Details',   group: 'Listing Card',  active: true  },
     { key: 'show_all',              label: 'Show All Toggle',   group: 'Listing Card',  active: true  },
@@ -139,12 +138,12 @@ const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
         edit_coordinates: true, geocoding: true, edit_fb_link: true, edit_update_date: true,
         // Misc
         add_listing: true, delete_listing: true,
-        telegram_send: true, batch_review: true, ai_extract: true,
+        telegram_send: true, batch_review: true, ai_extract: false,
         export_data: true, manage_users: true,
     },
     EDITOR: {
         add_listing: true, edit_listing: true, delete_listing: false,
-        telegram_send: false, batch_review: true, ai_extract: true,
+        telegram_send: false, batch_review: true, ai_extract: false,
         // Listing Card
         view_col_k: true, view_listing_ownership: true, view_pricing: true,
         view_photos: true, view_col_aa: true, view_col_ac: true,
@@ -160,7 +159,7 @@ const ROLE_DEFAULTS: Record<AppRole, Record<Feature, boolean>> = {
     },
     BROKER: {
         add_listing: true, edit_listing: true, delete_listing: false,
-        telegram_send: false, batch_review: false, ai_extract: true,
+        telegram_send: false, batch_review: false, ai_extract: false,
         // Listing Card
         view_col_k: true, view_listing_ownership: true, view_pricing: true,
         view_photos: true, view_col_aa: true, view_col_ac: true,
