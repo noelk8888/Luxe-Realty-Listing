@@ -74,7 +74,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     const { fbGroup, role } = useAuth();
     const { addToViewing, removeFromViewing, isInViewing, isFull } = useViewing();
 
-    // Discreet Listing Concealment & Reveal state
+    // Concealment & Reveal state
     const [isRevealed, setIsRevealed] = useState(false);
     const revealTimeoutRef = useRef<any>(null);
 
@@ -89,28 +89,6 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         ];
         return forbiddenWords.some(word => summaryUpper.includes(word));
     })();
-
-    const isDiscreetConcealed = isDiscreetListing && role !== 'superadmin' && !isRevealed;
-
-    const handleCardClick = () => {
-        if (isDiscreetConcealed) {
-            setIsRevealed(true);
-            if (revealTimeoutRef.current) {
-                clearTimeout(revealTimeoutRef.current);
-            }
-            revealTimeoutRef.current = setTimeout(() => {
-                setIsRevealed(false);
-            }, 5 * 60 * 1000); // 5 minutes
-        }
-    };
-
-    useEffect(() => {
-        return () => {
-            if (revealTimeoutRef.current) {
-                clearTimeout(revealTimeoutRef.current);
-            }
-        };
-    }, []);
 
     const hasForbiddenPreviewWords = (() => {
         const summaryUpper = (listing.summary || '').toUpperCase();
@@ -135,6 +113,31 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         if (role === 'superadmin') return true;
         return !!permissions.facade;
     })();
+
+    const isDiscreetConcealed = isDiscreetListing && role !== 'superadmin' && !isRevealed;
+    const isFacadeConcealed = hasForbiddenPreviewWords && role !== 'superadmin' && !isRevealed;
+    const isCardConcealed = isDiscreetConcealed || (isFacadeConcealed && isFacadeAllowed);
+    const isPhotoBlurred = isDiscreetConcealed || (isFacadeConcealed && isFacadeAllowed);
+
+    const handleCardClick = () => {
+        if (isCardConcealed) {
+            setIsRevealed(true);
+            if (revealTimeoutRef.current) {
+                clearTimeout(revealTimeoutRef.current);
+            }
+            revealTimeoutRef.current = setTimeout(() => {
+                setIsRevealed(false);
+            }, 5 * 60 * 1000); // 5 minutes
+        }
+    };
+
+    useEffect(() => {
+        return () => {
+            if (revealTimeoutRef.current) {
+                clearTimeout(revealTimeoutRef.current);
+            }
+        };
+    }, []);
 
     const showPreviewPic = permissions.preview_pic && isFacadeAllowed;
 
@@ -629,7 +632,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
 
     return (
         <div
-            className={`${cardClassName} ${isDisabled && !isSelected ? 'opacity-50' : ''} p-5 ${isDiscreetConcealed ? 'cursor-pointer hover:shadow-md transition-all duration-300' : ''}`}
+            className={`${cardClassName} ${isDisabled && !isSelected ? 'opacity-50' : ''} p-5 ${isCardConcealed ? 'cursor-pointer hover:shadow-md transition-all duration-300' : ''}`}
             onClick={handleCardClick}
         >
             {/* Header Row: owner name left when preview_pic on, status pill left otherwise — GEO-ID always right */}
@@ -759,7 +762,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         </div>
                     ) : photoUrl ? (
                         <div className="w-full aspect-[4/3] rounded-3xl overflow-hidden bg-gray-100 relative group/photo shadow-sm border border-gray-100">
-                            {isDiscreetConcealed ? (
+                            {isPhotoBlurred ? (
                                 <div className="w-full h-full relative cursor-pointer select-none">
                                     <img
                                         src={photoUrl}
@@ -873,7 +876,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         </div>
                     ) : photoUrl ? (
                         <div className="w-full aspect-[4/3] rounded-3xl overflow-hidden bg-gray-100 relative group/photo shadow-sm border border-gray-100">
-                            {isDiscreetConcealed ? (
+                            {isPhotoBlurred ? (
                                 <div className="w-full h-full relative cursor-pointer select-none">
                                     <img
                                         src={photoUrl}
