@@ -779,7 +779,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         </div>
                     )}
                 </div>
-            ) : permissions.view_photos && listing.photoLink && !photoError && !showPreviewPic ? (
+            ) : permissions.view_photos && listing.photoLink && !photoError && !showPreviewPic && !hasForbiddenPreviewWords ? (
                 /* Photo visible but preview_pic off — show photo without glass badge */
                 <div className="mt-0.5 mb-4">
                     {isPhotoLoading ? (
@@ -799,7 +799,8 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         <div className="mb-4 mt-0.5">{renderPriceModule(false)}</div>
                     )}
                 </div>
-            ) : showPreviewPic && (!listing.photoLink || photoError) ? (
+            ) : (
+                /* Preview pic not allowed/error/no photo - render the placeholder */
                 <div className="mt-0.5 mb-4">
                     <div className="w-full aspect-[4/3] rounded-3xl bg-gradient-to-br from-gray-100 to-gray-200 relative flex flex-col items-center justify-center border border-gray-200 shadow-inner overflow-hidden">
                         <div className="absolute inset-0 opacity-30"
@@ -850,10 +851,6 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                             {renderPriceModule(true)}
                         </div>
                     </div>
-                </div>
-            ) : (
-                <div className="mb-4 mt-0.5">
-                    {renderPriceModule(false)}
                 </div>
             )}
 
