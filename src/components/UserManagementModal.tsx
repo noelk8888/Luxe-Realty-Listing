@@ -87,6 +87,7 @@ const FEATURES: { key: Feature; label: string; group: string; active: boolean }[
     { key: 'view_notes',            label: 'Notes Button',      group: 'Listing Card',  active: true  },
     { key: 'change_status',         label: 'Change Status',     group: 'Listing Card',  active: true  },
     { key: 'geo_id_click',          label: 'GEO ID Click',      group: 'Listing Card',  active: true  },
+    { key: 'view_col_ac',           label: 'GEO ID',            group: 'Listing Card',  active: true  },
     { key: 'view_last_update',      label: 'Last Update',       group: 'Listing Card',  active: true  },
     { key: 'copy_photo_link',       label: 'Copy Photo Link',   group: 'Listing Card',  active: true  },
     { key: 'edit_listing',          label: 'Edit Button',       group: 'Listing Card',  active: true  },
