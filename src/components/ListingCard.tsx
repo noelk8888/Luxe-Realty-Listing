@@ -302,7 +302,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     }, [isClientError]);
 
     useEffect(() => {
-        if (!permissions.view_photos || !listing.photoLink) {
+        if (!(permissions.view_photos || permissions.preview_pic) || !listing.photoLink) {
             setPhotoUrl(null);
             setIsPhotoLoading(false);
             setPhotoError(false);
@@ -373,7 +373,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         return () => {
             isMounted = false;
         };
-    }, [listing.id, listing.photoLink, permissions.view_photos]);
+    }, [listing.id, listing.photoLink, permissions.view_photos, permissions.preview_pic]);
 
     const status = (listing.statusAQ || '').toLowerCase().trim();
     const isNotAvailable = status !== 'available' && status !== '';
@@ -658,7 +658,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             )}
 
             {/* Photo Preview Module with Overlaid Price + iOS-glass Status Badge */}
-            {permissions.view_photos && permissions.preview_pic && listing.photoLink && !photoError ? (
+            {permissions.preview_pic && listing.photoLink && !photoError ? (
                 <div className="mt-0.5 mb-4">
                     {isPhotoLoading ? (
                         <div className="w-full aspect-[4/3] rounded-2xl bg-gray-100 animate-pulse flex items-center justify-center border border-gray-100 relative">
@@ -669,25 +669,44 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         </div>
                     ) : photoUrl ? (
                         <div className="w-full aspect-[4/3] rounded-3xl overflow-hidden bg-gray-100 relative group/photo shadow-sm border border-gray-100">
-                            <a
-                                href={listing.photoLink}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="block w-full h-full"
-                            >
-                                <img
-                                    src={photoUrl}
-                                    alt={`Listing ${listing.id}`}
-                                    className="w-full h-full object-cover group-hover/photo:scale-105 transition-transform duration-500"
-                                    loading="lazy"
-                                    onError={() => {
-                                        setPhotoError(true);
-                                        setPhotoUrl(null);
-                                        failedPhotoExtractions.add(listing.id);
-                                    }}
-                                />
-                            </a>
+                            {permissions.view_photos ? (
+                                <a
+                                    href={listing.photoLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="block w-full h-full"
+                                >
+                                    <img
+                                        src={photoUrl}
+                                        alt={`Listing ${listing.id}`}
+                                        className="w-full h-full object-cover group-hover/photo:scale-105 transition-transform duration-500"
+                                        loading="lazy"
+                                        onError={() => {
+                                            setPhotoError(true);
+                                            setPhotoUrl(null);
+                                            failedPhotoExtractions.add(listing.id);
+                                        }}
+                                    />
+                                </a>
+                            ) : (
+                                <div 
+                                    className="w-full h-full cursor-default"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <img
+                                        src={photoUrl}
+                                        alt={`Listing ${listing.id}`}
+                                        className="w-full h-full object-cover"
+                                        loading="lazy"
+                                        onError={() => {
+                                            setPhotoError(true);
+                                            setPhotoUrl(null);
+                                            failedPhotoExtractions.add(listing.id);
+                                        }}
+                                    />
+                                </div>
+                            )}
 
                             {/* iOS frosted-glass status badge — top-left overlay */}
                             <div className="absolute top-4 left-4 z-20">
