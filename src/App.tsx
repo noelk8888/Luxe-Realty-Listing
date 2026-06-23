@@ -267,7 +267,7 @@ function App() {
   const [isTypeFilterOpen, setIsTypeFilterOpen] = useState(false);
 
   // SUPERADMIN Sort State
-  const [adminSortMode, setAdminSortMode] = useState<'SOCMED' | 'GEO-ID' | 'LISTING DATE'>('GEO-ID');
+  const [adminSortMode, setAdminSortMode] = useState<'SOCMED' | 'GEO-ID' | 'LISTING DATE'>('LISTING DATE');
   const [isAdminSortMenuOpen, setIsAdminSortMenuOpen] = useState(false);
   const adminSortRef = useRef<HTMLDivElement>(null);
 
@@ -1140,12 +1140,12 @@ function App() {
           if (!a.mapVerified && b.mapVerified) return 1;
           return geoB - geoA;
         } else {
-          // SHOW ALL = OFF: Ownership > Socmed > Date > Map Verified > GEO-ID
+          // SHOW ALL = OFF: Date > Ownership > Socmed > Map Verified > GEO-ID
+          if (!isNaN(dateA) && !isNaN(dateB) && dateA !== dateB) return dateB - dateA;
           if (aOwnerMatch && !bOwnerMatch) return -1;
           if (!aOwnerMatch && bOwnerMatch) return 1;
           if (aHasMySocmed && !bHasMySocmed) return -1;
           if (!aHasMySocmed && bHasMySocmed) return 1;
-          if (!isNaN(dateA) && !isNaN(dateB) && dateA !== dateB) return dateB - dateA;
           if (a.mapVerified && !b.mapVerified) return -1;
           if (!a.mapVerified && b.mapVerified) return 1;
           return geoB - geoA;
