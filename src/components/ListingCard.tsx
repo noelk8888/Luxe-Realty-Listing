@@ -569,7 +569,19 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         >
                             {isColumnKCopied ? 'COPIED!' : `${index ? `${index}. ` : ''}${listing.columnK}`}
                         </div>
-                    ) : <div />
+                    ) : (
+                        /* owner/cobroker is turned off or not present — show the status here in its place */
+                        <div
+                            className={`text-sm font-extrabold leading-tight truncate mr-3 ${
+                                isUndecisiveSeller ? 'text-amber-800' :
+                                isUnderNego ? 'text-blue-500' :
+                                isNotAvailable ? 'text-red-600' :
+                                'text-green-600'
+                            }`}
+                        >
+                            {index ? `${index}. ` : ''}{(listing.statusAQ?.toUpperCase() === 'OFF THE MARKET' ? 'OFF MARKET' : listing.statusAQ) || 'Available'}
+                        </div>
+                    )
                 ) : (
                     /* preview_pic OFF — show status pill on the left */
                     <div className={`bg-white border-2 px-6 py-1.5 rounded-2xl shadow-sm flex items-center justify-center min-w-[140px] 
@@ -708,39 +720,41 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                                 </div>
                             )}
 
-                            {/* iOS frosted-glass status badge — top-left overlay */}
-                            <div className="absolute top-4 left-4 z-20">
-                                <div className={`
-                                    inline-flex items-center px-4 py-2 rounded-full
-                                    backdrop-blur-md border border-white/65
-                                    shadow-[0_2px_14px_rgba(0,0,0,0.22)]
-                                    ${
-                                        isUndecisiveSeller
-                                            ? 'bg-amber-100/50 ring-1 ring-amber-400/70'
-                                            : isUnderNego
-                                            ? 'bg-blue-100/50 ring-1 ring-blue-400/70'
-                                            : isNotAvailable
-                                            ? 'bg-red-100/50 ring-1 ring-red-400/70'
-                                            : 'bg-emerald-100/50 ring-1 ring-green-400/70'
-                                    }
-                                `}>
-                                    {/* Coloured dot */}
-                                    <span className={`w-2 h-2 rounded-full mr-2 flex-shrink-0 shadow-sm ${
-                                        isUndecisiveSeller ? 'bg-amber-500' :
-                                        isUnderNego      ? 'bg-blue-500'  :
-                                        isNotAvailable   ? 'bg-red-500'   :
-                                        'bg-emerald-500'
-                                    }`} />
-                                    <span className={`text-[12px] font-black uppercase tracking-[0.22em] ${
-                                        isUndecisiveSeller ? 'text-amber-900' :
-                                        isUnderNego      ? 'text-blue-900'  :
-                                        isNotAvailable   ? 'text-red-900'   :
-                                        'text-emerald-900'
-                                    }`}>
-                                        {(listing.statusAQ?.toUpperCase() === 'OFF THE MARKET' ? 'OFF MARKET' : listing.statusAQ) || 'Available'}
-                                    </span>
+                            {/* iOS frosted-glass status badge — top-left overlay, only shown when Owner/Cobroker is ON */}
+                            {permissions.view_col_k && listing.columnK && (
+                                <div className="absolute top-4 left-4 z-20">
+                                    <div className={`
+                                        inline-flex items-center px-4 py-2 rounded-full
+                                        backdrop-blur-md border border-white/65
+                                        shadow-[0_2px_14px_rgba(0,0,0,0.22)]
+                                        ${
+                                            isUndecisiveSeller
+                                                ? 'bg-amber-100/50 ring-1 ring-amber-400/70'
+                                                : isUnderNego
+                                                ? 'bg-blue-100/50 ring-1 ring-blue-400/70'
+                                                : isNotAvailable
+                                                ? 'bg-red-100/50 ring-1 ring-red-400/70'
+                                                : 'bg-emerald-100/50 ring-1 ring-green-400/70'
+                                        }
+                                    `}>
+                                        {/* Coloured dot */}
+                                        <span className={`w-2 h-2 rounded-full mr-2 flex-shrink-0 shadow-sm ${
+                                            isUndecisiveSeller ? 'bg-amber-500' :
+                                            isUnderNego      ? 'bg-blue-500'  :
+                                            isNotAvailable   ? 'bg-red-500'   :
+                                            'bg-emerald-500'
+                                        }`} />
+                                        <span className={`text-[12px] font-black uppercase tracking-[0.22em] ${
+                                            isUndecisiveSeller ? 'text-amber-900' :
+                                            isUnderNego      ? 'text-blue-900'  :
+                                            isNotAvailable   ? 'text-red-900'   :
+                                            'text-emerald-900'
+                                        }`}>
+                                            {(listing.statusAQ?.toUpperCase() === 'OFF THE MARKET' ? 'OFF MARKET' : listing.statusAQ) || 'Available'}
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
                             {/* Watermark — top-right */}
                             {renderWatermark()}
@@ -782,38 +796,40 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                     <div className="w-full aspect-[4/3] rounded-3xl bg-gradient-to-br from-gray-100 to-gray-200 relative flex flex-col items-center justify-center border border-gray-200 shadow-inner overflow-hidden">
                         <div className="absolute inset-0 opacity-30"
                             style={{ backgroundImage: 'radial-gradient(circle, #9ca3af 1px, transparent 1px)', backgroundSize: '18px 18px' }} />
-                        {/* STATUS badge — top-left, same position as photo overlay */}
-                        <div className="absolute top-4 left-4 z-20">
-                            <div className={`
-                                inline-flex items-center px-4 py-2 rounded-full
-                                backdrop-blur-md border border-white/65
-                                shadow-[0_2px_14px_rgba(0,0,0,0.22)]
-                                ${
-                                    isUndecisiveSeller
-                                        ? 'bg-amber-100/50 ring-1 ring-amber-400/70'
-                                        : isUnderNego
-                                        ? 'bg-blue-100/50 ring-1 ring-blue-400/70'
-                                        : isNotAvailable
-                                        ? 'bg-red-100/50 ring-1 ring-red-400/70'
-                                        : 'bg-emerald-100/50 ring-1 ring-green-400/70'
-                                }
-                            `}>
-                                <span className={`w-2 h-2 rounded-full mr-2 flex-shrink-0 shadow-sm ${
-                                    isUndecisiveSeller ? 'bg-amber-500' :
-                                    isUnderNego      ? 'bg-blue-500'  :
-                                    isNotAvailable   ? 'bg-red-500'   :
-                                    'bg-emerald-500'
-                                }`} />
-                                <span className={`text-[12px] font-black uppercase tracking-[0.22em] ${
-                                    isUndecisiveSeller ? 'text-amber-900' :
-                                    isUnderNego      ? 'text-blue-900'  :
-                                    isNotAvailable   ? 'text-red-900'   :
-                                    'text-emerald-900'
-                                }`}>
-                                    {(listing.statusAQ?.toUpperCase() === 'OFF THE MARKET' ? 'OFF MARKET' : listing.statusAQ) || 'Available'}
-                                </span>
+                        {/* STATUS badge — top-left, same position as photo overlay, only shown when Owner/Cobroker is ON */}
+                        {permissions.view_col_k && listing.columnK && (
+                            <div className="absolute top-4 left-4 z-20">
+                                <div className={`
+                                    inline-flex items-center px-4 py-2 rounded-full
+                                    backdrop-blur-md border border-white/65
+                                    shadow-[0_2px_14px_rgba(0,0,0,0.22)]
+                                    ${
+                                        isUndecisiveSeller
+                                            ? 'bg-amber-100/50 ring-1 ring-amber-400/70'
+                                            : isUnderNego
+                                            ? 'bg-blue-100/50 ring-1 ring-blue-400/70'
+                                            : isNotAvailable
+                                            ? 'bg-red-100/50 ring-1 ring-red-400/70'
+                                            : 'bg-emerald-100/50 ring-1 ring-green-400/70'
+                                    }
+                                `}>
+                                    <span className={`w-2 h-2 rounded-full mr-2 flex-shrink-0 shadow-sm ${
+                                        isUndecisiveSeller ? 'bg-amber-500' :
+                                        isUnderNego      ? 'bg-blue-500'  :
+                                        isNotAvailable   ? 'bg-red-500'   :
+                                        'bg-emerald-500'
+                                    }`} />
+                                    <span className={`text-[12px] font-black uppercase tracking-[0.22em] ${
+                                        isUndecisiveSeller ? 'text-amber-900' :
+                                        isUnderNego      ? 'text-blue-900'  :
+                                        isNotAvailable   ? 'text-red-900'   :
+                                        'text-emerald-900'
+                                    }`}>
+                                        {(listing.statusAQ?.toUpperCase() === 'OFF THE MARKET' ? 'OFF MARKET' : listing.statusAQ) || 'Available'}
+                                    </span>
+                                </div>
                             </div>
-                        </div>
+                        )}
                         {/* Watermark — top-right */}
                         {renderWatermark()}
                         <div className="relative z-10 flex flex-col items-center gap-2">
