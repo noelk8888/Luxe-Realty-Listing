@@ -508,6 +508,19 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             );
         }
 
+        if (isFacadeConcealed && isFacadeAllowed) {
+            const bgClass = isOverlay
+                ? 'backdrop-blur-md bg-white/70 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
+                : 'bg-gray-100 shadow-inner';
+            return (
+                <div 
+                    className={`w-full px-3 py-2.5 rounded-2xl flex flex-col items-center justify-center gap-0.5 text-center transition-all duration-200 ${bgClass}`}
+                >
+                    <span className="text-sm font-bold text-gray-800 uppercase tracking-widest">DO NOT SHOW FACADE</span>
+                </div>
+            );
+        }
+
         let bgClass = '';
         if (isClientLoading) {
             bgClass = isOverlay
