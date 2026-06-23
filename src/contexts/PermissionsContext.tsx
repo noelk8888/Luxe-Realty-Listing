@@ -153,13 +153,23 @@ async function resolvePermissions(email: string, role: string): Promise<Record<F
     const perms: Record<Feature, boolean> = { ...ROLE_DEFAULTS[typedRole] };
 
     // Apply role-level DB overrides
+    const rolesToQuery = role.toUpperCase() === 'V1' ? ['V1', 'VIEWER'] : [role.toUpperCase()];
     const { data: rolePerms } = await supabase
         .from('luxe_listing_role_permissions')
-        .select('feature, enabled')
-        .eq('role', role.toUpperCase());
+        .select('role, feature, enabled')
+        .in('role', rolesToQuery);
 
     if (rolePerms) {
-        for (const row of rolePerms) {
+        // First apply VIEWER permissions (legacy fallback)
+        const viewerPerms = rolePerms.filter(r => ((r.role as string) || '').toUpperCase() === 'VIEWER');
+        for (const row of viewerPerms) {
+            if (ALL_FEATURES.includes(row.feature as Feature)) {
+                perms[row.feature as Feature] = row.enabled;
+            }
+        }
+        // Then apply V1 / other role permissions (takes precedence)
+        const activeRolePerms = rolePerms.filter(r => ((r.role as string) || '').toUpperCase() !== 'VIEWER');
+        for (const row of activeRolePerms) {
             if (ALL_FEATURES.includes(row.feature as Feature)) {
                 perms[row.feature as Feature] = row.enabled;
             }
