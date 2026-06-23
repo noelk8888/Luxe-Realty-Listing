@@ -75,12 +75,30 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     const { addToViewing, removeFromViewing, isInViewing, isFull } = useViewing();
 
     const hasForbiddenPreviewWords = (() => {
-        if (role !== 'v2') return false;
         const summaryUpper = (listing.summary || '').toUpperCase();
-        return summaryUpper.includes('FACADE');
+        const forbiddenFacadeWords = [
+            'FACADE',
+            'G11705',
+            'FOR SALE/LEASE',
+            'DON\'T POST THE FACADE ONLINE',
+            'DON’T POST THE FACADE ONLINE',
+            '11B MONS ST., BRGY. STA LUCIA, SAN JUAN CITY',
+            '11B MONS ST, BRGY STA LUCIA, SAN JUAN CITY'
+        ];
+        return forbiddenFacadeWords.some(word => {
+            const cleanWord = word.replace(/\*/g, '');
+            const cleanSummary = summaryUpper.replace(/\*/g, '');
+            return cleanSummary.includes(cleanWord);
+        });
     })();
 
-    const showPreviewPic = permissions.preview_pic && !hasForbiddenPreviewWords;
+    const isFacadeAllowed = (() => {
+        if (!hasForbiddenPreviewWords) return true;
+        if (role === 'superadmin') return true;
+        return !!permissions.facade;
+    })();
+
+    const showPreviewPic = permissions.preview_pic && isFacadeAllowed;
 
 
 
@@ -779,7 +797,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         </div>
                     )}
                 </div>
-            ) : permissions.view_photos && listing.photoLink && !photoError && !showPreviewPic && !hasForbiddenPreviewWords ? (
+            ) : permissions.view_photos && listing.photoLink && !photoError && !showPreviewPic && isFacadeAllowed ? (
                 /* Photo visible but preview_pic off — show photo without glass badge */
                 <div className="mt-0.5 mb-4">
                     {isPhotoLoading ? (

@@ -52,7 +52,6 @@ function App() {
   const [results, setResults] = useState<Listing[]>([]);
 
   const visibleListings = useMemo(() => {
-    if (role !== 'v2') return allListings;
     const forbiddenWords = [
       'DISCREET',
       'DO NOT POST ONLINE',
@@ -62,9 +61,14 @@ function App() {
     ];
     return allListings.filter(item => {
       const summaryUpper = (item.summary || '').toUpperCase();
-      return !forbiddenWords.some(word => summaryUpper.includes(word));
+      const isDiscreet = forbiddenWords.some(word => summaryUpper.includes(word));
+      if (isDiscreet) {
+        if (role === 'superadmin') return true;
+        return !!permissions.discreet;
+      }
+      return true;
     });
-  }, [allListings, role]);
+  }, [allListings, role, permissions.discreet]);
 
   const [selectedType, setSelectedType] = useState<string | null>(() => new URLSearchParams(window.location.search).get('type')); // Default null (No filter)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(() => new URLSearchParams(window.location.search).get('category')); // 'Residential' | 'Commercial' | 'Industrial' | 'Agricultural' | null
@@ -503,20 +507,22 @@ function App() {
     fetchListings().then(data => {
       console.log('Fetched listings:', data.length);
       setAllListings(data);
-      // Initialize results with all data so "Show All" works immediately (filtered for V2 user level)
-      const initialResults = role === 'v2' 
-        ? data.filter(item => {
-            const summaryUpper = (item.summary || '').toUpperCase();
-            const forbiddenWords = [
-              'DISCREET',
-              'DO NOT POST ONLINE',
-              'DO NOT SHARE ONLINE',
-              'NO POSTING ONLINE',
-              'NO ONLINE POSTING'
-            ];
-            return !forbiddenWords.some(word => summaryUpper.includes(word));
-          })
-        : data;
+      // Initialize results with all data so "Show All" works immediately (filtered based on discreet permissions)
+      const initialResults = data.filter(item => {
+        const summaryUpper = (item.summary || '').toUpperCase();
+        const isDiscreet = [
+          'DISCREET',
+          'DO NOT POST ONLINE',
+          'DO NOT SHARE ONLINE',
+          'NO POSTING ONLINE',
+          'NO ONLINE POSTING'
+        ].some(word => summaryUpper.includes(word));
+        if (isDiscreet) {
+          if (role === 'superadmin') return true;
+          return !!permissions.discreet;
+        }
+        return true;
+      });
       setResults(initialResults);
       setLoadingProgress(100);
       setTimeout(() => setLoading(false), 400);
@@ -559,19 +565,21 @@ function App() {
       const data = await refreshListings();
       console.log('Refreshed listings:', data.length);
       setAllListings(data);
-      const refreshedResults = role === 'v2' 
-        ? data.filter(item => {
-            const summaryUpper = (item.summary || '').toUpperCase();
-            const forbiddenWords = [
-              'DISCREET',
-              'DO NOT POST ONLINE',
-              'DO NOT SHARE ONLINE',
-              'NO POSTING ONLINE',
-              'NO ONLINE POSTING'
-            ];
-            return !forbiddenWords.some(word => summaryUpper.includes(word));
-          })
-        : data;
+      const refreshedResults = data.filter(item => {
+        const summaryUpper = (item.summary || '').toUpperCase();
+        const isDiscreet = [
+          'DISCREET',
+          'DO NOT POST ONLINE',
+          'DO NOT SHARE ONLINE',
+          'NO POSTING ONLINE',
+          'NO ONLINE POSTING'
+        ].some(word => summaryUpper.includes(word));
+        if (isDiscreet) {
+          if (role === 'superadmin') return true;
+          return !!permissions.discreet;
+        }
+        return true;
+      });
       setResults(refreshedResults);
       // Reset search and filters
       setQuery('');
@@ -751,6 +759,13 @@ function App() {
       performSearch();
     }
   }, [debouncedQuery, visibleListings]);
+
+  // Effect: Keep results synchronized with visibleListings when search query is empty
+  useEffect(() => {
+    if (!query && !debouncedQuery && !hasSearched) {
+      setResults(visibleListings);
+    }
+  }, [visibleListings, query, debouncedQuery, hasSearched]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

@@ -39,7 +39,9 @@ export type Feature =
     | 'full_screen_map'
     | 'map_preview'
     | 'viewing_listing'
-    | 'preview_pic';
+    | 'preview_pic'
+    | 'discreet'
+    | 'facade';
 
 const ALL_FEATURES: Feature[] = [
     'add_listing', 'edit_listing', 'delete_listing',
@@ -55,7 +57,7 @@ const ALL_FEATURES: Feature[] = [
     'show_all', 'view_last_update', 'edit_monthly_dues', 'copy_photo_link',
     'full_screen_map',
     'map_preview', 'viewing_listing',
-    'preview_pic'
+    'preview_pic', 'discreet', 'facade'
 ];
 
 // ── Role defaults ─────────────────────────────────────────────────────────────
@@ -75,6 +77,7 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'v1' | 'v2', Record<
         full_screen_map: true,
         map_preview: true, viewing_listing: true,
         preview_pic: true,
+        discreet: true, facade: true,
     },
     editor: {
         add_listing: true, edit_listing: true, delete_listing: false,
@@ -91,6 +94,7 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'v1' | 'v2', Record<
         full_screen_map: false,
         map_preview: true, viewing_listing: false,
         preview_pic: true,
+        discreet: true, facade: true,
     },
     broker: {
         add_listing: true, edit_listing: true, delete_listing: false,
@@ -107,6 +111,7 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'v1' | 'v2', Record<
         full_screen_map: false,
         map_preview: true, viewing_listing: false,
         preview_pic: true,
+        discreet: true, facade: true,
     },
     v1: {
         add_listing: false, edit_listing: false, delete_listing: false,
@@ -123,6 +128,7 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'v1' | 'v2', Record<
         full_screen_map: false,
         map_preview: true, viewing_listing: false,
         preview_pic: true,
+        discreet: true, facade: true,
     },
     v2: {
         add_listing: false, edit_listing: false, delete_listing: false,
@@ -139,6 +145,7 @@ const ROLE_DEFAULTS: Record<'admin' | 'editor' | 'broker' | 'v1' | 'v2', Record<
         full_screen_map: false,
         map_preview: false, viewing_listing: false,
         preview_pic: false,
+        discreet: false, facade: false,
     },
 };
 
