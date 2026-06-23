@@ -77,17 +77,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     const hasForbiddenPreviewWords = (() => {
         if (role !== 'v2') return false;
         const summaryUpper = (listing.summary || '').toUpperCase();
-        const forbiddenTerms = [
-            'FACADE',
-            'G11705',
-            '*FOR SALE/LEASE*',
-            'FOR SALE/LEASE',
-            "*DON'T POST THE FACADE ONLINE*",
-            "DON'T POST THE FACADE ONLINE",
-            '11B MONS ST., BRGY. STA LUCIA, SAN JUAN CITY',
-            '11B MONS ST., BRGY. STA. LUCIA, SAN JUAN CITY'
-        ];
-        return forbiddenTerms.some(term => summaryUpper.includes(term.toUpperCase()));
+        return summaryUpper.includes('FACADE');
     })();
 
     const showPreviewPic = permissions.preview_pic && !hasForbiddenPreviewWords;
