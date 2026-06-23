@@ -218,8 +218,8 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     
     const handleCopyClientVersion = async (e: React.MouseEvent) => {
         e.stopPropagation();
-        // AI Client Version Generation: Kiu group and superadmin only
-        if (role !== 'superadmin' && fbGroup !== 'Kiu') return;
+        // AI Client Version Generation: based on permission
+        if (!permissions.ai_extract) return;
         if (isClientLoading) return;
 
         const rawText = (listing.summary || '').trim();
@@ -441,7 +441,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             bgClass = isOverlay
                 ? 'backdrop-blur-md bg-red-100/65 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
                 : 'bg-red-50 shadow-md';
-        } else if (role === 'superadmin' || fbGroup === 'Kiu') {
+        } else if (permissions.ai_extract) {
             bgClass = isOverlay
                 ? 'backdrop-blur-md bg-white/65 border border-white/65 shadow-[0_2px_12px_rgba(0,0,0,0.18)]'
                 : 'bg-gray-100 hover:bg-gray-200 shadow-inner';
@@ -455,10 +455,10 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             <div 
                 onClick={handleCopyClientVersion}
                 className={`w-full px-3 py-2.5 rounded-2xl flex flex-col items-center justify-center gap-0.5 text-center transition-all duration-200
-                    ${(role === 'superadmin' || fbGroup === 'Kiu') ? 'cursor-pointer' : 'cursor-default'}
+                    ${permissions.ai_extract ? 'cursor-pointer' : 'cursor-default'}
                     ${bgClass}
                 `}
-                title={(role === 'superadmin' || fbGroup === 'Kiu') ? 'Click to generate & copy Client Version (via AI)' : undefined}
+                title={permissions.ai_extract ? 'Click to generate & copy Client Version (via AI)' : undefined}
             >
                 {!permissions.view_pricing && (
                     <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">Price Hidden</span>

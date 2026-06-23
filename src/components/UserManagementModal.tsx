@@ -78,6 +78,7 @@ const FEATURES: { key: Feature; label: string; group: string; active: boolean }[
     { key: 'view_col_k',            label: 'Owner/Cobroker',    group: 'Listing Card',  active: true  },
     { key: 'view_listing_ownership', label: 'Listing Ownership', group: 'Listing Card', active: true  },
     { key: 'view_pricing',          label: 'View Pricing',      group: 'Listing Card',  active: true  },
+    { key: 'ai_extract',            label: 'Price Click AI Text', group: 'Listing Card', active: true  },
     { key: 'view_photos',           label: 'Photo Button',      group: 'Listing Card',  active: true  },
     { key: 'view_col_aa',           label: 'Listing Details',   group: 'Listing Card',  active: true  },
     { key: 'show_all',              label: 'Show All Toggle',   group: 'Listing Card',  active: true  },
