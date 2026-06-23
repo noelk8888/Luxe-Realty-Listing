@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, ArrowUp, ArrowDown, Facebook, Instagram, Youtube, Eye, Share2, Check } from 'lucide-react';
 import { DualRangeSlider } from './components/DualRangeSlider';
@@ -50,6 +50,22 @@ function App() {
   const lastRefreshTimeRef = useRef<number>(Date.now());
   const [allListings, setAllListings] = useState<Listing[]>([]);
   const [results, setResults] = useState<Listing[]>([]);
+
+  const visibleListings = useMemo(() => {
+    if (role !== 'v2') return allListings;
+    const forbiddenWords = [
+      'DISCREET',
+      'DO NOT POST ONLINE',
+      'DO NOT SHARE ONLINE',
+      'NO POSTING ONLINE',
+      'NO ONLINE POSTING'
+    ];
+    return allListings.filter(item => {
+      const summaryUpper = (item.summary || '').toUpperCase();
+      return !forbiddenWords.some(word => summaryUpper.includes(word));
+    });
+  }, [allListings, role]);
+
   const [selectedType, setSelectedType] = useState<string | null>(() => new URLSearchParams(window.location.search).get('type')); // Default null (No filter)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(() => new URLSearchParams(window.location.search).get('category')); // 'Residential' | 'Commercial' | 'Industrial' | 'Agricultural' | null
   const [selectedDirect, setSelectedDirect] = useState<boolean>(() => new URLSearchParams(window.location.search).get('direct') === 'true');
@@ -487,8 +503,21 @@ function App() {
     fetchListings().then(data => {
       console.log('Fetched listings:', data.length);
       setAllListings(data);
-      // Initialize results with all data so "Show All" works immediately
-      setResults(data);
+      // Initialize results with all data so "Show All" works immediately (filtered for V2 user level)
+      const initialResults = role === 'v2' 
+        ? data.filter(item => {
+            const summaryUpper = (item.summary || '').toUpperCase();
+            const forbiddenWords = [
+              'DISCREET',
+              'DO NOT POST ONLINE',
+              'DO NOT SHARE ONLINE',
+              'NO POSTING ONLINE',
+              'NO ONLINE POSTING'
+            ];
+            return !forbiddenWords.some(word => summaryUpper.includes(word));
+          })
+        : data;
+      setResults(initialResults);
       setLoadingProgress(100);
       setTimeout(() => setLoading(false), 400);
     }).catch(error => {
@@ -530,7 +559,20 @@ function App() {
       const data = await refreshListings();
       console.log('Refreshed listings:', data.length);
       setAllListings(data);
-      setResults(data);
+      const refreshedResults = role === 'v2' 
+        ? data.filter(item => {
+            const summaryUpper = (item.summary || '').toUpperCase();
+            const forbiddenWords = [
+              'DISCREET',
+              'DO NOT POST ONLINE',
+              'DO NOT SHARE ONLINE',
+              'NO POSTING ONLINE',
+              'NO ONLINE POSTING'
+            ];
+            return !forbiddenWords.some(word => summaryUpper.includes(word));
+          })
+        : data;
+      setResults(refreshedResults);
       // Reset search and filters
       setQuery('');
       setDebouncedQuery('');
@@ -700,7 +742,7 @@ function App() {
 
       // Keyword search only (semantic search disabled)
       const performSearch = async () => {
-        let keywordResults = searchListings(allListings, debouncedQuery, 0); // Always use broad match (0)
+        let keywordResults = searchListings(visibleListings, debouncedQuery, 0); // Always use broad match (0)
 
         console.log('🔍 Using keyword search only');
         setResults(keywordResults);
@@ -708,7 +750,7 @@ function App() {
 
       performSearch();
     }
-  }, [debouncedQuery, allListings]);
+  }, [debouncedQuery, visibleListings]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -816,12 +858,12 @@ function App() {
   useEffect(() => { setSelectedBarangay(null); }, [selectedCity]);
 
   useEffect(() => {
-    // If a filter is selected but no results yet (and no query), we should populate results with allListings
+    // If a filter is selected but no results yet (and no query), we should populate results with visibleListings
     // so filtering can happen on the full set.
     if ((selectedType || selectedCategory || selectedDirect || selectedRegion || selectedProvince || selectedCity || selectedBarangay) && results.length === 0 && !query) {
-      setResults(allListings);
+      setResults(visibleListings);
     }
-  }, [selectedType, selectedCategory, selectedDirect, selectedRegion, selectedProvince, selectedCity, selectedBarangay, results.length, query, allListings]);
+  }, [selectedType, selectedCategory, selectedDirect, selectedRegion, selectedProvince, selectedCity, selectedBarangay, results.length, query, visibleListings]);
 
   // Derived Min/Max from BASE results (for Slider limits)
   const availablePrices = baseFilteredResults.map(item => {
@@ -1691,7 +1733,7 @@ function App() {
 
           <div className={`font-bold text-gray-900 tracking-tight transition-all duration-500 ${(hasSearched || selectedType || selectedCategory || (selectedBedrooms.length > 0) || (selectedParking.length > 0) || (selectedPropertyTypes.length > 0)) ? 'text-2xl mb-4 mt-4' : 'text-4xl sm:text-5xl mb-8'}`}>
             {(selectedType || selectedCategory || hasSearched || (selectedBedrooms.length > 0) || (selectedParking.length > 0) || (selectedPropertyTypes.length > 0))
-              ? <>Found {displayedResults.length.toLocaleString()} of {allListings.filter(l => l.sourceTab === 'Sheet1').length.toLocaleString()} Available <span className="relative inline-block" ref={adminSortRef}>
+              ? <>Found {displayedResults.length.toLocaleString()} of {visibleListings.filter(l => l.sourceTab === 'Sheet1').length.toLocaleString()} Available <span className="relative inline-block" ref={adminSortRef}>
                   {role === 'superadmin' ? (
                     <span onClick={() => setIsAdminSortMenuOpen(!isAdminSortMenuOpen)} className="cursor-pointer hover:text-blue-600 transition-colors border-b border-dashed border-gray-400 pb-0.5" title="Listings Sort Options">Listings</span>
                   ) : (
@@ -1714,7 +1756,7 @@ function App() {
                     </div>
                   )}
                 </span></>
-              : allListings.filter(l => l.sourceTab === 'Sheet1').length > 0 ? <>{allListings.filter(l => l.sourceTab === 'Sheet1').length.toLocaleString()} Available <span className="relative inline-block" ref={adminSortRef}>
+              : visibleListings.filter(l => l.sourceTab === 'Sheet1').length > 0 ? <>{visibleListings.filter(l => l.sourceTab === 'Sheet1').length.toLocaleString()} Available <span className="relative inline-block" ref={adminSortRef}>
                   {role === 'superadmin' ? (
                     <span onClick={() => setIsAdminSortMenuOpen(!isAdminSortMenuOpen)} className="cursor-pointer hover:text-blue-600 transition-colors border-b border-dashed border-gray-400 pb-0.5" title="Listings Sort Options">Listings</span>
                   ) : (
@@ -1812,10 +1854,10 @@ function App() {
             <div className="inline-flex bg-gray-100 p-0.5 rounded-lg shadow-inner relative z-0">
               {(() => {
                 const categoryPresence = {
-                  'Residential': allListings.some(item => (item.category || '').toUpperCase().includes('RESIDENTIAL')),
-                  'Commercial': allListings.some(item => (item.category || '').toUpperCase().includes('COMMERCIAL')),
-                  'Industrial': allListings.some(item => (item.category || '').toUpperCase().includes('INDUSTRIAL')),
-                  'Agricultural': allListings.some(item => (item.category || '').toUpperCase().includes('AGRICULTURAL'))
+                  'Residential': visibleListings.some(item => (item.category || '').toUpperCase().includes('RESIDENTIAL')),
+                  'Commercial': visibleListings.some(item => (item.category || '').toUpperCase().includes('COMMERCIAL')),
+                  'Industrial': visibleListings.some(item => (item.category || '').toUpperCase().includes('INDUSTRIAL')),
+                  'Agricultural': visibleListings.some(item => (item.category || '').toUpperCase().includes('AGRICULTURAL'))
                 };
 
                 return (['Residential', 'Commercial', 'Industrial', 'Agricultural'] as const)
@@ -1897,7 +1939,7 @@ function App() {
                             setDebouncedQuery('');
                             setSelectedListings([]);
                             setHasSearched(false);
-                            setResults(allListings); // Reset to all listings
+                            setResults(visibleListings); // Reset to all listings
                             setSelectedType(null);
                             setSelectedCategory(null);
                             setSelectedDirect(false);
@@ -2799,12 +2841,12 @@ function App() {
         selectedListings={selectedListings}
         initialSuggestedEdit={
           selectedListings.length > 0
-            ? allListings.find(l => l.id === selectedListings[0])?.columnV || ''
+            ? visibleListings.find(l => l.id === selectedListings[0])?.columnV || ''
             : ''
         }
         listing={
           selectedListings.length > 0
-            ? allListings.find(l => l.id === selectedListings[0]) ?? null
+            ? visibleListings.find(l => l.id === selectedListings[0]) ?? null
             : null
         }
         onSaveCoords={handleNotesCoordsSave}
@@ -2814,7 +2856,7 @@ function App() {
         isOpen={showMapModal}
         onClose={() => setShowMapModal(false)}
         centerListing={mapCenterListing}
-        allListings={allListings}
+        allListings={visibleListings}
         filteredListingsIds={new Set(displayedResults.map(l => l.id))}
         onNotesClick={handleSendForm}
         onShowNote={handleShowNote}

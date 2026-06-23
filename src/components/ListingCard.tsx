@@ -74,6 +74,24 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     const { fbGroup, role } = useAuth();
     const { addToViewing, removeFromViewing, isInViewing, isFull } = useViewing();
 
+    const hasForbiddenPreviewWords = (() => {
+        if (role !== 'v2') return false;
+        const summaryUpper = (listing.summary || '').toUpperCase();
+        const forbiddenTerms = [
+            'FACADE',
+            'G11705',
+            '*FOR SALE/LEASE*',
+            'FOR SALE/LEASE',
+            "*DON'T POST THE FACADE ONLINE*",
+            "DON'T POST THE FACADE ONLINE",
+            '11B MONS ST., BRGY. STA LUCIA, SAN JUAN CITY',
+            '11B MONS ST., BRGY. STA. LUCIA, SAN JUAN CITY'
+        ];
+        return forbiddenTerms.some(term => summaryUpper.includes(term.toUpperCase()));
+    })();
+
+    const showPreviewPic = permissions.preview_pic && !hasForbiddenPreviewWords;
+
 
 
     const formatPrice = (price: number) => {
@@ -302,7 +320,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     }, [isClientError]);
 
     useEffect(() => {
-        if (!(permissions.view_photos || permissions.preview_pic) || !listing.photoLink) {
+        if (!(permissions.view_photos || showPreviewPic) || !listing.photoLink) {
             setPhotoUrl(null);
             setIsPhotoLoading(false);
             setPhotoError(false);
@@ -373,7 +391,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         return () => {
             isMounted = false;
         };
-    }, [listing.id, listing.photoLink, permissions.view_photos, permissions.preview_pic]);
+    }, [listing.id, listing.photoLink, permissions.view_photos, showPreviewPic]);
 
     const status = (listing.statusAQ || '').toLowerCase().trim();
     const isNotAvailable = status !== 'available' && status !== '';
@@ -557,7 +575,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             {/* Header Row: owner name left when preview_pic on, status pill left otherwise — GEO-ID always right */}
             <div className="flex items-center justify-between mb-3">
                 {/* Left side: owner name (preview_pic ON) OR status pill (preview_pic OFF) */}
-                {permissions.preview_pic ? (
+                {showPreviewPic ? (
                     /* preview_pic ON — show owner name on the left, same line as GEO-ID */
                     permissions.view_col_k && listing.columnK ? (
                         <div
@@ -657,7 +675,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             </div>
 
             {/* Owner name — only shown as own row when preview_pic is OFF (otherwise it's in the header) */}
-            {permissions.view_col_k && listing.columnK && !permissions.preview_pic && (
+            {permissions.view_col_k && listing.columnK && !showPreviewPic && (
                 <div
                     onClick={handleCopyColumnK}
                     className={`text-sm font-extrabold leading-tight cursor-pointer transition-colors mb-3
@@ -670,7 +688,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             )}
 
             {/* Photo Preview Module with Overlaid Price + iOS-glass Status Badge */}
-            {permissions.preview_pic && listing.photoLink && !photoError ? (
+            {showPreviewPic && listing.photoLink && !photoError ? (
                 <div className="mt-0.5 mb-4">
                     {isPhotoLoading ? (
                         <div className="w-full aspect-[4/3] rounded-2xl bg-gray-100 animate-pulse flex items-center justify-center border border-gray-100 relative">
@@ -771,7 +789,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         </div>
                     )}
                 </div>
-            ) : permissions.view_photos && listing.photoLink && !photoError && !permissions.preview_pic ? (
+            ) : permissions.view_photos && listing.photoLink && !photoError && !showPreviewPic ? (
                 /* Photo visible but preview_pic off — show photo without glass badge */
                 <div className="mt-0.5 mb-4">
                     {isPhotoLoading ? (
@@ -791,7 +809,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         <div className="mb-4 mt-0.5">{renderPriceModule(false)}</div>
                     )}
                 </div>
-            ) : permissions.preview_pic && (!listing.photoLink || photoError) ? (
+            ) : showPreviewPic && (!listing.photoLink || photoError) ? (
                 <div className="mt-0.5 mb-4">
                     <div className="w-full aspect-[4/3] rounded-3xl bg-gradient-to-br from-gray-100 to-gray-200 relative flex flex-col items-center justify-center border border-gray-200 shadow-inner overflow-hidden">
                         <div className="absolute inset-0 opacity-30"
@@ -989,7 +1007,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                         </button>
                     )
                 ) : null}
-                {permissions.view_photos && listing.photoLink && !permissions.preview_pic && (
+                {permissions.view_photos && listing.photoLink && !showPreviewPic && (
                     <a
                         href={listing.photoLink}
                         target="_blank"
