@@ -95,7 +95,6 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
         const forbiddenFacadeWords = [
             'FACADE',
             'G11705',
-            'FOR SALE/LEASE',
             'DON\'T POST THE FACADE ONLINE',
             'DON’T POST THE FACADE ONLINE',
             '11B MONS ST., BRGY. STA LUCIA, SAN JUAN CITY',
