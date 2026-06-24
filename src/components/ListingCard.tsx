@@ -424,14 +424,30 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
 
         const cacheKey = `gphoto_thumb_${listing.id}`;
         
-        const cached = localStorage.getItem(cacheKey);
-        if (cached && cached !== 'FAILED') {
-            setPhotoUrl(cached);
+        const cachedStr = localStorage.getItem(cacheKey);
+        let cachedUrl: string | null = null;
+        if (cachedStr) {
+            try {
+                if (cachedStr.startsWith('{')) {
+                    const parsed = JSON.parse(cachedStr);
+                    // Cache expiry set to 2 hours (2 * 60 * 60 * 1000 = 7,200,000 ms)
+                    if (Date.now() - parsed.timestamp < 2 * 60 * 60 * 1000) {
+                        cachedUrl = parsed.url;
+                    }
+                } else {
+                    // Legacy plain-text cache: discard
+                    localStorage.removeItem(cacheKey);
+                }
+            } catch (e) {
+                localStorage.removeItem(cacheKey);
+            }
+        }
+
+        if (cachedUrl && cachedUrl !== 'FAILED') {
+            setPhotoUrl(cachedUrl);
             setIsPhotoLoading(false);
             setPhotoError(false);
             return;
-        } else if (cached === 'FAILED') {
-            localStorage.removeItem(cacheKey);
         }
 
         if (failedPhotoExtractions.has(listing.id)) {
@@ -456,7 +472,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                 if (matches && matches.length > 0) {
                     const resolvedUrl = matches[0] + '=w600';
                     if (isMounted) {
-                        localStorage.setItem(cacheKey, resolvedUrl);
+                        localStorage.setItem(cacheKey, JSON.stringify({ url: resolvedUrl, timestamp: Date.now() }));
                         setPhotoUrl(resolvedUrl);
                         setIsPhotoLoading(false);
                     }
@@ -467,6 +483,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                 console.error(`[ListingCard] Failed to extract photo for ${listing.id}:`, err);
                 if (isMounted) {
                     failedPhotoExtractions.add(listing.id);
+                    localStorage.removeItem(cacheKey);
                     setPhotoError(true);
                     setIsPhotoLoading(false);
                 }
@@ -858,6 +875,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                                             setPhotoError(true);
                                             setPhotoUrl(null);
                                             failedPhotoExtractions.add(listing.id);
+                                            localStorage.removeItem(`gphoto_thumb_${listing.id}`);
                                         }}
                                     />
                                 </a>
@@ -875,6 +893,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                                             setPhotoError(true);
                                             setPhotoUrl(null);
                                             failedPhotoExtractions.add(listing.id);
+                                            localStorage.removeItem(`gphoto_thumb_${listing.id}`);
                                         }}
                                     />
                                 </div>
@@ -965,7 +984,7 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                             ) : (
                                 <a href={listing.photoLink} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="block w-full h-full">
                                     <img src={photoUrl} alt={`Listing ${listing.id}`} className="w-full h-full object-cover group-hover/photo:scale-105 transition-transform duration-500" loading="lazy"
-                                        onError={() => { setPhotoError(true); setPhotoUrl(null); failedPhotoExtractions.add(listing.id); }} />
+                                        onError={() => { setPhotoError(true); setPhotoUrl(null); failedPhotoExtractions.add(listing.id); localStorage.removeItem(`gphoto_thumb_${listing.id}`); }} />
                                 </a>
                             )}
                             <div className="absolute bottom-2 left-2 right-2 z-10">{renderPriceModule(true)}</div>
