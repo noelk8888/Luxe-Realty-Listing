@@ -206,6 +206,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.error('Sign out error:', error);
         } finally {
             // Force local state clear immediately to be snappy
+            setUser(null);
+            setSession(null);
             setRole(null);
             setDisplayRole(null);
             setFbLink(null);
