@@ -28,6 +28,10 @@ function App() {
   const { permissions } = usePermissions();
   const { viewingList } = useViewing();
 
+  const [sessionAccepted, setSessionAccepted] = useState(() => {
+    return sessionStorage.getItem('termsAccepted') === 'true';
+  });
+
   const [showUserManagement, setShowUserManagement] = useState(false);
   const [showAccessDenied, setShowAccessDenied] = useState(false);
   const [showViewingSidebar, setShowViewingSidebar] = useState(false);
@@ -1622,17 +1626,42 @@ function App() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <img src="/footer-logo.png" alt="Loading" className="h-36 w-auto animate-pulse" />
-          <div className="h-1 w-32 bg-gray-200 rounded-full overflow-hidden">
+          <div className="h-1.5 w-40 bg-gray-200 rounded-full overflow-hidden">
             <div className="h-full bg-blue-600 rounded-full animate-pulse w-2/3" />
           </div>
+          <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest animate-pulse">Loading Portal...</span>
         </div>
       </div>
     );
   }
 
+  if (!sessionAccepted) {
+    return (
+      <LoginScreen
+        onSignIn={async () => {
+          sessionStorage.setItem('termsAccepted', 'true');
+          setSessionAccepted(true);
+          await signInWithGoogle();
+        }}
+        userLoggedIn={!!user}
+        onProceed={() => {
+          sessionStorage.setItem('termsAccepted', 'true');
+          setSessionAccepted(true);
+        }}
+      />
+    );
+  }
+
   if (!user) {
-    return <LoginScreen onSignIn={signInWithGoogle} />;
+    return (
+      <LoginScreen
+        onSignIn={async () => {
+          sessionStorage.setItem('termsAccepted', 'true');
+          setSessionAccepted(true);
+          await signInWithGoogle();
+        }}
+      />
+    );
   }
 
   if (!role) {
@@ -1640,7 +1669,10 @@ function App() {
       return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
-            <img src="/footer-logo.png" alt="Checking permissions" className="h-36 w-auto animate-pulse" />
+            <div className="h-1.5 w-40 bg-gray-200 rounded-full overflow-hidden">
+              <div className="h-full bg-blue-600 rounded-full animate-pulse w-2/3" />
+            </div>
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest animate-pulse">Verifying Credentials...</span>
           </div>
         </div>
       );
