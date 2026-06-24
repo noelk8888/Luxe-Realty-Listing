@@ -1832,7 +1832,6 @@ function App() {
           {/* Animated Loading Progress Bar */}
           {loading && (
             <div className="w-full max-w-md mx-auto flex flex-col items-center gap-6">
-              <img src="/footer-logo.png" alt="Loading" className="h-36 w-auto animate-pulse" />
               <div className="w-full">
                 <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                   <div
@@ -1840,7 +1839,10 @@ function App() {
                     style={{ width: `${loadingProgress}%` }}
                   />
                 </div>
-                <p className="text-sm text-gray-400 mt-2">{Math.round(loadingProgress)}%</p>
+                <div className="flex justify-between items-center mt-2">
+                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest animate-pulse">Retrieving listings...</span>
+                  <p className="text-sm text-gray-400 font-bold">{Math.round(loadingProgress)}%</p>
+                </div>
               </div>
             </div>
           )}
