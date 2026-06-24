@@ -34,6 +34,7 @@ function App() {
 
   const [showUserManagement, setShowUserManagement] = useState(false);
   const [showAccessDenied, setShowAccessDenied] = useState(false);
+
   const [showViewingSidebar, setShowViewingSidebar] = useState(false);
 
   // ── New Note Submitted alert ──
