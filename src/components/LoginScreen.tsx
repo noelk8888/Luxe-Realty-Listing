@@ -17,11 +17,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSignIn, userLoggedIn
                 <div className="w-full bg-amber-50/50 border border-amber-100/70 rounded-2xl p-6 sm:p-8">
                     <div className="flex items-center gap-3 text-amber-800 mb-4">
                         <ShieldAlert className="w-6 h-6 flex-shrink-0" />
-                        <h2 className="text-lg sm:text-xl font-black tracking-wider uppercase">
+                        <h2 className="text-base sm:text-lg font-black tracking-wider uppercase">
                             RESTRICTED PORTAL EXCLUSIVITY NOTICE
                         </h2>
                     </div>
-                    <p className="text-base sm:text-lg leading-relaxed text-gray-700 font-semibold text-left">
+                    <p className="text-sm sm:text-base leading-relaxed text-gray-700 font-semibold text-left">
                         Welcome. This platform operates as a strictly confidential, closed-network portfolio curated exclusively for a pre-approved and privileged clientele. Access is highly restricted. If you do not possess authorized credentials, or if you were directed here by a broker without an active account, please contact your designated real estate director or our concierge team to initiate the credentialing process.
                     </p>
                 </div>
@@ -31,11 +31,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSignIn, userLoggedIn
                     <div className="text-left">
                         <div className="flex items-center gap-3 text-gray-800 mb-2">
                             <Lock className="w-6 h-6 text-gray-600 flex-shrink-0" />
-                            <h2 className="text-lg sm:text-xl font-black tracking-wider uppercase">
+                            <h2 className="text-base sm:text-lg font-black tracking-wider uppercase">
                                 BINDING CONFIDENTIALITY AGREEMENT
                             </h2>
                         </div>
-                        <p className="text-base sm:text-lg leading-relaxed text-gray-600 font-semibold">
+                        <p className="text-sm sm:text-base leading-relaxed text-gray-600 font-semibold">
                             Prior to authentication, you must acknowledge and accept the terms governing this private environment.
                         </p>
                     </div>
@@ -57,7 +57,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSignIn, userLoggedIn
                                 className="w-6 h-6 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                             />
                         </div>
-                        <span className="text-base sm:text-lg leading-relaxed text-gray-700 font-semibold">
+                        <span className="text-sm sm:text-base leading-relaxed text-gray-700 font-semibold">
                             I acknowledge and agree that by authenticating my credentials, I am entering into a legally binding agreement of strict confidentiality. I understand that all real estate listings, financial data, and media contained herein are proprietary and intended for my exclusive review as an authorized recipient. I expressly agree not to disclose, reproduce, distribute, or otherwise share any information from this platform without prior written consent. I further acknowledge that property details and pricing are subject to immediate change without notice.
                         </span>
                     </label>
@@ -69,7 +69,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSignIn, userLoggedIn
                         onClick={userLoggedIn && onProceed ? onProceed : onSignIn}
                         disabled={!accepted}
                         className={`
-                            w-full flex items-center justify-center gap-3 px-8 py-4.5 bg-white border border-gray-200 rounded-xl shadow-sm transition-all duration-200 text-gray-700 font-extrabold text-base sm:text-lg
+                            w-full flex items-center justify-center gap-3 px-8 py-4.5 bg-white border border-gray-200 rounded-xl shadow-sm transition-all duration-200 text-gray-700 font-extrabold text-sm sm:text-base
                             ${accepted 
                                 ? 'hover:shadow-md hover:border-gray-300 hover:bg-gray-50 active:scale-[0.99] cursor-pointer' 
                                 : 'opacity-40 cursor-not-allowed'
