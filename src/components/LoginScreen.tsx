@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldAlert, Lock } from 'lucide-react';
+import { Lock } from 'lucide-react';
 
 interface LoginScreenProps {
     onSignIn: () => Promise<void>;
@@ -13,19 +13,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSignIn, userLoggedIn
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
             <div className="w-full max-w-2xl bg-white border border-gray-100 rounded-3xl p-8 sm:p-10 shadow-xl flex flex-col gap-8">
-                {/* Exclusivity Notice */}
-                <div className="w-full bg-amber-50/50 border border-amber-100/70 rounded-2xl p-6 sm:p-8">
-                    <div className="flex items-center gap-3 text-amber-800 mb-4">
-                        <ShieldAlert className="w-6 h-6 flex-shrink-0" />
-                        <h2 className="text-base sm:text-lg font-black tracking-wider uppercase">
-                            RESTRICTED PORTAL EXCLUSIVITY NOTICE
-                        </h2>
-                    </div>
-                    <p className="text-sm sm:text-base leading-relaxed text-gray-700 font-semibold text-left">
-                        Welcome. This platform operates as a strictly confidential, closed-network portfolio curated exclusively for a pre-approved and privileged clientele. Access is highly restricted. If you do not possess authorized credentials, or if you were directed here by a broker without an active account, please contact your designated real estate director or our concierge team to initiate the credentialing process.
-                    </p>
-                </div>
-
                 {/* Confidentiality Agreement */}
                 <div className="w-full flex flex-col gap-5">
                     <div className="text-left">
