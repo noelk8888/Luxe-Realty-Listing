@@ -354,24 +354,24 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
             });
 
             // Custom sort logic:
-            // 1. "Luxe" group members always on top
-            // 2. Then by Role (ADMIN > EDITOR > BROKER > V1 > V2)
-            // 3. Then by Name (alphabetical)
+            // 1. By Role (ADMIN > EDITOR > BROKER > V1 > V2)
+            // 2. By Last Login (most recent first)
+            // 3. By Name (alphabetical)
             formattedUsers.sort((a, b) => {
-                const aGroup = (a.fb_group || '').trim().toLowerCase();
-                const bGroup = (b.fb_group || '').trim().toLowerCase();
-                const isALuxe = aGroup === 'luxe';
-                const isBLuxe = bGroup === 'luxe';
-
-                // Sort by group priority (Luxe group first)
-                if (isALuxe && !isBLuxe) return -1;
-                if (!isALuxe && isBLuxe) return 1;
-
                 // Sort by role priority
                 const aRolePriority = ROLE_ORDER[a.role] ?? 99;
                 const bRolePriority = ROLE_ORDER[b.role] ?? 99;
                 if (aRolePriority !== bRolePriority) {
                     return aRolePriority - bRolePriority;
+                }
+
+                // Sort by last login (descending)
+                if (a.last_login && b.last_login) {
+                    return new Date(b.last_login).getTime() - new Date(a.last_login).getTime();
+                } else if (a.last_login) {
+                    return -1; // a has login, b doesn't, a goes first
+                } else if (b.last_login) {
+                    return 1; // b has login, a doesn't, b goes first
                 }
 
                 // Final sort by name
