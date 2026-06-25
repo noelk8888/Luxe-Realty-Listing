@@ -36,7 +36,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const SUPERADMIN_EMAILS = [
     'noelkiu@gmail.com',
     'lesliekiudmd@yahoo.com',
-    'leslie@luxerealtyph.com',
     'louiekiu@gmail.com'
 ];
 
@@ -44,7 +43,6 @@ const SUPERADMIN_EMAILS = [
 const MASKED_ROLES: Record<string, Role> = {
     'noelkiu@gmail.com': 'admin',
     'lesliekiudmd@yahoo.com': 'broker',
-    'leslie@luxerealtyph.com': 'broker',
     'louiekiu@gmail.com': 'broker',
 };
 

@@ -54,7 +54,6 @@ const ROLE_ORDER: Record<string, number> = {
 const MASKED_ROLES_UPPER: Record<string, AppRole> = {
     'noelkiu@gmail.com': 'ADMIN',
     'lesliekiudmd@yahoo.com': 'BROKER',
-    'leslie@luxerealtyph.com': 'BROKER',
 };
 
 const ROLE_BADGE: Record<AppRole, string> = {
