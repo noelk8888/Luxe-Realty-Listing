@@ -54,7 +54,7 @@ async function fetchUserProfile(email: string): Promise<{ role: Role; displayRol
 
     const { data, error } = await supabase
         .from('luxe_listing_users')
-        .select('role, fb_link, fb_group, name')
+        .select('role, fb_link, fb_group, name, login_count')
         .eq('email', lowEmail)
         .maybeSingle();
 
@@ -62,6 +62,21 @@ async function fetchUserProfile(email: string): Promise<{ role: Role; displayRol
     
     // If there's an actual error (not just "no data"), log it
     if (error) console.error('Auth: profile fetch error', error);
+
+    // Track login if user exists and hasn't been tracked this session
+    if (data && !sessionStorage.getItem('login_counted')) {
+        const newCount = (data.login_count || 0) + 1;
+        const { error: updateError } = await supabase
+            .from('luxe_listing_users')
+            .update({ login_count: newCount, last_login: new Date().toISOString() })
+            .eq('email', lowEmail);
+        
+        if (!updateError) {
+            sessionStorage.setItem('login_counted', 'true');
+        } else {
+            console.error('Auth: failed to update login stats', updateError);
+        }
+    }
 
     const dbRole = (data?.role as string || '').toUpperCase();
     

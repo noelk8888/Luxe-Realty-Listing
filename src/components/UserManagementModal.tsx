@@ -29,6 +29,8 @@ interface AppUser {
     fb_link?: string;
     fb_group?: string;
     created_by?: string;
+    login_count?: number;
+    last_login?: string;
 }
 
 interface UserManagementModalProps {
@@ -338,7 +340,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
         setUsersLoading(true);
         const { data, error } = await supabase
             .from('luxe_listing_users')
-            .select('id, email, name, role, fb_link, fb_group, created_by');
+            .select('id, email, name, role, fb_link, fb_group, created_by, login_count, last_login');
 
         if (error) {
             setError('Failed to load users: ' + error.message);
@@ -728,6 +730,8 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                             <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Email</th>
                                             <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Role</th>
                                             <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider hidden sm:table-cell">Group</th>
+                                            <th className="text-center px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider hidden md:table-cell">Logins</th>
+                                            <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider hidden lg:table-cell">Last Login</th>
                                             <th className="text-right px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Actions</th>
                                         </tr>
                                     </thead>
@@ -768,6 +772,8 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                             </select>
                                                         </td>
                                                         <td className="px-5 py-2.5 hidden sm:table-cell" />
+                                                        <td className="px-5 py-2.5 hidden md:table-cell" />
+                                                        <td className="px-5 py-2.5 hidden lg:table-cell" />
                                                         <td className="px-5 py-2.5 text-right">
                                                             <div className="flex items-center justify-end gap-2">
                                                                 <button
@@ -790,7 +796,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                 ) : confirmDelete === u.email ? (
                                                     /* ── Confirm delete row ── */
                                                     <>
-                                                        <td colSpan={4} className="px-5 py-2.5 text-sm text-red-600 font-medium">
+                                                        <td colSpan={6} className="px-5 py-2.5 text-sm text-red-600 font-medium">
                                                             Remove <strong>{u.name || u.email}</strong>? This cannot be undone.
                                                         </td>
                                                         <td className="px-5 py-2.5 text-right">
@@ -838,6 +844,12 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                                     {u.fb_group}
                                                                 </span>
                                                             ) : '—'}
+                                                        </td>
+                                                        <td className="px-5 py-3 text-center text-xs text-gray-500 font-medium hidden md:table-cell">
+                                                            {u.login_count || 0}
+                                                        </td>
+                                                        <td className="px-5 py-3 text-xs text-gray-400 hidden lg:table-cell whitespace-nowrap">
+                                                            {u.last_login ? new Date(u.last_login).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—'}
                                                         </td>
                                                         <td className="px-5 py-3 text-right">
                                                             <div className="flex items-center justify-end gap-1">
