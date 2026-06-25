@@ -509,6 +509,9 @@ function App() {
 
   // Initial Data Load
   useEffect(() => {
+    if (!sessionAccepted || !role) return;
+
+    setLoading(true);
     fetchListings().then(data => {
       console.log('Fetched listings:', data.length);
       setAllListings(data);
@@ -536,7 +539,8 @@ function App() {
       setLoadingProgress(100);
       setTimeout(() => setLoading(false), 400);
     });
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionAccepted, role]);
 
   // Simulated loading progress bar
   useEffect(() => {
@@ -554,10 +558,13 @@ function App() {
 
   // Handle initial loader removal
   useEffect(() => {
-    if (!authLoading && !loading) {
-      document.body.classList.add('loaded');
+    if (!authLoading) {
+      // Remove loader immediately if user needs to login or is denied access
+      if (!sessionAccepted || !role || !loading) {
+        document.body.classList.add('loaded');
+      }
     }
-  }, [authLoading, loading]);
+  }, [authLoading, loading, sessionAccepted, role]);
 
   // Manual Refresh Handler
 
