@@ -66,7 +66,8 @@ async function fetchUserProfile(email: string): Promise<{ role: Role; displayRol
     const dbRole = (data?.role as string || '').toUpperCase();
     
     // Calculate Internal Role
-    let role: Role = 'v1';
+    // Default to null (Access Denied) if email is not in the approved users table
+    let role: Role = data ? 'v1' : null;
     if (dbRole === 'ADMIN') role = 'admin';
     else if (dbRole === 'SUPERADMIN') role = 'superadmin';
     else if (dbRole === 'EDITOR') role = 'editor';
