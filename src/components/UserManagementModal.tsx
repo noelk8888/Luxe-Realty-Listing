@@ -344,14 +344,25 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
         if (error) {
             setError('Failed to load users: ' + error.message);
         } else {
-            const formattedUsers = (data ?? []).map(u => {
-                let r = (u.role as string).toUpperCase();
-                if (r === 'VIEWER') r = 'V1';
-                return {
-                    ...u,
-                    role: r as AppRole
-                };
-            });
+            const formattedUsers = (data ?? [])
+                .map(u => {
+                    let r = (u.role as string).toUpperCase();
+                    if (r === 'VIEWER') r = 'V1';
+                    return {
+                        ...u,
+                        role: r as AppRole
+                    };
+                })
+                .filter(u => {
+                    // Non-superadmins cannot see KIU group members (except leslie@luxerealtyph.com)
+                    if (isSuperAdmin) return true;
+                    
+                    const isKiuGroup = (u.fb_group || '').trim().toLowerCase() === 'kiu';
+                    const isLeslie = u.email.toLowerCase() === 'leslie@luxerealtyph.com';
+                    
+                    if (isKiuGroup && !isLeslie) return false;
+                    return true;
+                });
 
             // Custom sort logic:
             // 1. By Role (ADMIN > EDITOR > BROKER > V1 > V2)
