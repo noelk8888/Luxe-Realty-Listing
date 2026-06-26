@@ -725,7 +725,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                         )}
 
                         {/* Table */}
-                        <div className="overflow-y-auto flex-1 min-h-0">
+                        <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0">
                             {usersLoading ? (
                                 <div className="flex items-center justify-center py-16 text-gray-400">
                                     <Loader2 size={22} className="animate-spin mr-2" /> Loading users…
@@ -739,9 +739,9 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                             <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Name</th>
                                             <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Email</th>
                                             <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Role</th>
-                                            <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider hidden sm:table-cell">Group</th>
-                                            {isSuperAdmin && <th className="text-center px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider hidden md:table-cell">Logins</th>}
-                                            {isSuperAdmin && <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider hidden lg:table-cell">Last Login</th>}
+                                            <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Group</th>
+                                            {isSuperAdmin && <th className="text-center px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Logins</th>}
+                                            {isSuperAdmin && <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Last Login</th>}
                                             <th className="text-right px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Actions</th>
                                         </tr>
                                     </thead>
@@ -781,9 +781,9 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                                 <option value="V2">V2</option>
                                                             </select>
                                                         </td>
-                                                        <td className="px-5 py-2.5 hidden sm:table-cell" />
-                                                        {isSuperAdmin && <td className="px-5 py-2.5 hidden md:table-cell" />}
-                                                        {isSuperAdmin && <td className="px-5 py-2.5 hidden lg:table-cell" />}
+                                                        <td className="px-5 py-2.5" />
+                                                        {isSuperAdmin && <td className="px-5 py-2.5" />}
+                                                        {isSuperAdmin && <td className="px-5 py-2.5" />}
                                                         <td className="px-5 py-2.5 text-right">
                                                             <div className="flex items-center justify-end gap-2">
                                                                 <button
@@ -847,7 +847,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                                 {MASKED_ROLES_UPPER[u.email.toLowerCase()] || (u.role === 'SUPERADMIN' ? 'ADMIN' : u.role)}
                                                             </span>
                                                         </td>
-                                                        <td className="px-5 py-3 text-gray-400 text-xs hidden sm:table-cell truncate max-w-[140px]">
+                                                        <td className="px-5 py-3 text-gray-400 text-xs truncate max-w-[140px]">
                                                             {u.fb_group ? (
                                                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-full text-[11px] font-bold">
                                                                     <Link2 size={10} />
@@ -857,10 +857,10 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                         </td>
                                                         {isSuperAdmin && (
                                                             <>
-                                                                <td className="px-5 py-3 text-center text-xs text-gray-500 font-medium hidden md:table-cell">
+                                                                <td className="px-5 py-3 text-center text-xs text-gray-500 font-medium">
                                                                     {u.login_count || 0}
                                                                 </td>
-                                                                <td className="px-5 py-3 text-xs text-gray-400 hidden lg:table-cell whitespace-nowrap">
+                                                                <td className="px-5 py-3 text-xs text-gray-400 whitespace-nowrap">
                                                                     {u.last_login ? new Date(u.last_login).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—'}
                                                                 </td>
                                                             </>
