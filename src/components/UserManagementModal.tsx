@@ -365,10 +365,18 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                 });
 
             // Custom sort logic:
-            // 1. By Role (ADMIN > EDITOR > BROKER > V1 > V2)
-            // 2. By Last Login (most recent first)
-            // 3. By Name (alphabetical)
+            // 1. By Logins (descending)
+            // 2. By Role Priority (ADMIN > EDITOR > BROKER > V1 > V2)
+            // 3. By Last Login (most recent first)
+            // 4. By Name (alphabetical)
             formattedUsers.sort((a, b) => {
+                // Sort by number of logins (descending)
+                const aLogins = a.login_count || 0;
+                const bLogins = b.login_count || 0;
+                if (aLogins !== bLogins) {
+                    return bLogins - aLogins;
+                }
+
                 // Sort by role priority
                 const aRolePriority = ROLE_ORDER[a.role] ?? 99;
                 const bRolePriority = ROLE_ORDER[b.role] ?? 99;
@@ -736,12 +744,10 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                 <table className="w-full text-sm border-collapse">
                                     <thead className="sticky top-0 bg-white z-10">
                                         <tr className="border-b border-gray-100">
-                                            <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Name</th>
-                                            <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Email</th>
+                                            <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">User</th>
                                             <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Role</th>
                                             <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Group</th>
                                             {isSuperAdmin && <th className="text-center px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Logins</th>}
-                                            {isSuperAdmin && <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Last Login</th>}
                                             <th className="text-right px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Actions</th>
                                         </tr>
                                     </thead>
@@ -756,17 +762,10 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                                 value={editName}
                                                                 onChange={e => setEditName(e.target.value)}
                                                                 className="w-full text-sm border border-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1"
+                                                                placeholder="Name"
                                                             />
-                                                            <select
-                                                                value={editFbGroup}
-                                                                onChange={e => handleGroupSelect(e.target.value, setEditFbGroup)}
-                                                                className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-gray-300 text-gray-600"
-                                                            >
-                                                                <option value="">(no group)</option>
-                                                                {groups.map(g => <option key={g.id} value={g.name}>{g.name}</option>)}
-                                                            </select>
+                                                            <div className="text-gray-400 text-[11px] truncate max-w-[160px] pl-1">{u.email}</div>
                                                         </td>
-                                                        <td className="px-5 py-2.5 text-gray-400 text-xs truncate max-w-[160px]">{u.email}</td>
                                                         <td className="px-5 py-2.5">
                                                             <select
                                                                 value={MASKED_ROLES_UPPER[u.email.toLowerCase()] || editRole}
@@ -781,8 +780,16 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                                 <option value="V2">V2</option>
                                                             </select>
                                                         </td>
-                                                        <td className="px-5 py-2.5" />
-                                                        {isSuperAdmin && <td className="px-5 py-2.5" />}
+                                                        <td className="px-5 py-2.5">
+                                                            <select
+                                                                value={editFbGroup}
+                                                                onChange={e => handleGroupSelect(e.target.value, setEditFbGroup)}
+                                                                className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-gray-300 text-gray-600"
+                                                            >
+                                                                <option value="">(no group)</option>
+                                                                {groups.map(g => <option key={g.id} value={g.name}>{g.name}</option>)}
+                                                            </select>
+                                                        </td>
                                                         {isSuperAdmin && <td className="px-5 py-2.5" />}
                                                         <td className="px-5 py-2.5 text-right">
                                                             <div className="flex items-center justify-end gap-2">
@@ -806,7 +813,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                 ) : confirmDelete === u.email ? (
                                                     /* ── Confirm delete row ── */
                                                     <>
-                                                        <td colSpan={isSuperAdmin ? 6 : 4} className="px-5 py-2.5 text-sm text-red-600 font-medium">
+                                                        <td colSpan={isSuperAdmin ? 4 : 3} className="px-5 py-2.5 text-sm text-red-600 font-medium">
                                                             Remove <strong>{u.name || u.email}</strong>? This cannot be undone.
                                                         </td>
                                                         <td className="px-5 py-2.5 text-right">
@@ -830,8 +837,8 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                 ) : (
                                                     /* ── Normal row ── */
                                                     <>
-                                                        <td className="px-5 py-3 font-semibold text-gray-800 whitespace-nowrap">
-                                                            <div className="flex items-center gap-1.5">
+                                                        <td className="px-5 py-3 whitespace-nowrap">
+                                                            <div className="font-semibold text-gray-800 flex items-center gap-1.5">
                                                                 {u.name || '—'}
                                                                 {u.fb_link && (
                                                                     <a href={u.fb_link} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} title={u.fb_link}
@@ -840,8 +847,8 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                                     </a>
                                                                 )}
                                                             </div>
+                                                            <div className="text-gray-400 text-xs truncate max-w-[180px] mt-0.5">{u.email}</div>
                                                         </td>
-                                                        <td className="px-5 py-3 text-gray-400 text-xs truncate max-w-[180px]">{u.email}</td>
                                                         <td className="px-5 py-3">
                                                             <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide ${ROLE_BADGE[MASKED_ROLES_UPPER[u.email.toLowerCase()] || u.role]}`}>
                                                                 {MASKED_ROLES_UPPER[u.email.toLowerCase()] || (u.role === 'SUPERADMIN' ? 'ADMIN' : u.role)}
@@ -856,14 +863,12 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                             ) : '—'}
                                                         </td>
                                                         {isSuperAdmin && (
-                                                            <>
-                                                                <td className="px-5 py-3 text-center text-xs text-gray-500 font-medium">
-                                                                    {u.login_count || 0}
-                                                                </td>
-                                                                <td className="px-5 py-3 text-xs text-gray-400 whitespace-nowrap">
+                                                            <td className="px-5 py-3 whitespace-nowrap text-center">
+                                                                <div className="text-sm text-gray-700 font-medium">{u.login_count || 0}</div>
+                                                                <div className="text-[10px] text-gray-400 mt-0.5">
                                                                     {u.last_login ? new Date(u.last_login).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—'}
-                                                                </td>
-                                                            </>
+                                                                </div>
+                                                            </td>
                                                         )}
                                                         <td className="px-5 py-3 text-right">
                                                             <div className="flex items-center justify-end gap-1">
