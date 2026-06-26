@@ -745,8 +745,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                     <thead className="sticky top-0 bg-white z-10">
                                         <tr className="border-b border-gray-100">
                                             <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">User</th>
-                                            <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Role</th>
-                                            <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Group</th>
+                                            <th className="text-left px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Role &amp; Group</th>
                                             {isSuperAdmin && <th className="text-center px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Logins</th>}
                                             <th className="text-right px-5 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Actions</th>
                                         </tr>
@@ -767,20 +766,20 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                             <div className="text-gray-400 text-[11px] truncate max-w-[160px] pl-1">{u.email}</div>
                                                         </td>
                                                         <td className="px-5 py-2.5">
-                                                            <select
-                                                                value={MASKED_ROLES_UPPER[u.email.toLowerCase()] || editRole}
-                                                                onChange={e => setEditRole(e.target.value as AppRole)}
-                                                                disabled={!!MASKED_ROLES_UPPER[u.email.toLowerCase()]}
-                                                                className={`text-xs font-bold border rounded-full px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-gray-300 ${!!MASKED_ROLES_UPPER[u.email.toLowerCase()] ? 'bg-gray-50 opacity-100 cursor-not-allowed border-gray-100' : ''}`}
-                                                            >
-                                                                <option value="ADMIN">ADMIN</option>
-                                                                <option value="EDITOR">EDITOR</option>
-                                                                <option value="BROKER">BROKER</option>
-                                                                <option value="V1">V1</option>
-                                                                <option value="V2">V2</option>
-                                                            </select>
-                                                        </td>
-                                                        <td className="px-5 py-2.5">
+                                                            <div className="mb-2">
+                                                                <select
+                                                                    value={MASKED_ROLES_UPPER[u.email.toLowerCase()] || editRole}
+                                                                    onChange={e => setEditRole(e.target.value as AppRole)}
+                                                                    disabled={!!MASKED_ROLES_UPPER[u.email.toLowerCase()]}
+                                                                    className={`text-xs font-bold border rounded-full px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-gray-300 ${!!MASKED_ROLES_UPPER[u.email.toLowerCase()] ? 'bg-gray-50 opacity-100 cursor-not-allowed border-gray-100' : ''}`}
+                                                                >
+                                                                    <option value="ADMIN">ADMIN</option>
+                                                                    <option value="EDITOR">EDITOR</option>
+                                                                    <option value="BROKER">BROKER</option>
+                                                                    <option value="V1">V1</option>
+                                                                    <option value="V2">V2</option>
+                                                                </select>
+                                                            </div>
                                                             <select
                                                                 value={editFbGroup}
                                                                 onChange={e => handleGroupSelect(e.target.value, setEditFbGroup)}
@@ -813,7 +812,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                 ) : confirmDelete === u.email ? (
                                                     /* ── Confirm delete row ── */
                                                     <>
-                                                        <td colSpan={isSuperAdmin ? 4 : 3} className="px-5 py-2.5 text-sm text-red-600 font-medium">
+                                                        <td colSpan={isSuperAdmin ? 3 : 2} className="px-5 py-2.5 text-sm text-red-600 font-medium">
                                                             Remove <strong>{u.name || u.email}</strong>? This cannot be undone.
                                                         </td>
                                                         <td className="px-5 py-2.5 text-right">
@@ -850,17 +849,19 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen
                                                             <div className="text-gray-400 text-xs truncate max-w-[180px] mt-0.5">{u.email}</div>
                                                         </td>
                                                         <td className="px-5 py-3">
-                                                            <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide ${ROLE_BADGE[MASKED_ROLES_UPPER[u.email.toLowerCase()] || u.role]}`}>
-                                                                {MASKED_ROLES_UPPER[u.email.toLowerCase()] || (u.role === 'SUPERADMIN' ? 'ADMIN' : u.role)}
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-5 py-3 text-gray-400 text-xs truncate max-w-[140px]">
-                                                            {u.fb_group ? (
-                                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-full text-[11px] font-bold">
-                                                                    <Link2 size={10} />
-                                                                    {u.fb_group}
+                                                            <div className="mb-1.5">
+                                                                <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide ${ROLE_BADGE[MASKED_ROLES_UPPER[u.email.toLowerCase()] || u.role]}`}>
+                                                                    {MASKED_ROLES_UPPER[u.email.toLowerCase()] || (u.role === 'SUPERADMIN' ? 'ADMIN' : u.role)}
                                                                 </span>
-                                                            ) : '—'}
+                                                            </div>
+                                                            <div className="text-gray-400 text-xs truncate max-w-[140px]">
+                                                                {u.fb_group ? (
+                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-full text-[11px] font-bold">
+                                                                        <Link2 size={10} />
+                                                                        {u.fb_group}
+                                                                    </span>
+                                                                ) : '—'}
+                                                            </div>
                                                         </td>
                                                         {isSuperAdmin && (
                                                             <td className="px-5 py-3 whitespace-nowrap text-center">
