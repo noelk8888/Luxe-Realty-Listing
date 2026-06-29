@@ -1643,35 +1643,17 @@ function App() {
     );
   }
 
-  if (!sessionAccepted) {
-    return (
-      <LoginScreen
-        onSignIn={async () => {
-          sessionStorage.setItem('termsAccepted', 'true');
-          setSessionAccepted(true);
-          await signInWithGoogle();
-        }}
-        userLoggedIn={!!user}
-        onProceed={() => {
-          sessionStorage.setItem('termsAccepted', 'true');
-          setSessionAccepted(true);
-        }}
-      />
-    );
-  }
-
+  // Step 1: Not logged in → Welcome page
   if (!user) {
     return (
       <LoginScreen
-        onSignIn={async () => {
-          sessionStorage.setItem('termsAccepted', 'true');
-          setSessionAccepted(true);
-          await signInWithGoogle();
-        }}
+        mode="welcome"
+        onSignIn={signInWithGoogle}
       />
     );
   }
 
+  // Step 2: Logged in but no role yet → verifying or access denied
   if (!role) {
     if (!showAccessDenied) {
       return (
@@ -1686,6 +1668,23 @@ function App() {
       );
     }
     return <AccessDenied email={user.email || ''} onSignOut={signOut} />;
+  }
+
+  // Step 3: Superadmins and leslie skip the confidentiality agreement
+  const skipAgreement = role === 'superadmin' || (user.email || '').toLowerCase() === 'leslie@luxerealtyph.com';
+
+  // Step 4: Non-privileged users must accept confidentiality agreement (once per session)
+  if (!skipAgreement && !sessionAccepted) {
+    return (
+      <LoginScreen
+        mode="agreement"
+        onSignIn={signInWithGoogle}
+        onProceed={() => {
+          sessionStorage.setItem('termsAccepted', 'true');
+          setSessionAccepted(true);
+        }}
+      />
+    );
   }
 
   return (
