@@ -507,6 +507,17 @@ function App() {
     return () => clearTimeout(timer);
   }, [query]);
 
+  // Auto-accept session for users who skip the confidentiality agreement (superadmins, leslie)
+  // Without this, sessionAccepted stays false on fresh mobile sessions and data never loads
+  useEffect(() => {
+    if (!role || !user?.email) return;
+    const skip = role === 'superadmin' || user.email.toLowerCase() === 'leslie@luxerealtyph.com';
+    if (skip && !sessionAccepted) {
+      sessionStorage.setItem('termsAccepted', 'true');
+      setSessionAccepted(true);
+    }
+  }, [role, user?.email, sessionAccepted]);
+
   // Initial Data Load
   useEffect(() => {
     if (!sessionAccepted || !role) return;
@@ -543,19 +554,19 @@ function App() {
   }, [sessionAccepted, role]);
 
   // Simulated loading progress bar
-  // Phase 1: 0→90% fast, Phase 2: 90→99% slow creep (so it never looks stuck)
+  // Phase 1: 0→80% fast, Phase 2: 80→97.5% slow creep (so it never looks stuck)
   useEffect(() => {
     if (!loading) return;
     const interval = setInterval(() => {
       setLoadingProgress(prev => {
-        if (prev >= 99.5) return prev; // Cap at ~99.5%, actual 100% comes from data load
-        if (prev < 90) {
-          // Phase 1: Quick ramp to 90%
-          const increment = Math.max(0.5, (90 - prev) * 0.08);
-          return Math.min(90, prev + increment);
+        if (prev >= 97.5) return prev; // Cap at 97.5%, actual 100% comes from data load
+        if (prev < 80) {
+          // Phase 1: Quick ramp to 80%
+          const increment = Math.max(0.5, (80 - prev) * 0.08);
+          return Math.min(80, prev + increment);
         }
-        // Phase 2: Slow creep from 90% to 99% — keeps the bar moving on slow connections
-        const remaining = 99.5 - prev;
+        // Phase 2: Slow creep from 80% to 97.5% — keeps the bar moving on slow connections
+        const remaining = 97.5 - prev;
         const increment = Math.max(0.05, remaining * 0.02);
         return prev + increment;
       });
