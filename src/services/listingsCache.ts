@@ -48,36 +48,48 @@ const METADATA_KEY = 'listings_cache';
  */
 export async function isCacheValid(): Promise<boolean> {
   try {
-    const metadata = await db.metadata.get(METADATA_KEY);
+    // Timeout guard: metadata read can hang if IndexedDB is stuck
+    const timeout = new Promise<boolean>((resolve) =>
+      setTimeout(() => {
+        console.warn('⏱️ Cache validity check timed out after 3s');
+        resolve(false);
+      }, 3000)
+    );
 
-    if (!metadata) {
-      return false;
-    }
+    const check = (async (): Promise<boolean> => {
+      const metadata = await db.metadata.get(METADATA_KEY);
 
-    // Check version
-    if (metadata.version !== CACHE_VERSION) {
-      console.log('📦 Cache version mismatch, invalidating');
-      await clearCache();
-      return false;
-    }
+      if (!metadata) {
+        return false;
+      }
 
-    // Check if cache has data (reject empty caches)
-    if (!metadata.count || metadata.count === 0) {
-      console.log('🚫 Cache is empty (0 listings), invalidating');
-      await clearCache();
-      return false;
-    }
+      // Check version
+      if (metadata.version !== CACHE_VERSION) {
+        console.log('📦 Cache version mismatch, invalidating');
+        await clearCache();
+        return false;
+      }
 
-    // Check expiry
-    const age = Date.now() - metadata.timestamp;
-    if (age > CACHE_EXPIRY_MS) {
-      console.log('⏰ Cache expired, invalidating');
-      await clearCache();
-      return false;
-    }
+      // Check if cache has data (reject empty caches)
+      if (!metadata.count || metadata.count === 0) {
+        console.log('🚫 Cache is empty (0 listings), invalidating');
+        await clearCache();
+        return false;
+      }
 
-    console.log(`✅ Cache is valid (age: ${Math.round(age / 1000)}s, count: ${metadata.count})`);
-    return true;
+      // Check expiry
+      const age = Date.now() - metadata.timestamp;
+      if (age > CACHE_EXPIRY_MS) {
+        console.log('⏰ Cache expired, invalidating');
+        await clearCache();
+        return false;
+      }
+
+      console.log(`✅ Cache is valid (age: ${Math.round(age / 1000)}s, count: ${metadata.count})`);
+      return true;
+    })();
+
+    return await Promise.race([check, timeout]);
   } catch (error) {
     console.error('Error checking cache validity:', error);
     return false;
@@ -85,25 +97,37 @@ export async function isCacheValid(): Promise<boolean> {
 }
 
 /**
- * Get cached listings
+ * Get cached listings (with timeout to prevent IndexedDB hangs)
  */
 export async function getCachedListings(): Promise<Listing[] | null> {
   try {
-    const isValid = await isCacheValid();
-    if (!isValid) {
-      return null;
-    }
+    // Timeout guard: IndexedDB can hang indefinitely on some browsers/deployments
+    const timeout = new Promise<null>((resolve) =>
+      setTimeout(() => {
+        console.warn('⏱️ IndexedDB cache read timed out after 5s, skipping cache');
+        resolve(null);
+      }, 5000)
+    );
 
-    console.log('📖 Reading listings from IndexedDB cache');
-    const startTime = performance.now();
+    const cacheRead = (async (): Promise<Listing[] | null> => {
+      const isValid = await isCacheValid();
+      if (!isValid) {
+        return null;
+      }
 
-    // Get all listings ordered by cache index
-    const listings = await db.listings.orderBy('_cacheIndex').toArray();
+      console.log('📖 Reading listings from IndexedDB cache');
+      const startTime = performance.now();
 
-    const duration = Math.round(performance.now() - startTime);
-    console.log(`✅ Loaded ${listings.length} listings from cache in ${duration}ms`);
+      // Get all listings ordered by cache index
+      const listings = await db.listings.orderBy('_cacheIndex').toArray();
 
-    return listings;
+      const duration = Math.round(performance.now() - startTime);
+      console.log(`✅ Loaded ${listings.length} listings from cache in ${duration}ms`);
+
+      return listings;
+    })();
+
+    return await Promise.race([cacheRead, timeout]);
   } catch (error) {
     console.error('Error reading from cache:', error);
     return null;

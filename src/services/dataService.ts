@@ -93,23 +93,37 @@ export const isDuplicateListing = (summary: string): boolean => {
  */
 export const fetchListings = async (): Promise<Listing[]> => {
     try {
-        // Try to get cached data first
-        const cached = await getCachedListings();
-        if (cached) {
-            console.log('✅ Using cached listings from IndexedDB');
-            return cached.filter(l => !isDuplicateListing(l.summary));
-        }
+        // Global timeout: if the entire fetch pipeline hangs, resolve with empty
+        // so the loading screen doesn't get stuck forever
+        const FETCH_TIMEOUT_MS = 30_000; // 30 seconds
+        const timeout = new Promise<Listing[]>((resolve) =>
+            setTimeout(() => {
+                console.error('⏱️ fetchListings global timeout after 30s — returning empty');
+                resolve([]);
+            }, FETCH_TIMEOUT_MS)
+        );
 
-        // Cache miss or invalid - fetch from Supabase
-        console.log('📡 Cache miss - fetching from Supabase...');
-        const listings = await fetchFromSupabase();
+        const fetchPipeline = (async (): Promise<Listing[]> => {
+            // Try to get cached data first
+            const cached = await getCachedListings();
+            if (cached) {
+                console.log('✅ Using cached listings from IndexedDB');
+                return cached.filter(l => !isDuplicateListing(l.summary));
+            }
 
-        // Save to cache in background (don't await - don't block return)
-        saveListingsToCache(listings).catch(err => {
-            console.error('Failed to cache listings:', err);
-        });
+            // Cache miss or invalid - fetch from Supabase
+            console.log('📡 Cache miss - fetching from Supabase...');
+            const listings = await fetchFromSupabase();
 
-        return listings;
+            // Save to cache in background (don't await - don't block return)
+            saveListingsToCache(listings).catch(err => {
+                console.error('Failed to cache listings:', err);
+            });
+
+            return listings;
+        })();
+
+        return await Promise.race([fetchPipeline, timeout]);
     } catch (error) {
         console.error('Error in fetchListings:', error);
         return [];
