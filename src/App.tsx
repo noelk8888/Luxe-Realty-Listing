@@ -543,18 +543,25 @@ function App() {
   }, [sessionAccepted, role]);
 
   // Simulated loading progress bar
+  // Phase 1: 0→90% fast, Phase 2: 90→99% slow creep (so it never looks stuck)
   useEffect(() => {
-    if (!loading || loadingProgress >= 90) return;
+    if (!loading) return;
     const interval = setInterval(() => {
       setLoadingProgress(prev => {
-        if (prev >= 90) { clearInterval(interval); return prev; }
-        // Slow down as it approaches 90%
-        const increment = Math.max(0.5, (90 - prev) * 0.08);
-        return Math.min(90, prev + increment);
+        if (prev >= 99.5) return prev; // Cap at ~99.5%, actual 100% comes from data load
+        if (prev < 90) {
+          // Phase 1: Quick ramp to 90%
+          const increment = Math.max(0.5, (90 - prev) * 0.08);
+          return Math.min(90, prev + increment);
+        }
+        // Phase 2: Slow creep from 90% to 99% — keeps the bar moving on slow connections
+        const remaining = 99.5 - prev;
+        const increment = Math.max(0.05, remaining * 0.02);
+        return prev + increment;
       });
     }, 150);
     return () => clearInterval(interval);
-  }, [loading, loadingProgress]);
+  }, [loading]);
 
   // Handle initial loader removal
   useEffect(() => {
