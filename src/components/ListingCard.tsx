@@ -523,6 +523,9 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
 
     // Watermark: group logo (or group name text) in top-right corner of photo/placeholder
     const renderWatermark = () => {
+        const isLeslieDirect = listing.columnBD?.trim().toLowerCase() === 'leslie kiu' && listing.isDirect;
+        if (!isLeslieDirect) return null;
+
         const logoSrc = fbGroup === 'Luxe' ? '/luxe-logo.png'
             : fbGroup === 'Kiu' ? kiuLogo
             : null;
@@ -1040,8 +1043,10 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                                 </div>
                             </div>
                         )}
+
                         {/* Watermark — top-right */}
                         {renderWatermark()}
+
                         <div className="relative z-10 flex flex-col items-center gap-2">
                             <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 18h16.5A1.5 1.5 0 0021.75 16.5V7.5A1.5 1.5 0 0020.25 6H3.75A1.5 1.5 0 002.25 7.5v9A1.5 1.5 0 003.75 18z" />
