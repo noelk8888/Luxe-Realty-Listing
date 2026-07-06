@@ -523,7 +523,8 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
 
     // Watermark: group logo (or group name text) in top-right corner of photo/placeholder
     const renderWatermark = () => {
-        const isLeslieDirect = listing.columnBD?.trim().toLowerCase() === 'leslie kiu' && listing.isDirect;
+        const ownershipStr = listing.columnBD?.trim().toLowerCase();
+        const isLeslieDirect = (ownershipStr === 'leslie kiu' || ownershipStr === 'sales associate leslie kiu') && listing.isDirect;
         if (!isLeslieDirect) return null;
 
         const logoSrc = fbGroup === 'Luxe' ? '/luxe-logo.png'
