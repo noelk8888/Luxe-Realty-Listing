@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Map, RotateCcw, List } from 'lucide-react';
+import { X, Map, RotateCcw, List, Share2 } from 'lucide-react';
 import { useViewing } from '../contexts/ViewingContext';
 import { ViewingMapModal } from './ViewingMapModal';
 import type { Listing } from '../types';
@@ -11,6 +11,7 @@ interface ViewingSidebarProps {
     onClose: () => void;
     isListViewActive: boolean;
     onListViewChange: (active: boolean) => void;
+    onShare: () => void;
 }
 
 function ListingPreview({ listing, onRemove }: { listing: Listing; onRemove: () => void }) {
@@ -47,7 +48,7 @@ function ListingPreview({ listing, onRemove }: { listing: Listing; onRemove: () 
     );
 }
 
-export const ViewingSidebar: React.FC<ViewingSidebarProps> = ({ isOpen, onClose, isListViewActive, onListViewChange }) => {
+export const ViewingSidebar: React.FC<ViewingSidebarProps> = ({ isOpen, onClose, isListViewActive, onListViewChange, onShare }) => {
     const { viewingList, removeFromViewing, resetViewing } = useViewing();
     const [showMapModal, setShowMapModal] = useState(false);
 
@@ -144,6 +145,13 @@ export const ViewingSidebar: React.FC<ViewingSidebarProps> = ({ isOpen, onClose,
                         >
                             <Map size={14} />
                             MAP VIEW
+                        </button>
+                        <button
+                            onClick={onShare}
+                            className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-colors uppercase tracking-widest shadow-sm"
+                        >
+                            <Share2 size={14} />
+                            SHARE
                         </button>
                         <button
                             onClick={handleReset}

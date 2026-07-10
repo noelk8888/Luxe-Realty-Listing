@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import type { Listing } from '../types';
 import { useAuth } from './AuthContext';
@@ -8,6 +8,7 @@ const MAX_VIEWING = 10;
 interface ViewingContextType {
     viewingList: Listing[];
     addToViewing: (listing: Listing) => void;
+    addManyToViewing: (listings: Listing[]) => void;
     removeFromViewing: (id: string) => void;
     resetViewing: () => void;
     isInViewing: (id: string) => boolean;
@@ -27,21 +28,36 @@ export function ViewingProvider({ children }: { children: ReactNode }) {
         }
     }, [user]);
 
-    const addToViewing = (listing: Listing) => {
+    const addToViewing = useCallback((listing: Listing) => {
         setViewingList(prev => {
             if (prev.some(l => l.id === listing.id)) return prev; // already in list
             if (prev.length >= MAX_VIEWING) return prev;           // max reached
             return [...prev, listing];
         });
-    };
+    }, []);
 
-    const removeFromViewing = (id: string) => {
+    const addManyToViewing = useCallback((listings: Listing[]) => {
+        setViewingList(prev => {
+            const next = [...prev];
+            let added = false;
+            listings.forEach(listing => {
+                if (next.length >= MAX_VIEWING) return;
+                if (!next.some(l => l.id === listing.id)) {
+                    next.push(listing);
+                    added = true;
+                }
+            });
+            return added ? next : prev;
+        });
+    }, []);
+
+    const removeFromViewing = useCallback((id: string) => {
         setViewingList(prev => prev.filter(l => l.id !== id));
-    };
+    }, []);
 
-    const resetViewing = () => {
+    const resetViewing = useCallback(() => {
         setViewingList([]);
-    };
+    }, []);
 
     const isInViewing = (id: string) => viewingList.some(l => l.id === id);
 
@@ -49,6 +65,7 @@ export function ViewingProvider({ children }: { children: ReactNode }) {
         <ViewingContext.Provider value={{
             viewingList,
             addToViewing,
+            addManyToViewing,
             removeFromViewing,
             resetViewing,
             isInViewing,

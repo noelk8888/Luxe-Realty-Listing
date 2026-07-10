@@ -27,7 +27,7 @@ import { listingMatchesPropertyType } from './utils/propertyTypeFilters';
 function App() {
   const { user, role, displayRole, fbGroup, userName, groupBranding, isLoading: authLoading, signInWithGoogle, signOut } = useAuth();
   const { permissions } = usePermissions();
-  const { viewingList } = useViewing();
+  const { viewingList, addManyToViewing } = useViewing();
 
   const [sessionAccepted, setSessionAccepted] = useState(() => {
     return sessionStorage.getItem('termsAccepted') === 'true';
@@ -37,7 +37,7 @@ function App() {
   const [showAccessDenied, setShowAccessDenied] = useState(false);
 
   const [showViewingSidebar, setShowViewingSidebar] = useState(false);
-  const [showViewingListView, setShowViewingListView] = useState(false);
+  const [showViewingListView, setShowViewingListView] = useState(() => new URLSearchParams(window.location.search).get('viewingMode') === 'true');
 
   // ── New Note Submitted alert ──
   // Visible only to: superadmin, or admin/editor whose fbGroup === 'Luxe'
@@ -179,6 +179,30 @@ function App() {
       setShowViewingListView(false);
     }
   }, [viewingList.length]);
+
+  useEffect(() => {
+    if (loading || visibleListings.length === 0) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const ids = (params.get('viewing') || '')
+      .split(',')
+      .map(id => id.trim().toUpperCase())
+      .filter(Boolean)
+      .slice(0, 10);
+
+    if (ids.length === 0) return;
+
+    const listingsById = new Map(visibleListings.map(listing => [listing.id.toUpperCase(), listing]));
+    const sharedListings = ids
+      .map(id => listingsById.get(id))
+      .filter((listing): listing is Listing => Boolean(listing));
+
+    if (sharedListings.length > 0) {
+      addManyToViewing(sharedListings);
+      setShowViewingSidebar(true);
+      setShowViewingListView(params.get('viewingMode') === 'true');
+    }
+  }, [loading, visibleListings, addManyToViewing]);
 
   // ── Note submission alert: poll Supabase every 30 s ──
   const canSeeNoteAlert =
@@ -691,6 +715,21 @@ function App() {
       });
   };
 
+  const handleShareViewingList = () => {
+    const shareUrl = new URL(window.location.href);
+    shareUrl.searchParams.set('viewing', viewingList.map(listing => listing.id).join(','));
+    shareUrl.searchParams.set('viewingMode', 'true');
+
+    navigator.clipboard.writeText(shareUrl.toString())
+      .then(() => {
+        setShowShareToast(true);
+        setTimeout(() => setShowShareToast(false), 2500);
+      })
+      .catch((err) => {
+        console.error('Failed to copy viewing list link: ', err);
+      });
+  };
+
   // Synchronize all filter and sort states with URL parameters
   useEffect(() => {
     // Only synchronize once initial loading is done, to prevent overwriting URL parameters with empty values on mount
@@ -740,6 +779,8 @@ function App() {
     if (selectedBedrooms.length > 0) params.set('bedrooms', selectedBedrooms.join(','));
     if (selectedParking.length > 0) params.set('parking', selectedParking.join(','));
     if (selectedPropertyTypes.length > 0) params.set('propertyTypes', selectedPropertyTypes.join(','));
+    if (viewingList.length > 0) params.set('viewing', viewingList.map(listing => listing.id).join(','));
+    if (showViewingListView && viewingList.length > 0) params.set('viewingMode', 'true');
 
     if (sortConfig) {
       params.set('sortKey', sortConfig.key);
@@ -778,6 +819,8 @@ function App() {
     selectedBedrooms,
     selectedParking,
     selectedPropertyTypes,
+    viewingList,
+    showViewingListView,
     sortConfig
   ]);
 
@@ -3099,7 +3142,7 @@ function App() {
             </div>
             <div>
               <p className="text-sm font-bold text-gray-900 leading-none">Link copied!</p>
-              <p className="text-xs text-gray-500 mt-1">Filtered results are ready to share.</p>
+              <p className="text-xs text-gray-500 mt-1">The share link is ready.</p>
             </div>
           </div>
         </div>
@@ -3112,6 +3155,7 @@ function App() {
           onClose={() => setShowViewingSidebar(false)}
           isListViewActive={showViewingListView}
           onListViewChange={setShowViewingListView}
+          onShare={handleShareViewingList}
         />
       )}
 
