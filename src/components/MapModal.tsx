@@ -9,6 +9,7 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import { X, ArrowLeft, Filter, Users } from 'lucide-react';
 import type { Listing } from '../types';
 import { calculateDistance } from '../utils/geoUtils';
+import { listingMatchesPropertyType } from '../utils/propertyTypeFilters';
 import { ListingCard } from './ListingCard';
 import { usePermissions } from '../contexts/PermissionsContext';
 
@@ -185,18 +186,7 @@ export const MapModal: React.FC<MapModalProps> = ({
     // Filter Helpers
     const matchesPropertyType = (item: Listing): boolean => {
         if (selectedPropertyTypes.length === 0) return true;
-        const itemType = (item.typeDescription || '').trim().toUpperCase();
-        return selectedPropertyTypes.some(type => {
-            if (type === 'TOWNHOUSE') return itemType.includes('TOWNHOUSE') || itemType.includes('TOWN HOUSE');
-            if (type === 'WAREHOUSE') return itemType.includes('WAREHOUSE');
-            if (type === 'VACANT LOT') return itemType.includes('VACANT LOT');
-            if (type === 'HOUSE AND LOT') return itemType.includes('HOUSE AND LOT') || itemType.includes('HOUSE & LOT');
-            if (type === 'CONDO') return itemType.includes('CONDO');
-            if (type === 'OFFICE/COMMERCIAL') return itemType.includes('OFFICE') || itemType.includes('COMMERCIAL');
-            if (type === 'BUILDING') return itemType.includes('BUILDING');
-            if (type === 'CLUB SHARE / BUSINESS') return itemType.includes('CLUB SHARES') || itemType.includes('CLUB SHARE') || itemType.includes('BUSINESS');
-            return false;
-        });
+        return selectedPropertyTypes.some(type => listingMatchesPropertyType(item.typeDescription || '', type));
     };
 
     const matchesSaleType = (item: Listing): boolean => {
@@ -437,6 +427,19 @@ export const MapModal: React.FC<MapModalProps> = ({
                             maxZoom={20}
                         />
                         <MarkerClusterGroup
+                            key={[
+                                selectedPropertyTypes.join(','),
+                                selectedSaleTypes.join(','),
+                                selectedCategories.join(','),
+                                String(showOnlyDirect),
+                                String(showAllInMap),
+                                String(showSimilar),
+                                String(showNearby),
+                                String(similarRadius),
+                                String(usePriceFilter),
+                                String(useLotSizeFilter),
+                                neighbors.map(l => l.id).join(',')
+                            ].join('|')}
                             chunkedLoading
                             spiderfyOnMaxZoom={true}
                             showCoverageOnHover={false}

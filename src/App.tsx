@@ -22,6 +22,7 @@ import { LoginScreen } from './components/LoginScreen';
 import { AccessDenied } from './components/AccessDenied';
 import { supabase } from './lib/supabase';
 import { clearCache } from './services/listingsCache';
+import { listingMatchesPropertyType } from './utils/propertyTypeFilters';
 
 function App() {
   const { user, role, displayRole, fbGroup, userName, groupBranding, isLoading: authLoading, signInWithGoogle, signOut } = useAuth();
@@ -36,6 +37,7 @@ function App() {
   const [showAccessDenied, setShowAccessDenied] = useState(false);
 
   const [showViewingSidebar, setShowViewingSidebar] = useState(false);
+  const [showViewingListView, setShowViewingListView] = useState(false);
 
   // ── New Note Submitted alert ──
   // Visible only to: superadmin, or admin/editor whose fbGroup === 'Luxe'
@@ -169,6 +171,12 @@ function App() {
   useEffect(() => {
     if (viewingList.length > 0) {
       setShowViewingSidebar(true);
+    }
+  }, [viewingList.length]);
+
+  useEffect(() => {
+    if (viewingList.length === 0) {
+      setShowViewingListView(false);
     }
   }, [viewingList.length]);
 
@@ -1066,18 +1074,7 @@ function App() {
     }
     // Filter by Property Type (Multi-select)
     if (selectedPropertyTypes.length > 0) {
-      const itemType = (item.typeDescription || '').trim().toUpperCase();
-      const matchesType = selectedPropertyTypes.some(type => {
-        if (type === 'TOWNHOUSE') return itemType.includes('TOWNHOUSE') || itemType.includes('TOWN HOUSE');
-        if (type === 'WAREHOUSE') return itemType.includes('WAREHOUSE');
-        if (type === 'VACANT LOT') return itemType.includes('VACANT LOT');
-        if (type === 'HOUSE AND LOT') return itemType.includes('HOUSE AND LOT') || itemType.includes('HOUSE & LOT');
-        if (type === 'CONDO') return itemType.includes('CONDO');
-        if (type === 'OFFICE/COMMERCIAL') return itemType.includes('OFFICE') || itemType.includes('COMMERCIAL');
-        if (type === 'BUILDING') return itemType.includes('BUILDING');
-        if (type === 'CLUB SHARE / BUSINESS') return itemType.includes('CLUB SHARES') || itemType.includes('CLUB SHARE') || itemType.includes('BUSINESS');
-        return false;
-      });
+      const matchesType = selectedPropertyTypes.some(type => listingMatchesPropertyType(item.typeDescription || '', type));
       if (!matchesType) return false;
     }
     return true;
@@ -1705,17 +1702,41 @@ function App() {
     );
   }
 
+  const canUseViewingList = (role === 'superadmin' || fbGroup === 'Luxe') && permissions.viewing_listing;
+  const isViewingListViewActive = canUseViewingList && showViewingListView && viewingList.length > 0;
+  const hasActiveResultsView =
+    isViewingListViewActive ||
+    hasSearched ||
+    selectedType ||
+    selectedCategory ||
+    selectedDirect ||
+    selectedRegion ||
+    selectedProvince ||
+    selectedCity ||
+    selectedBarangay ||
+    selectedBedrooms.length > 0 ||
+    selectedParking.length > 0 ||
+    selectedPropertyTypes.length > 0 ||
+    priceRange !== null ||
+    pricePerSqmRange !== null ||
+    lotAreaRange !== null ||
+    floorAreaRange !== null ||
+    (useExactPrice && manualPrice !== '') ||
+    (useExactPricePerSqm && manualPricePerSqm !== '') ||
+    (useExactLotArea && manualLotArea !== '') ||
+    (useExactFloorArea && manualFloorArea !== '');
+
   return (
     <div
       className="min-h-screen bg-gray-50 text-gray-900 font-sans selection:bg-blue-100 transition-all duration-300"
-      style={{ paddingRight: showViewingSidebar && (role === 'superadmin' || fbGroup === 'Luxe') && permissions.viewing_listing ? '320px' : '0px' }}
+      style={{ paddingRight: showViewingSidebar && canUseViewingList ? '320px' : '0px' }}
     >
       <ScrollToTop />
 
       {/* Header */}
       <header
         className="fixed top-0 left-0 right-0 w-full py-4 bg-white border-b border-gray-100 flex items-center justify-center px-4 z-50 transition-all duration-300"
-        style={{ paddingRight: showViewingSidebar && (role === 'superadmin' || fbGroup === 'Luxe') && permissions.viewing_listing ? 'calc(320px + 1rem)' : '1rem' }}
+        style={{ paddingRight: showViewingSidebar && canUseViewingList ? 'calc(320px + 1rem)' : '1rem' }}
       >
         <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
           {(groupBranding?.logoUrl || groupBranding?.brandName) && (
@@ -1798,13 +1819,15 @@ function App() {
       </header>
 
       {/* Hero / Search Section */}
-      < div className={`flex flex-col items-center justify-center transition-all duration-500 ease-out px-4 pt-28 ${(hasSearched || selectedType || selectedCategory || (selectedBedrooms.length > 0) || (selectedParking.length > 0) || (selectedPropertyTypes.length > 0)) ? 'py-12 min-h-[30vh]' : 'min-h-[100vh]'
+      < div className={`flex flex-col items-center justify-center transition-all duration-500 ease-out px-4 pt-28 ${hasActiveResultsView ? 'py-12 min-h-[30vh]' : 'min-h-[100vh]'
         }`}>
-        <div className={`w-full max-w-2xl text-center space-y-6 transition-all duration-500 ${(hasSearched || selectedType || selectedCategory || (selectedBedrooms.length > 0) || (selectedParking.length > 0) || (selectedPropertyTypes.length > 0)) ? 'translate-y-0' : '-translate-y-8'
+        <div className={`w-full max-w-2xl text-center space-y-6 transition-all duration-500 ${hasActiveResultsView ? 'translate-y-0' : '-translate-y-8'
           }`}>
 
-          <div className={`font-bold text-gray-900 tracking-tight transition-all duration-500 ${(hasSearched || selectedType || selectedCategory || (selectedBedrooms.length > 0) || (selectedParking.length > 0) || (selectedPropertyTypes.length > 0)) ? 'text-2xl mb-4 mt-4' : 'text-4xl sm:text-5xl mb-8'}`}>
-            {(selectedType || selectedCategory || hasSearched || (selectedBedrooms.length > 0) || (selectedParking.length > 0) || (selectedPropertyTypes.length > 0))
+          <div className={`font-bold text-gray-900 tracking-tight transition-all duration-500 ${hasActiveResultsView ? 'text-2xl mb-4 mt-4' : 'text-4xl sm:text-5xl mb-8'}`}>
+            {isViewingListViewActive
+              ? <>Viewing List</>
+              : (selectedType || selectedCategory || hasSearched || (selectedBedrooms.length > 0) || (selectedParking.length > 0) || (selectedPropertyTypes.length > 0))
               ? <>Found {displayedResults.length.toLocaleString()} of {visibleListings.filter(l => l.sourceTab === 'Sheet1').length.toLocaleString()} Available <span className="relative inline-block" ref={adminSortRef}>
                   {role === 'superadmin' ? (
                     <span onClick={() => setIsAdminSortMenuOpen(!isAdminSortMenuOpen)} className="cursor-pointer hover:text-blue-600 transition-colors border-b border-dashed border-gray-400 pb-0.5" title="Listings Sort Options">Listings</span>
@@ -2841,30 +2864,37 @@ function App() {
 
       {/* Results Section */}
       {
-        // Show results only when search or any filter is active
-        (
-          hasSearched ||
-          selectedType ||
-          selectedCategory ||
-          selectedDirect ||
-          selectedRegion ||
-          selectedProvince ||
-          selectedCity ||
-          selectedBarangay ||
-          (selectedBedrooms.length > 0) ||
-          (selectedParking.length > 0) ||
-          (selectedPropertyTypes.length > 0) ||
-          priceRange !== null ||
-          pricePerSqmRange !== null ||
-          lotAreaRange !== null ||
-          floorAreaRange !== null ||
-          (useExactPrice && manualPrice !== '') ||
-          (useExactPricePerSqm && manualPricePerSqm !== '') ||
-          (useExactLotArea && manualLotArea !== '') ||
-          (useExactFloorArea && manualFloorArea !== '')
-        ) ? (
+        // Show results when search, filters, or viewing-list mode is active
+        hasActiveResultsView ? (
           <div className="max-w-7xl mx-auto px-4 pb-20 animate-fade-in-up">
-            {paginatedResults.length === 0 ? (
+            {isViewingListViewActive ? (
+              <>
+                <div className="mb-5 flex items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-xl font-black text-gray-900 uppercase tracking-widest">Viewing List</h2>
+                    <p className="text-sm text-gray-500 mt-1">{viewingList.length} selected listing{viewingList.length === 1 ? '' : 's'}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {viewingList.map((listing, idx) => (
+                    <ListingCard
+                      key={`viewing-${listing.id}-${idx}`}
+                      listing={listing}
+                      isSelected={selectedListings.includes(listing.id)}
+                      onToggleSelection={handleToggleSelection}
+                      isDisabled={selectedListings.length >= 5}
+                      onNotesClick={handleSendForm}
+                      onShowNote={handleShowNote}
+                      onMapClick={handleMapClick}
+                      index={idx + 1}
+                      activeFilter={selectedType}
+                      onEditClick={handleEditClick}
+                      rowNumber={rowNumbers[listing.id]}
+                    />
+                  ))}
+                </div>
+              </>
+            ) : paginatedResults.length === 0 ? (
               <div className="text-center py-20 text-gray-500 bg-white rounded-2xl border border-gray-100">
                 <p className="text-lg">
                   No matches found for "{query}"
@@ -3076,15 +3106,17 @@ function App() {
       )}
 
       {/* Viewing Sidebar */}
-      {(role === 'superadmin' || fbGroup === 'Luxe') && permissions.viewing_listing && (
+      {canUseViewingList && (
         <ViewingSidebar
           isOpen={showViewingSidebar}
           onClose={() => setShowViewingSidebar(false)}
+          isListViewActive={showViewingListView}
+          onListViewChange={setShowViewingListView}
         />
       )}
 
       {/* Viewing FAB — bottom-right floating button */}
-      {(role === 'superadmin' || fbGroup === 'Luxe') && permissions.viewing_listing && viewingList.length > 0 && (
+      {canUseViewingList && viewingList.length > 0 && (
         <button
           onClick={() => setShowViewingSidebar(v => !v)}
           className="fixed bottom-6 right-6 z-[800] flex items-center gap-2 px-4 py-3 bg-orange-500 hover:bg-orange-600 text-white text-xs font-black rounded-2xl shadow-2xl transition-all duration-200 uppercase tracking-widest"

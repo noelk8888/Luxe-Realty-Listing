@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Map, RotateCcw } from 'lucide-react';
+import { X, Map, RotateCcw, List } from 'lucide-react';
 import { useViewing } from '../contexts/ViewingContext';
 import { ViewingMapModal } from './ViewingMapModal';
 import type { Listing } from '../types';
@@ -9,6 +9,8 @@ const MAX_VIEWING = 10;
 interface ViewingSidebarProps {
     isOpen: boolean;
     onClose: () => void;
+    isListViewActive: boolean;
+    onListViewChange: (active: boolean) => void;
 }
 
 function ListingPreview({ listing, onRemove }: { listing: Listing; onRemove: () => void }) {
@@ -45,11 +47,12 @@ function ListingPreview({ listing, onRemove }: { listing: Listing; onRemove: () 
     );
 }
 
-export const ViewingSidebar: React.FC<ViewingSidebarProps> = ({ isOpen, onClose }) => {
+export const ViewingSidebar: React.FC<ViewingSidebarProps> = ({ isOpen, onClose, isListViewActive, onListViewChange }) => {
     const { viewingList, removeFromViewing, resetViewing } = useViewing();
     const [showMapModal, setShowMapModal] = useState(false);
 
     const handleReset = () => {
+        onListViewChange(false);
         resetViewing();
         onClose();
     };
@@ -124,6 +127,17 @@ export const ViewingSidebar: React.FC<ViewingSidebarProps> = ({ isOpen, onClose 
                 {/* Action Buttons */}
                 {viewingList.length > 0 && (
                     <div className="flex-shrink-0 px-3 py-4 border-t border-orange-100 bg-white space-y-2">
+                        <button
+                            onClick={() => onListViewChange(!isListViewActive)}
+                            className={`w-full flex items-center justify-center gap-2 py-2.5 text-xs font-bold rounded-xl transition-colors uppercase tracking-widest shadow-sm ${
+                                isListViewActive
+                                    ? 'bg-gray-900 hover:bg-black text-white'
+                                    : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200'
+                            }`}
+                        >
+                            <List size={14} />
+                            VIEWING LIST MODE
+                        </button>
                         <button
                             onClick={() => setShowMapModal(true)}
                             className="w-full flex items-center justify-center gap-2 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-xl transition-colors uppercase tracking-widest shadow-sm"
