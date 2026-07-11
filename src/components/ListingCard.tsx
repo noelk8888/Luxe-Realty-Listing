@@ -230,6 +230,22 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             const cleanId = listing.id.trim();
             const cleanBody = mainBody.trim();
             let copyText = cleanBody.startsWith(cleanId) ? mainBody : `${cleanId}\n${mainBody}`;
+
+            // Luxe members receive a client-ready listing: no GEO ID and no update/footer details.
+            const isLuxeGroupMember = fbGroup === 'Luxe';
+            if (isLuxeGroupMember) {
+                const lines = copyText.split(/\r?\n/);
+                if (lines[0]?.trim().toLowerCase() === cleanId.toLowerCase()) {
+                    lines.shift();
+                }
+
+                // Older listings can already contain an "<date> update" line in their text.
+                // Remove that line and every line after it for the Luxe copy format.
+                const updateLineIndex = lines.findIndex(line =>
+                    /^\s*(?:[A-Z][a-z]{2,8}\.?\s+\d{1,2},\s*\d{4}|\d{1,2}[/-]\d{1,2}[/-]\d{2,4})\s+update\b/i.test(line)
+                );
+                copyText = (updateLineIndex >= 0 ? lines.slice(0, updateLineIndex) : lines).join('\n').trim();
+            }
             
             if (listing.monthlyDues && !copyText.toLowerCase().includes('monthly dues:')) {
                 const priceMatch = copyText.match(/\n(?=\s*(?:Lease Price|Sale Price|Price)\s*:)/i);
@@ -241,6 +257,12 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             }
 
             let footer = '';
+
+            if (isLuxeGroupMember) {
+                navigator.clipboard.writeText(copyText);
+                setIsCopied(true);
+                return;
+            }
 
             // Update date
             let datePrefix = 'Last Update Unknown';
