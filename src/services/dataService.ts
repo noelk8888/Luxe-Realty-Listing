@@ -430,6 +430,7 @@ export const normalizeDbListing = (row: DbListing): Listing => {
     // Check isDirect from DIRECT OR BROKER column or summary
     const directOrBroker = (row['DIRECT OR BROKER'] || '').toUpperCase();
     const isDirect = directOrBroker.includes('DIRECT') || rawSummary.toUpperCase().includes('DIRECT');
+    const isDirectToOwner = directOrBroker.includes('DIRECT') && !directOrBroker.includes('BROKER');
 
     // Parse parking from garage column
     const parking = parseInt(row['garage'] || '0') || 0;
@@ -474,6 +475,7 @@ export const normalizeDbListing = (row: DbListing): Listing => {
         mapLink: row['MAP LINK'] || '',
         columnV: row['COMMENTS'] || '',
         isDirect: isDirect,
+        isDirectToOwner,
 
         lat,
         lng,

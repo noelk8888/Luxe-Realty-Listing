@@ -737,12 +737,17 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
                     permissions.view_col_k && listing.columnK ? (
                         <div
                             onClick={handleCopyColumnK}
-                            className={`text-sm font-extrabold leading-tight cursor-pointer transition-colors truncate mr-3
+                            className={`flex min-w-0 items-center gap-2 text-sm font-extrabold leading-tight cursor-pointer transition-colors mr-3
                                 ${isColumnKCopied ? 'text-green-600' : 'text-gray-900 hover:text-blue-600'}
                             `}
                             title="Click to copy"
                         >
-                            {isColumnKCopied ? 'COPIED!' : `${index ? `${index}. ` : ''}${listing.columnK}`}
+                            <span className="truncate">{isColumnKCopied ? 'COPIED!' : `${index ? `${index}. ` : ''}${listing.columnK}`}</span>
+                            {listing.isDirectToOwner && !isColumnKCopied && (
+                                <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-emerald-700">
+                                    Direct
+                                </span>
+                            )}
                         </div>
                     ) : (
                         /* owner/cobroker is turned off or not present — show the status here in its place */
@@ -849,12 +854,17 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
             {permissions.view_col_k && listing.columnK && !showPreviewPic && (
                 <div
                     onClick={handleCopyColumnK}
-                    className={`text-sm font-extrabold leading-tight cursor-pointer transition-colors mb-3
+                    className={`flex items-center gap-2 text-sm font-extrabold leading-tight cursor-pointer transition-colors mb-3
                         ${isColumnKCopied ? 'text-green-600' : 'text-gray-900 hover:text-blue-600'}
                     `}
                     title="Click to copy"
                 >
-                    {isColumnKCopied ? 'COPIED!' : `${index ? `${index}. ` : ''}${listing.columnK}`}
+                    <span>{isColumnKCopied ? 'COPIED!' : `${index ? `${index}. ` : ''}${listing.columnK}`}</span>
+                    {listing.isDirectToOwner && !isColumnKCopied && (
+                        <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-emerald-700">
+                            Direct
+                        </span>
+                    )}
                 </div>
             )}
 
