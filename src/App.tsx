@@ -730,6 +730,35 @@ function App() {
       });
   };
 
+  const handleSelectViewingGeoId = (geoId: string) => {
+    const normalizedGeoId = geoId.trim();
+    if (!normalizedGeoId) return;
+
+    setShowViewingListView(false);
+    setShowViewingSidebar(false);
+    setQuery(normalizedGeoId);
+    setDebouncedQuery(normalizedGeoId);
+    setHasSearched(true);
+    setSelectedListings([]);
+    setSelectedType(null);
+    setSelectedCategory(null);
+    setSelectedDirect(false);
+    setSelectedRegion(null);
+    setSelectedProvince(null);
+    setSelectedCity(null);
+    setSelectedBarangay(null);
+    setPriceRange(null);
+    setPricePerSqmRange(null);
+    setLotAreaRange(null);
+    setFloorAreaRange(null);
+    setSelectedBedrooms([]);
+    setSelectedParking([]);
+    setSelectedPropertyTypes([]);
+    setSortConfig(null);
+    setShowAllListings(true);
+    setCurrentPage(1);
+  };
+
   // Synchronize all filter and sort states with URL parameters
   useEffect(() => {
     // Only synchronize once initial loading is done, to prevent overwriting URL parameters with empty values on mount
@@ -3156,6 +3185,7 @@ function App() {
           isListViewActive={showViewingListView}
           onListViewChange={setShowViewingListView}
           onShare={handleShareViewingList}
+          onSelectGeoId={handleSelectViewingGeoId}
         />
       )}
 

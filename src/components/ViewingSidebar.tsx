@@ -12,9 +12,10 @@ interface ViewingSidebarProps {
     isListViewActive: boolean;
     onListViewChange: (active: boolean) => void;
     onShare: () => void;
+    onSelectGeoId: (geoId: string) => void;
 }
 
-function ListingPreview({ listing, onRemove }: { listing: Listing; onRemove: () => void }) {
+function ListingPreview({ listing, onRemove, onSelectGeoId }: { listing: Listing; onRemove: () => void; onSelectGeoId: (geoId: string) => void }) {
     const lines = (listing.displaySummary || '')
         .split('\n')
         .map(l => l.trim())
@@ -33,9 +34,14 @@ function ListingPreview({ listing, onRemove }: { listing: Listing; onRemove: () 
             </button>
 
             {/* GEO ID */}
-            <div className="text-sm font-black text-orange-500 tracking-tight mb-1.5 pr-6">
+            <button
+                type="button"
+                onClick={() => onSelectGeoId(listing.id)}
+                className="text-left text-sm font-black text-orange-500 hover:text-orange-600 hover:underline tracking-tight mb-1.5 pr-6 transition-colors"
+                title={`Search ${listing.id}`}
+            >
                 {listing.id}
-            </div>
+            </button>
 
             {/* Listing preview lines */}
             <div className="text-[11px] text-gray-600 leading-relaxed whitespace-pre-line font-medium">
@@ -48,7 +54,7 @@ function ListingPreview({ listing, onRemove }: { listing: Listing; onRemove: () 
     );
 }
 
-export const ViewingSidebar: React.FC<ViewingSidebarProps> = ({ isOpen, onClose, isListViewActive, onListViewChange, onShare }) => {
+export const ViewingSidebar: React.FC<ViewingSidebarProps> = ({ isOpen, onClose, isListViewActive, onListViewChange, onShare, onSelectGeoId }) => {
     const { viewingList, removeFromViewing, resetViewing } = useViewing();
     const [showMapModal, setShowMapModal] = useState(false);
 
@@ -120,6 +126,7 @@ export const ViewingSidebar: React.FC<ViewingSidebarProps> = ({ isOpen, onClose,
                                 key={listing.id}
                                 listing={listing}
                                 onRemove={() => removeFromViewing(listing.id)}
+                                onSelectGeoId={onSelectGeoId}
                             />
                         ))
                     )}
