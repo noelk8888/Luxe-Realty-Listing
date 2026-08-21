@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useViewing } from '../contexts/ViewingContext';
 import { GEMINI_PROMPT_PREFIX } from '../constants/reorganizePrompt';
 import { extractClientVersion } from '../services/geminiService';
+import { buildListingCopyText } from '../utils/listingCopyText';
 import kiuLogo from '../assets/kiu_logo.png';
 
 interface ListingCardProps {
@@ -217,93 +218,8 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
     const handleCopy = (e: React.MouseEvent) => {
         e.stopPropagation();
         if (listing.summary) {
-            // Split notes out of summary (summary = mainBody + '\n\n' + columnV)
-            const notes = listing.columnV?.trim() || '';
-            const mainBody = notes && listing.summary.endsWith('\n\n' + notes)
-                ? listing.summary.slice(0, -(notes.length + 2))
-                : listing.summary;
-
-            const mapsLink = (listing.lat && listing.lng)
-                ? `https://www.google.com/maps/search/?api=1&query=${listing.lat},${listing.lng}`
-                : '';
-
-            const cleanId = listing.id.trim();
-            const cleanBody = mainBody.trim();
-            let copyText = cleanBody.startsWith(cleanId) ? mainBody : `${cleanId}\n${mainBody}`;
-
-            // Luxe members receive a client-ready listing: no GEO ID and no update/footer details.
             const isLuxeGroupMember = fbGroup === 'Luxe';
-            if (isLuxeGroupMember) {
-                const lines = copyText.split(/\r?\n/);
-                if (lines[0]?.trim().toLowerCase() === cleanId.toLowerCase()) {
-                    lines.shift();
-                }
-
-                // Older listings can already contain an "<date> update" line in their text.
-                // Remove that line and every line after it for the Luxe copy format.
-                const updateLineIndex = lines.findIndex(line =>
-                    /^\s*(?:[A-Z][a-z]{2,8}\.?\s+\d{1,2},\s*\d{4}|\d{1,2}[/-]\d{1,2}[/-]\d{2,4})\s+update\b/i.test(line)
-                );
-                copyText = (updateLineIndex >= 0 ? lines.slice(0, updateLineIndex) : lines).join('\n').trim();
-            }
-            
-            if (listing.monthlyDues && !copyText.toLowerCase().includes('monthly dues:')) {
-                const priceMatch = copyText.match(/\n(?=\s*(?:Lease Price|Sale Price|Price)\s*:)/i);
-                if (priceMatch && priceMatch.index !== undefined) {
-                    copyText = copyText.slice(0, priceMatch.index) + `\nMonthly Dues: ${listing.monthlyDues}` + copyText.slice(priceMatch.index);
-                } else {
-                    copyText += `\nMonthly Dues: ${listing.monthlyDues}`;
-                }
-            }
-
-            let footer = '';
-
-            if (isLuxeGroupMember) {
-                navigator.clipboard.writeText(copyText);
-                setIsCopied(true);
-                return;
-            }
-
-            // Update date
-            let datePrefix = 'Last Update Unknown';
-            if (listing.columnBC) {
-                const parts = listing.columnBC.split(' | ');
-                const datePart = parts[0]?.trim();
-                if (datePart) {
-                    const date = new Date(datePart);
-                    if (!isNaN(date.getTime())) {
-                        const formattedDate = date.toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                        });
-                        datePrefix = `${formattedDate} update`;
-                    }
-                }
-            }
-            footer += datePrefix;
-
-            // Remove existing Verified Map Location from copyText to move it to footer
-            const verifiedMapRegex = /\n?Verified Map Location:.*?(\n|$)/gi;
-            const existingMapLineMatch = copyText.match(verifiedMapRegex);
-            copyText = copyText.replace(verifiedMapRegex, '').trimEnd();
-
-            // Map link
-            const hasGooglePin = /google\s*pin\s*:/i.test(copyText);
-            if (existingMapLineMatch) {
-                // If it was already in the text, append it exactly
-                footer += `\n${existingMapLineMatch[0].trim()}`;
-            } else if (mapsLink && listing.mapVerified && !hasGooglePin) {
-                footer += `\nVerified Map Location: ${mapsLink}`;
-            }
-
-            // Note
-            if (notes) {
-                footer += `\nThere's a NOTE in this listing. Check it in the app`;
-            }
-
-            copyText = `${copyText}\n\n${footer}`;
-
+            const copyText = buildListingCopyText(listing, { isLuxeGroupMember });
             navigator.clipboard.writeText(copyText);
             setIsCopied(true);
         }

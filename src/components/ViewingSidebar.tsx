@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { X, Map, RotateCcw, List, Share2 } from 'lucide-react';
+import { X, Map, RotateCcw, List, Share2, FileText, Check } from 'lucide-react';
 import { useViewing } from '../contexts/ViewingContext';
 import { ViewingMapModal } from './ViewingMapModal';
+import { useAuth } from '../contexts/AuthContext';
+import { buildViewingListText } from '../utils/listingCopyText';
 import type { Listing } from '../types';
 
 const MAX_VIEWING = 10;
@@ -56,12 +58,21 @@ function ListingPreview({ listing, onRemove, onSelectGeoId }: { listing: Listing
 
 export const ViewingSidebar: React.FC<ViewingSidebarProps> = ({ isOpen, onClose, isListViewActive, onListViewChange, onShare, onSelectGeoId }) => {
     const { viewingList, removeFromViewing, resetViewing } = useViewing();
+    const { fbGroup } = useAuth();
     const [showMapModal, setShowMapModal] = useState(false);
+    const [isTextCopied, setIsTextCopied] = useState(false);
 
     const handleReset = () => {
         onListViewChange(false);
         resetViewing();
         onClose();
+    };
+
+    const handleTextListing = async () => {
+        const text = buildViewingListText(viewingList, fbGroup === 'Luxe');
+        await navigator.clipboard.writeText(text);
+        setIsTextCopied(true);
+        window.setTimeout(() => setIsTextCopied(false), 2000);
     };
 
     return (
@@ -145,6 +156,13 @@ export const ViewingSidebar: React.FC<ViewingSidebarProps> = ({ isOpen, onClose,
                         >
                             <List size={14} />
                             VIEWING LIST MODE
+                        </button>
+                        <button
+                            onClick={handleTextListing}
+                            className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-colors uppercase tracking-widest shadow-sm"
+                        >
+                            {isTextCopied ? <Check size={14} /> : <FileText size={14} />}
+                            {isTextCopied ? 'TEXT COPIED!' : 'TEXT LISTING'}
                         </button>
                         <button
                             onClick={() => setShowMapModal(true)}
