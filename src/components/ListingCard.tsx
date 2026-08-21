@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useViewing } from '../contexts/ViewingContext';
 import { GEMINI_PROMPT_PREFIX } from '../constants/reorganizePrompt';
 import { extractClientVersion } from '../services/geminiService';
-import { buildListingCopyText } from '../utils/listingCopyText';
+import { buildBrokerInfoCopyText, buildListingCopyText } from '../utils/listingCopyText';
 import kiuLogo from '../assets/kiu_logo.png';
 
 interface ListingCardProps {
@@ -227,14 +227,8 @@ export const ListingCard: React.FC<ListingCardProps> = React.memo(({
 
     const handleCopyColumnK = (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (listing.columnK) {
-            // Strip "Owner - " prefix if present
-            const ownerName = listing.columnK.replace(/^Owner\s*-\s*/i, '');
-            let copyText = ownerName;
-            if (listing.columnBD) {
-                // Swap order: Owner first, then Ownership
-                copyText = `${ownerName}\n${listing.columnBD}`;
-            }
+        const copyText = buildBrokerInfoCopyText(listing);
+        if (copyText) {
             navigator.clipboard.writeText(copyText);
             setIsColumnKCopied(true);
         }

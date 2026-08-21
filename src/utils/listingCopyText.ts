@@ -88,6 +88,17 @@ export function buildListingCopyText(
     return `${copyText}\n\n${footer}`;
 }
 
+export function buildBrokerInfoCopyText(listing: Listing): string {
+    if (!listing.columnK) return '';
+
+    const ownerName = listing.columnK.replace(/^Owner\s*-\s*/i, '');
+    if (listing.columnBD) {
+        return `${ownerName}\n${listing.columnBD}`.trim();
+    }
+
+    return ownerName.trim();
+}
+
 export function buildViewingListText(listings: Listing[], isLuxeGroupMember: boolean): string {
     return listings
         .map((listing, index) => {
@@ -105,7 +116,8 @@ export function buildViewingListText(listings: Listing[], isLuxeGroupMember: boo
             const details = (finalLinkLineIndex >= 0 ? lines.slice(0, finalLinkLineIndex + 1) : lines)
                 .join('\n')
                 .trim();
-            return `LISTING ${index + 1}:\n${details}`;
+            const brokerInfo = buildBrokerInfoCopyText(listing);
+            return `LISTING ${index + 1}:\n${details}${brokerInfo ? `\n\n${brokerInfo}` : ''}`;
         })
         .join('\n\n');
 }
