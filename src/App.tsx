@@ -150,6 +150,8 @@ function App() {
   });
   const [useExactFloorArea, setUseExactFloorArea] = useState<boolean>(() => new URLSearchParams(window.location.search).get('useExactFloorArea') === 'true');
   const [manualFloorArea, setManualFloorArea] = useState<string>(() => new URLSearchParams(window.location.search).get('manualFloorArea') || '');
+  const PRICE_EXACT_MATCH_TOLERANCE_PERCENT = 0.01;
+  const AREA_EXACT_MATCH_TOLERANCE = 1;
 
   // Share Toast notification state
   const [showShareToast, setShowShareToast] = useState(false);
@@ -1086,7 +1088,8 @@ function App() {
         if (selectedType === 'FOR SALE') return l.price;
         return l.price > 0 ? l.price : l.leasePrice;
       };
-      if (getPrice(item) !== priceVal) return false;
+      const priceToCompare = getPrice(item);
+      if (priceToCompare < priceVal * (1 - PRICE_EXACT_MATCH_TOLERANCE_PERCENT) || priceToCompare > priceVal * (1 + PRICE_EXACT_MATCH_TOLERANCE_PERCENT)) return false;
     } else if (priceRange) {
       const priceToCompare = (selectedType === 'Lease' || selectedType === 'FOR LEASE') ? item.leasePrice : item.price;
       if (priceToCompare < priceRange[0] || priceToCompare > priceRange[1]) return false;
@@ -1097,7 +1100,8 @@ function App() {
     if (useExactPricePerSqm && manualPricePerSqm) {
       const ppsVal = parseFloat(manualPricePerSqm.replace(/,/g, ''));
       const getPps = (l: Listing) => (selectedType === 'Lease' || selectedType === 'FOR LEASE') ? l.leasePricePerSqm : l.pricePerSqm;
-      if (getPps(item) !== ppsVal) return false;
+      const ppsToCompare = getPps(item);
+      if (ppsToCompare < ppsVal * (1 - PRICE_EXACT_MATCH_TOLERANCE_PERCENT) || ppsToCompare > ppsVal * (1 + PRICE_EXACT_MATCH_TOLERANCE_PERCENT)) return false;
     } else if (pricePerSqmRange) {
       const sqmToCompare = (selectedType === 'Lease' || selectedType === 'FOR LEASE') ? item.leasePricePerSqm : item.pricePerSqm;
       if (sqmToCompare < pricePerSqmRange[0] || sqmToCompare > pricePerSqmRange[1]) return false;
@@ -1106,8 +1110,7 @@ function App() {
     // Filter by Lot Area Range
     if (useExactLotArea && manualLotArea) {
       const lotVal = parseFloat(manualLotArea.replace(/,/g, ''));
-      // Match based on whole number (integer) part only - input "23" matches 23.00 to 23.99
-      if (Math.floor(item.lotArea) !== Math.floor(lotVal)) return false;
+      if (item.lotArea < lotVal - AREA_EXACT_MATCH_TOLERANCE || item.lotArea > lotVal + AREA_EXACT_MATCH_TOLERANCE) return false;
     } else if (lotAreaRange) {
       if (item.lotArea < lotAreaRange[0] || item.lotArea > lotAreaRange[1]) return false;
     }
@@ -1115,8 +1118,7 @@ function App() {
     // Filter by Floor Area Range
     if (useExactFloorArea && manualFloorArea) {
       const floorVal = parseFloat(manualFloorArea.replace(/,/g, ''));
-      // Match based on whole number (integer) part only - input "23" matches 23.00 to 23.99
-      if (Math.floor(item.floorArea) !== Math.floor(floorVal)) return false;
+      if (item.floorArea < floorVal - AREA_EXACT_MATCH_TOLERANCE || item.floorArea > floorVal + AREA_EXACT_MATCH_TOLERANCE) return false;
     } else if (floorAreaRange) {
       if (item.floorArea < floorAreaRange[0] || item.floorArea > floorAreaRange[1]) return false;
     }
