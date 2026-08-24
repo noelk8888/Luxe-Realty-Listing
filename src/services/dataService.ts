@@ -91,7 +91,12 @@ export const isDuplicateListing = (summary: string): boolean => {
  * 2. If cache valid: return cached data immediately
  * 3. If cache invalid: fetch from Supabase and cache
  */
-export const fetchListings = async (): Promise<Listing[]> => {
+interface FetchListingsOptions {
+    /** Called after the first 100 listings arrive on a cache miss. */
+    onInitialListings?: (listings: Listing[]) => void;
+}
+
+export const fetchListings = async ({ onInitialListings }: FetchListingsOptions = {}): Promise<Listing[]> => {
     try {
         // Global timeout: if the entire fetch pipeline hangs, resolve with empty
         // so the loading screen doesn't get stuck forever
@@ -113,7 +118,7 @@ export const fetchListings = async (): Promise<Listing[]> => {
 
             // Cache miss or invalid - fetch from Supabase
             console.log('📡 Cache miss - fetching from Supabase...');
-            const listings = await fetchFromSupabase();
+            const listings = await fetchFromSupabase(onInitialListings);
 
             // Save to cache in background (don't await - don't block return)
             saveListingsToCache(listings).catch(err => {
@@ -143,12 +148,12 @@ export const refreshListings = async (): Promise<Listing[]> => {
  * Fetch listings directly from Supabase (bypasses cache)
  * Implements retry logic with fallback to Available-only on timeout
  */
-export const fetchFromSupabase = async (): Promise<Listing[]> => {
+export const fetchFromSupabase = async (onInitialListings?: (listings: Listing[]) => void): Promise<Listing[]> => {
     try {
         console.log('Starting to fetch listings from Supabase...');
 
         // Try fetching all listings first (with retry)
-        const allListings = await fetchWithRetry(false);
+        const allListings = await fetchWithRetry(false, 2, onInitialListings);
         if (allListings.length > 0) {
             console.log(`✅ Successfully fetched ${allListings.length} total listings (ALL STATUS)`);
             return allListings;
@@ -156,7 +161,7 @@ export const fetchFromSupabase = async (): Promise<Listing[]> => {
 
         // If all listings fetch fails, fall back to Available only
         console.warn('⚠️ Fetching all listings failed, falling back to Available only...');
-        const availableListings = await fetchWithRetry(true);
+        const availableListings = await fetchWithRetry(true, 2, onInitialListings);
         console.log(`✅ Successfully fetched ${availableListings.length} listings (AVAILABLE only)`);
         return availableListings;
 
@@ -173,10 +178,13 @@ export const fetchFromSupabase = async (): Promise<Listing[]> => {
  */
 const fetchWithRetry = async (
     availableOnly: boolean,
-    maxRetries: number = 2
+    maxRetries: number = 2,
+    onInitialListings?: (listings: Listing[]) => void
 ): Promise<Listing[]> => {
     const batchSize = 500; // Smaller batches to reduce load
+    const initialBatchSize = 100;
     let attempt = 0;
+    let hasDeliveredInitialListings = false;
 
     while (attempt <= maxRetries) {
         try {
@@ -196,7 +204,10 @@ const fetchWithRetry = async (
                     query = query.eq('STATUS', 'Available');
                 }
 
-                query = query.range(offset, offset + batchSize - 1);
+                const currentBatchSize = offset === 0 && onInitialListings
+                    ? initialBatchSize
+                    : batchSize;
+                query = query.range(offset, offset + currentBatchSize - 1);
 
                 const { data, error } = await query;
 
@@ -213,13 +224,22 @@ const fetchWithRetry = async (
                     hasMore = false;
                 } else {
                     allData.push(...data);
-                    offset += batchSize;
+                    offset += data.length;
                     console.log(`  Batch: ${data.length} listings (total: ${allData.length})`);
+
+                    // Let the app render the first listings immediately. The remaining
+                    // rows keep downloading and are cached once the full load completes.
+                    if (!hasDeliveredInitialListings && onInitialListings) {
+                        hasDeliveredInitialListings = true;
+                        onInitialListings(
+                            data.map(normalizeDbListing).filter(listing => !isDuplicateListing(listing.summary))
+                        );
+                    }
 
                     // Small delay between batches to reduce database load
                     await new Promise(resolve => setTimeout(resolve, 50));
 
-                    if (data.length < batchSize) {
+                    if (data.length < currentBatchSize) {
                         hasMore = false;
                     }
                 }

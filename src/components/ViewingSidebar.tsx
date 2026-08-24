@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Map, RotateCcw, List, Share2, FileText, Check } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { X, Map, RotateCcw, List, Share2, FileText, Check, Copy } from 'lucide-react';
 import { useViewing } from '../contexts/ViewingContext';
 import { ViewingMapModal } from './ViewingMapModal';
 import { useAuth } from '../contexts/AuthContext';
@@ -60,7 +60,12 @@ export const ViewingSidebar: React.FC<ViewingSidebarProps> = ({ isOpen, onClose,
     const { viewingList, removeFromViewing, resetViewing } = useViewing();
     const { fbGroup } = useAuth();
     const [showMapModal, setShowMapModal] = useState(false);
+    const [showTextPreview, setShowTextPreview] = useState(false);
     const [isTextCopied, setIsTextCopied] = useState(false);
+    const textListing = useMemo(
+        () => buildViewingListText(viewingList, fbGroup === 'Luxe'),
+        [viewingList, fbGroup]
+    );
 
     const handleReset = () => {
         onListViewChange(false);
@@ -68,9 +73,8 @@ export const ViewingSidebar: React.FC<ViewingSidebarProps> = ({ isOpen, onClose,
         onClose();
     };
 
-    const handleTextListing = async () => {
-        const text = buildViewingListText(viewingList, fbGroup === 'Luxe');
-        await navigator.clipboard.writeText(text);
+    const handleCopyTextListing = async () => {
+        await navigator.clipboard.writeText(textListing);
         setIsTextCopied(true);
         window.setTimeout(() => setIsTextCopied(false), 2000);
     };
@@ -158,11 +162,11 @@ export const ViewingSidebar: React.FC<ViewingSidebarProps> = ({ isOpen, onClose,
                             VIEWING LIST MODE
                         </button>
                         <button
-                            onClick={handleTextListing}
+                            onClick={() => setShowTextPreview(true)}
                             className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-colors uppercase tracking-widest shadow-sm"
                         >
                             {isTextCopied ? <Check size={14} /> : <FileText size={14} />}
-                            {isTextCopied ? 'TEXT COPIED!' : 'TEXT LISTING'}
+                            TEXT LISTING
                         </button>
                         <button
                             onClick={() => setShowMapModal(true)}
@@ -195,6 +199,60 @@ export const ViewingSidebar: React.FC<ViewingSidebarProps> = ({ isOpen, onClose,
                 onClose={() => setShowMapModal(false)}
                 listings={viewingList}
             />
+
+            {showTextPreview && (
+                <div
+                    className="fixed inset-0 z-[950] flex items-center justify-center bg-black/40 px-4"
+                    onClick={() => setShowTextPreview(false)}
+                >
+                    <div
+                        className="flex max-h-[85vh] w-full max-w-3xl flex-col rounded-2xl bg-white shadow-2xl"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+                            <div>
+                                <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">
+                                    Text Listing Preview
+                                </h3>
+                                <p className="mt-1 text-xs font-medium text-gray-500">
+                                    Review {viewingList.length} listing{viewingList.length === 1 ? '' : 's'} before copying.
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setShowTextPreview(false)}
+                                className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                                title="Close preview"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <div className="min-h-0 flex-1 bg-gray-50 p-4">
+                            <textarea
+                                readOnly
+                                value={textListing}
+                                className="h-[55vh] w-full resize-none rounded-xl border border-gray-200 bg-white p-4 font-mono text-xs leading-relaxed text-gray-800 outline-none focus:border-emerald-300 focus:ring-4 focus:ring-emerald-100"
+                            />
+                        </div>
+
+                        <div className="flex flex-col gap-2 border-t border-gray-100 px-5 py-4 sm:flex-row sm:justify-end">
+                            <button
+                                onClick={() => setShowTextPreview(false)}
+                                className="rounded-xl bg-gray-100 px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-gray-600 transition-colors hover:bg-gray-200"
+                            >
+                                Close
+                            </button>
+                            <button
+                                onClick={handleCopyTextListing}
+                                className="flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-white shadow-sm transition-colors hover:bg-emerald-700"
+                            >
+                                {isTextCopied ? <Check size={14} /> : <Copy size={14} />}
+                                {isTextCopied ? 'Copied!' : 'Copy Text'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 };

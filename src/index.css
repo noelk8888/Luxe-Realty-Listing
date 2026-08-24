@@ -77,4 +77,24 @@ input[type="range"]::-moz-range-thumb {
   animation: toast-slide-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+@keyframes background-loading-line {
+  from {
+    transform: translateX(-120%);
+  }
+  to {
+    transform: translateX(400%);
+  }
+}
+
+.background-loading-line {
+  width: 28%;
+  animation: background-loading-line 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .background-loading-line {
+    animation: none;
+    transform: translateX(130%);
+  }
+}
 

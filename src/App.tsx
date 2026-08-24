@@ -24,6 +24,19 @@ import { supabase } from './lib/supabase';
 import { clearCache } from './services/listingsCache';
 import { listingMatchesPropertyType } from './utils/propertyTypeFilters';
 
+const BACKGROUND_LOADING_MESSAGES = [
+  'Still loading, please wait',
+  'Almost done.',
+  'Getting things ready…',
+  'Loading more listings…',
+  'Just a moment…',
+  'Nearly there…',
+  'Finishing up…',
+  'Preparing your listings…',
+  'Loading the latest details…',
+  'One moment, please…'
+];
+
 function App() {
   const { user, role, displayRole, fbGroup, userName, groupBranding, isLoading: authLoading, signInWithGoogle, signOut } = useAuth();
   const { permissions } = usePermissions();
@@ -50,6 +63,8 @@ function App() {
   const [hasSearched, setHasSearched] = useState(() => !!new URLSearchParams(window.location.search).get('q'));
   const [loading, setLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [isLoadingRemainingListings, setIsLoadingRemainingListings] = useState(false);
+  const [backgroundLoadingMessageIndex, setBackgroundLoadingMessageIndex] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isRefreshNeeded, setIsRefreshNeeded] = useState(false);
   const [showRefreshPrompt, setShowRefreshPrompt] = useState(false);
@@ -556,9 +571,9 @@ function App() {
   useEffect(() => {
     if (!sessionAccepted || !role) return;
 
-    setLoading(true);
-    fetchListings().then(data => {
-      console.log('Fetched listings:', data.length);
+    let isCurrentLoad = true;
+    let hasShownInitialListings = false;
+    const applyListings = (data: Listing[]) => {
       setAllListings(data);
       // Initialize results with all data so "Show All" works immediately (filtered based on discreet permissions)
       const initialResults = data.filter(item => {
@@ -577,13 +592,44 @@ function App() {
         return true;
       });
       setResults(initialResults);
+    };
+
+    setLoading(true);
+    setIsLoadingRemainingListings(false);
+    fetchListings({
+      onInitialListings: (initialListings) => {
+        if (!isCurrentLoad) return;
+        hasShownInitialListings = true;
+        console.log('Showing initial listings while the rest load:', initialListings.length);
+        applyListings(initialListings);
+        setIsLoadingRemainingListings(true);
+        setLoadingProgress(100);
+        setLoading(false);
+      }
+    }).then(data => {
+      if (!isCurrentLoad) return;
+      console.log('Fetched listings:', data.length);
+      // Keep usable initial results if the full background request reaches its
+      // timeout or fails after the first batch has already been displayed.
+      if (hasShownInitialListings && data.length === 0) {
+        setIsLoadingRemainingListings(false);
+        return;
+      }
+      applyListings(data);
+      setIsLoadingRemainingListings(false);
       setLoadingProgress(100);
       setTimeout(() => setLoading(false), 400);
     }).catch(error => {
+      if (!isCurrentLoad) return;
       console.error('Failed to fetch listings:', error);
+      setIsLoadingRemainingListings(false);
       setLoadingProgress(100);
       setTimeout(() => setLoading(false), 400);
     });
+
+    return () => {
+      isCurrentLoad = false;
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionAccepted, role]);
 
@@ -607,6 +653,23 @@ function App() {
     }, 150);
     return () => clearInterval(interval);
   }, [loading]);
+
+  useEffect(() => {
+    if (!isLoadingRemainingListings) {
+      setBackgroundLoadingMessageIndex(Math.floor(Math.random() * BACKGROUND_LOADING_MESSAGES.length));
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      setBackgroundLoadingMessageIndex(currentIndex => {
+        let nextIndex = Math.floor(Math.random() * (BACKGROUND_LOADING_MESSAGES.length - 1));
+        if (nextIndex >= currentIndex) nextIndex += 1;
+        return nextIndex;
+      });
+    }, 5000);
+
+    return () => window.clearInterval(interval);
+  }, [isLoadingRemainingListings]);
 
   // Handle initial loader removal
   useEffect(() => {
@@ -1901,6 +1964,8 @@ function App() {
           <div className={`font-bold text-gray-900 tracking-tight transition-all duration-500 ${hasActiveResultsView ? 'text-2xl mb-4 mt-4' : 'text-4xl sm:text-5xl mb-8'}`}>
             {isViewingListViewActive
               ? <>Viewing List</>
+              : isLoadingRemainingListings
+              ? <>{BACKGROUND_LOADING_MESSAGES[backgroundLoadingMessageIndex]}</>
               : (selectedType || selectedCategory || hasSearched || (selectedBedrooms.length > 0) || (selectedParking.length > 0) || (selectedPropertyTypes.length > 0))
               ? <>Found {displayedResults.length.toLocaleString()} of {visibleListings.filter(l => l.sourceTab === 'Sheet1').length.toLocaleString()} Available <span className="relative inline-block" ref={adminSortRef}>
                   {role === 'superadmin' ? (
@@ -1950,6 +2015,14 @@ function App() {
                 </span></> : 'Loading properties...'
             }
           </div>
+
+          {isLoadingRemainingListings && (
+            <div className="w-full max-w-xs mx-auto -mt-1" role="status" aria-live="polite" aria-label="Loading remaining listings">
+              <div className="h-1 overflow-hidden rounded-full bg-blue-100">
+                <div className="background-loading-line h-full rounded-full bg-blue-600" />
+              </div>
+            </div>
+          )}
 
           {/* Animated Loading Progress Bar */}
           {loading && (
@@ -2968,6 +3041,11 @@ function App() {
                   ))}
                 </div>
               </>
+            ) : paginatedResults.length === 0 && isLoadingRemainingListings ? (
+              <div className="text-center py-20 text-gray-500 bg-white rounded-2xl border border-gray-100">
+                <p className="text-lg">Still loading listings…</p>
+                <p className="text-sm mt-2">Your search may match a listing that is still downloading.</p>
+              </div>
             ) : paginatedResults.length === 0 ? (
               <div className="text-center py-20 text-gray-500 bg-white rounded-2xl border border-gray-100">
                 <p className="text-lg">
