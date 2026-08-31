@@ -37,6 +37,24 @@ const BACKGROUND_LOADING_MESSAGES = [
   'One moment, please…'
 ];
 
+const REFRESH_LOADING_MESSAGES = [
+  'Getting things ready…',
+  'Loading more listings…',
+  'Just a moment…',
+  'Nearly there…',
+  'Finishing up…',
+  'Preparing your listings…',
+  'Loading the latest details…',
+  'One moment, please…'
+];
+
+const getNextRandomMessageIndex = (currentIndex: number, messageCount: number) => {
+  if (messageCount < 2) return 0;
+  let nextIndex = Math.floor(Math.random() * (messageCount - 1));
+  if (nextIndex >= currentIndex) nextIndex += 1;
+  return nextIndex;
+};
+
 function App() {
   const { user, role, displayRole, fbGroup, userName, groupBranding, isLoading: authLoading, signInWithGoogle, signOut } = useAuth();
   const { permissions } = usePermissions();
@@ -66,6 +84,7 @@ function App() {
   const [isLoadingRemainingListings, setIsLoadingRemainingListings] = useState(false);
   const [backgroundLoadingMessageIndex, setBackgroundLoadingMessageIndex] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshLoadingMessageIndex, setRefreshLoadingMessageIndex] = useState(0);
   const [isRefreshNeeded, setIsRefreshNeeded] = useState(false);
   const [showRefreshPrompt, setShowRefreshPrompt] = useState(false);
   const [refreshCountdown, setRefreshCountdown] = useState(10);
@@ -661,15 +680,28 @@ function App() {
     }
 
     const interval = window.setInterval(() => {
-      setBackgroundLoadingMessageIndex(currentIndex => {
-        let nextIndex = Math.floor(Math.random() * (BACKGROUND_LOADING_MESSAGES.length - 1));
-        if (nextIndex >= currentIndex) nextIndex += 1;
-        return nextIndex;
-      });
+      setBackgroundLoadingMessageIndex(currentIndex =>
+        getNextRandomMessageIndex(currentIndex, BACKGROUND_LOADING_MESSAGES.length)
+      );
     }, 5000);
 
     return () => window.clearInterval(interval);
   }, [isLoadingRemainingListings]);
+
+  useEffect(() => {
+    if (!isRefreshing) {
+      setRefreshLoadingMessageIndex(Math.floor(Math.random() * REFRESH_LOADING_MESSAGES.length));
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      setRefreshLoadingMessageIndex(currentIndex =>
+        getNextRandomMessageIndex(currentIndex, REFRESH_LOADING_MESSAGES.length)
+      );
+    }, 5000);
+
+    return () => window.clearInterval(interval);
+  }, [isRefreshing]);
 
   // Handle initial loader removal
   useEffect(() => {
@@ -2231,8 +2263,8 @@ function App() {
                   className="hidden sm:flex items-center bg-white px-4 py-3 rounded-2xl border border-gray-100 shadow-xl hover:shadow-2xl transition-all duration-300 h-[calc(100%-4px)] disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Refresh data from server"
                 >
-                  <span className={`text-xs sm:text-sm font-bold uppercase tracking-wide whitespace-nowrap select-none ${isRefreshNeeded ? 'text-red-600 animate-pulse' : 'text-gray-600'}`}>
-                    {isRefreshing ? 'REFRESHING...' : 'REFRESH'}
+                  <span className={`text-xs sm:text-sm font-bold tracking-wide whitespace-nowrap select-none ${isRefreshing ? 'normal-case text-blue-600' : isRefreshNeeded ? 'uppercase text-red-600 animate-pulse' : 'uppercase text-gray-600'}`}>
+                    {isRefreshing ? REFRESH_LOADING_MESSAGES[refreshLoadingMessageIndex] : 'REFRESH'}
                   </span>
                 </button>
 
