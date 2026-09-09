@@ -36,7 +36,7 @@ export interface Listing {
     photoLink?: string; // Col AB
     mapLink?: string; // Col U
     columnV?: string; // Col V
-    isDirect: boolean; // Col W
+    isDirect: boolean; // DIRECT OR BROKER category is Direct (never inferred from description)
     isDirectToOwner: boolean; // DIRECT OR BROKER indicates a direct-to-owner listing
     columnAE: string; // Col AE: Property Category
     lotArea: number; // Col E

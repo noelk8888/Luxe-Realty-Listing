@@ -447,10 +447,12 @@ export const normalizeDbListing = (row: DbListing): Listing => {
         }
     }
 
-    // Check isDirect from DIRECT OR BROKER column or summary
-    const directOrBroker = (row['DIRECT OR BROKER'] || '').toUpperCase();
-    const isDirect = directOrBroker.includes('DIRECT') || rawSummary.toUpperCase().includes('DIRECT');
-    const isDirectToOwner = directOrBroker.includes('DIRECT') && !directOrBroker.includes('BROKER');
+    // DIRECT classification must come only from the Direct/Cobroker category.
+    // Description phrases such as "For direct buyers only" do not identify
+    // the listing source and must not make a Cobroker listing pass the filter.
+    const directOrBroker = (row['DIRECT OR BROKER'] || '').trim().toUpperCase();
+    const isDirect = directOrBroker.includes('DIRECT') && !directOrBroker.includes('BROKER');
+    const isDirectToOwner = isDirect;
 
     // Parse parking from garage column
     const parking = parseInt(row['garage'] || '0') || 0;

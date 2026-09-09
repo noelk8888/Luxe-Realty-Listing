@@ -39,7 +39,7 @@ class ListingsCacheDB extends Dexie {
 const db = new ListingsCacheDB();
 
 // Cache configuration
-const CACHE_VERSION = '1.0'; // Increment to force cache clear
+const CACHE_VERSION = '1.1'; // Direct/Cobroker classification now comes only from its category field
 const CACHE_EXPIRY_MS = 30 * 60 * 1000; // 30 minutes
 const METADATA_KEY = 'listings_cache';
 
