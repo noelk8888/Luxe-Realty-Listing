@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Tooltip } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Tooltip, useMap } from 'react-leaflet';
 import { supabase } from '../lib/supabase';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
-import { X, ArrowLeft, Filter, Users } from 'lucide-react';
+import { X, ArrowLeft, ArrowDown, ArrowUp, Circle, Filter, Users } from 'lucide-react';
 import type { Listing } from '../types';
 import { calculateDistance } from '../utils/geoUtils';
 import { listingMatchesPropertyType } from '../utils/propertyTypeFilters';
@@ -80,6 +80,24 @@ interface MapModalProps {
     rowNumbers?: Record<string, number>;
 }
 
+const formatPeso = (value: number) => `₱${new Intl.NumberFormat('en-PH', { maximumFractionDigits: 0 }).format(value)}`;
+
+const salePricePerSqm = (listing: Listing) => {
+    if (listing.pricePerSqm > 0) return Math.round(listing.pricePerSqm);
+    const area = listing.lotArea > 0 ? listing.lotArea : listing.floorArea;
+    return listing.price > 0 && area > 0 ? Math.round(listing.price / area) : 0;
+};
+
+const FocusMapListing: React.FC<{ listing: Listing | null }> = ({ listing }) => {
+    const map = useMap();
+
+    useEffect(() => {
+        if (listing) map.flyTo([listing.lat, listing.lng], Math.max(map.getZoom(), 17));
+    }, [listing, map]);
+
+    return null;
+};
+
 
 
 
@@ -102,6 +120,8 @@ export const MapModal: React.FC<MapModalProps> = ({
     const { permissions } = usePermissions();
     const [focusedListing, setFocusedListing] = useState<Listing | null>(null);
     const [groupedViewListings, setGroupedViewListings] = useState<Listing[] | null>(null);
+    const [selectedComparisonIds, setSelectedComparisonIds] = useState<string[]>([]);
+    const [mapFocusListing, setMapFocusListing] = useState<Listing | null>(null);
     const [localRowNumbers, setLocalRowNumbers] = useState<Record<string, number>>({});
     const localRowNumbersRef = useRef<Record<string, number>>({});
 
@@ -182,6 +202,11 @@ export const MapModal: React.FC<MapModalProps> = ({
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen]);
+
+    useEffect(() => {
+        setSelectedComparisonIds([]);
+        setMapFocusListing(null);
+    }, [centerListing?.id]);
 
     // Filter Helpers
     const matchesPropertyType = (item: Listing): boolean => {
@@ -326,6 +351,18 @@ export const MapModal: React.FC<MapModalProps> = ({
 
     // Group all relevant listings by coordinates
     const allRelevant = [centerListing, ...neighbors];
+    const selectedComparisons = allRelevant.filter(listing =>
+        selectedComparisonIds.includes(listing.id) && salePricePerSqm(listing) > 0
+    );
+    const averagePricePerSqm = selectedComparisons.length > 0
+        ? selectedComparisons.reduce((total, listing) => total + salePricePerSqm(listing), 0) / selectedComparisons.length
+        : 0;
+    const toggleComparison = (listing: Listing) => {
+        setSelectedComparisonIds(ids => ids.includes(listing.id)
+            ? ids.filter(id => id !== listing.id)
+            : [...ids, listing.id]);
+        setMapFocusListing(listing);
+    };
     const groupedListings: Record<string, Listing[]> = {};
     allRelevant.forEach(l => {
         if (l.lat && l.lng) {
@@ -419,8 +456,10 @@ export const MapModal: React.FC<MapModalProps> = ({
                 </div>
 
                 {/* Map Content */}
-                <div className="flex-1 relative z-0">
+                <div className="flex-1 min-h-0 flex flex-col md:flex-row relative z-0">
+                    <div className="relative min-h-[45%] flex-1 md:min-h-0">
                     <MapContainer center={center} zoom={15} maxZoom={20} style={{ height: '100%', width: '100%' }}>
+                        <FocusMapListing listing={mapFocusListing} />
                         <TileLayer
                             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -917,6 +956,63 @@ export const MapModal: React.FC<MapModalProps> = ({
                             </div>
                         </div>
                     )}
+                    </div>
+
+                    <aside className="z-[1002] flex h-[42%] min-h-0 w-full shrink-0 flex-col border-t border-gray-200 bg-white md:h-full md:w-80 md:border-l md:border-t-0" aria-label="Nearby listings and price comparison">
+                        <div className="border-b border-gray-100 p-4">
+                            <h4 className="font-bold text-gray-900">Listings on this map · {allRelevant.length}</h4>
+                            <p className="mt-1 text-xs text-gray-500">Choose listings to compare sale price per sqm.</p>
+                            {selectedComparisons.length > 0 ? (
+                                <div className="mt-3 rounded-xl bg-blue-50 p-3">
+                                    <p className="text-xs font-semibold text-blue-700">Average of {selectedComparisons.length} selected</p>
+                                    <p className="text-lg font-black text-blue-900">{formatPeso(averagePricePerSqm)}/sqm</p>
+                                </div>
+                            ) : (
+                                <p className="mt-3 text-xs text-gray-500">Select a listing with a sale price to start.</p>
+                            )}
+                            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] font-semibold">
+                                <span className="flex items-center gap-1 text-red-600"><ArrowUp size={13} /> Higher</span>
+                                <span className="flex items-center gap-1 text-amber-500"><Circle size={11} fill="currentColor" /> Equal</span>
+                                <span className="flex items-center gap-1 text-green-600"><ArrowDown size={13} /> Lower</span>
+                            </div>
+                        </div>
+                        <div className="min-h-0 flex-1 overflow-y-auto p-3">
+                            <div className="space-y-2">
+                                {allRelevant.map(listing => {
+                                    const pricePerSqm = salePricePerSqm(listing);
+                                    const isSelected = selectedComparisonIds.includes(listing.id);
+                                    const difference = pricePerSqm - averagePricePerSqm;
+                                    const roundedDifference = Math.round(difference);
+                                    const percentage = averagePricePerSqm > 0 ? Math.abs(difference / averagePricePerSqm * 100) : 0;
+                                    return (
+                                        <button
+                                            key={listing.id}
+                                            type="button"
+                                            onClick={() => toggleComparison(listing)}
+                                            aria-pressed={isSelected}
+                                            className={`w-full rounded-xl border p-3 text-left transition-colors ${isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'}`}
+                                        >
+                                            <span className="flex items-start gap-2">
+                                                <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[11px] ${isSelected ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-400'}`}>{isSelected ? '✓' : ''}</span>
+                                                <span className="min-w-0 flex-1">
+                                                    <span className="block font-bold text-gray-900">{listing.id}{listing.id === centerListing.id && <span className="ml-1 text-xs font-medium text-red-600">Featured</span>}</span>
+                                                    <span className="mt-0.5 block truncate text-xs text-gray-500">{listing.barangay || listing.area || listing.city || 'Location unavailable'}</span>
+                                                    {listing.price > 0 && <span className="mt-1 block text-xs text-gray-500">{formatPeso(listing.price)}{listing.lotArea > 0 ? ` · ${new Intl.NumberFormat('en-PH').format(listing.lotArea)} sqm lot` : ''}</span>}
+                                                    <span className="mt-1 block text-sm font-semibold text-gray-800">{pricePerSqm > 0 ? `${formatPeso(pricePerSqm)}/sqm` : 'Sale price/sqm unavailable'}</span>
+                                                    {pricePerSqm > 0 && averagePricePerSqm > 0 && (
+                                                        <span className={`mt-1 flex items-center gap-1 text-xs font-bold ${roundedDifference > 0 ? 'text-red-600' : roundedDifference < 0 ? 'text-green-600' : 'text-amber-500'}`}>
+                                                            {roundedDifference > 0 ? <ArrowUp size={15} aria-label="Higher" /> : roundedDifference < 0 ? <ArrowDown size={15} aria-label="Lower" /> : <Circle size={12} fill="currentColor" aria-label="Equal" />}
+                                                            {roundedDifference === 0 ? 'At average' : `${formatPeso(Math.abs(roundedDifference))}/sqm · ${percentage.toFixed(1)}% ${roundedDifference > 0 ? 'above' : 'below'} average`}
+                                                        </span>
+                                                    )}
+                                                </span>
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </aside>
                 </div>
 
                 {/* Grid Overlay for Grouped Listings */}
