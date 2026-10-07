@@ -134,6 +134,7 @@ export const MapModal: React.FC<MapModalProps> = ({
     const [mapFocusListing, setMapFocusListing] = useState<Listing | null>(null);
     const [sidebarLimit, setSidebarLimit] = useState(100);
     const [recenterKey, setRecenterKey] = useState(0);
+    const [hereRadius, setHereRadius] = useState<1 | 3>(1);
     const [localRowNumbers, setLocalRowNumbers] = useState<Record<string, number>>({});
     const localRowNumbersRef = useRef<Record<string, number>>({});
 
@@ -218,6 +219,7 @@ export const MapModal: React.FC<MapModalProps> = ({
             setSelectedComparisonIds([]);
             setMapFocusListing(null);
             setSidebarLimit(100);
+            setHereRadius(1);
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen]);
@@ -347,9 +349,8 @@ export const MapModal: React.FC<MapModalProps> = ({
         if (!matchesDirect(l)) return false;
         if (!matchesCategory(l)) return false;
 
-        // HERE shows all available mapped listings, not just the 1km neighborhood.
-        if (currentLocation) return true;
         const dist = calculateDistance(origin.lat, origin.lng, l.lat, l.lng);
+        if (currentLocation) return dist <= hereRadius;
 
         const isSimilar = isSimilarListing(l);
 
@@ -469,7 +470,7 @@ export const MapModal: React.FC<MapModalProps> = ({
                         </h3>
                         <p className="text-xs text-gray-500">
                             {currentLocation
-                                ? `${neighbors.length.toLocaleString()} ${showAllInMap ? '' : 'available '}listings with map coordinates`
+                                ? `${neighbors.length.toLocaleString()} ${showAllInMap ? '' : 'available '}listings within ${hereRadius}km`
                                 : `${neighbors.length} neighbors found within 1km`}
                         </p>
                     </div>
@@ -727,7 +728,19 @@ export const MapModal: React.FC<MapModalProps> = ({
                             {currentLocation ? (
                                 <>
                                     <button onClick={() => { setMapFocusListing(null); setRecenterKey(key => key + 1); }} className="px-2 py-1 text-xs font-bold text-blue-600 whitespace-nowrap">You are here</button>
-                                    <span className="px-2 text-xs text-gray-600 whitespace-nowrap">{neighbors.length.toLocaleString()} listings</span>
+                                    <div className="flex items-center gap-0.5">
+                                        {([1, 3] as const).map(radius => (
+                                            <button
+                                                key={radius}
+                                                onClick={() => { setHereRadius(radius); setSidebarLimit(100); }}
+                                                aria-pressed={hereRadius === radius}
+                                                className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-all ${hereRadius === radius ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-gray-600'}`}
+                                            >
+                                                {radius}km
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <span className="px-2 text-[10px] text-gray-600 whitespace-nowrap">Nearby {hereRadius}km · {neighbors.length.toLocaleString()}</span>
                                 </>
                             ) : (<>
                             {/* Featured (Static) */}
@@ -978,6 +991,7 @@ export const MapModal: React.FC<MapModalProps> = ({
                                             setShowOnlyDirect(false);
                                             setSelectedCategories([]);
                                             setShowAllInMap(false);
+                                            setHereRadius(1);
                                             setUsePriceFilter(true);
                                             setUseLotSizeFilter(true);
                                         }}
