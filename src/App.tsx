@@ -1599,9 +1599,10 @@ function App() {
   const [mapCenterListing, setMapCenterListing] = useState<Listing | null>(null);
   const [mapCurrentLocation, setMapCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locatingHere, setLocatingHere] = useState(false);
+  const canUseHere = role === 'superadmin' && !loading && !isLoadingRemainingListings && !isRefreshing;
 
   const handleHereClick = () => {
-    if (role !== 'superadmin' || locatingHere) return;
+    if (!canUseHere || locatingHere) return;
     if (!navigator.geolocation) {
       alert('Your browser does not support location access.');
       return;
@@ -2150,7 +2151,7 @@ function App() {
               </button>
             </div>
 
-            {role === 'superadmin' && (
+            {canUseHere && (
               <div className="inline-flex bg-gray-100 p-0.5 rounded-lg shadow-inner">
                 <button
                   onClick={handleHereClick}
