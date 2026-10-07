@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Tooltip, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, CircleMarker, Tooltip, useMap } from 'react-leaflet';
 import { supabase } from '../lib/supabase';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
@@ -68,6 +68,7 @@ interface MapModalProps {
     isOpen: boolean;
     onClose: () => void;
     centerListing: Listing | null;
+    currentLocation?: { lat: number; lng: number } | null;
     allListings: Listing[];
     filteredListingsIds: Set<string>;
     onNotesClick?: (id: string) => void;
@@ -102,10 +103,19 @@ const FocusMapListing: React.FC<{ listing: Listing | null }> = ({ listing }) => 
 
 
 
+const RecenterMap: React.FC<{ lat: number; lng: number; request: number }> = ({ lat, lng, request }) => {
+    const map = useMap();
+    useEffect(() => {
+        if (request > 0) map.flyTo([lat, lng], 15);
+    }, [lat, lng, request, map]);
+    return null;
+};
+
 export const MapModal: React.FC<MapModalProps> = ({ 
     isOpen, 
     onClose, 
     centerListing, 
+    currentLocation = null,
     allListings, 
     filteredListingsIds: _filteredListingsIds, 
     onNotesClick, 
@@ -122,6 +132,8 @@ export const MapModal: React.FC<MapModalProps> = ({
     const [groupedViewListings, setGroupedViewListings] = useState<Listing[] | null>(null);
     const [selectedComparisonIds, setSelectedComparisonIds] = useState<string[]>([]);
     const [mapFocusListing, setMapFocusListing] = useState<Listing | null>(null);
+    const [sidebarLimit, setSidebarLimit] = useState(100);
+    const [recenterKey, setRecenterKey] = useState(0);
     const [localRowNumbers, setLocalRowNumbers] = useState<Record<string, number>>({});
     const localRowNumbersRef = useRef<Record<string, number>>({});
 
@@ -199,6 +211,13 @@ export const MapModal: React.FC<MapModalProps> = ({
             setSelectedSaleTypes(initialSaleTypes);
             setSelectedCategories(initialCategories);
             setShowOnlyDirect(initialDirect);
+            setShowAllInMap(false);
+            setShowFilters(false);
+            setFocusedListing(null);
+            setGroupedViewListings(null);
+            setSelectedComparisonIds([]);
+            setMapFocusListing(null);
+            setSidebarLimit(100);
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen]);
@@ -206,7 +225,7 @@ export const MapModal: React.FC<MapModalProps> = ({
     useEffect(() => {
         setSelectedComparisonIds([]);
         setMapFocusListing(null);
-    }, [centerListing?.id]);
+    }, [centerListing?.id, currentLocation?.lat, currentLocation?.lng]);
 
     // Filter Helpers
     const matchesPropertyType = (item: Listing): boolean => {
@@ -252,12 +271,15 @@ export const MapModal: React.FC<MapModalProps> = ({
         }
     };
 
-    if (!isOpen || !centerListing || !centerListing.lat || !centerListing.lng) return null;
+    const origin = currentLocation || centerListing;
+    if (!isOpen || !origin || !Number.isFinite(origin.lat) || !Number.isFinite(origin.lng)) return null;
 
-    const center: [number, number] = [centerListing.lat, centerListing.lng];
+    const center: [number, number] = [origin.lat, origin.lng];
+    const featuredId = currentLocation ? undefined : centerListing?.id;
 
     // Helper function to check if a listing is "Similar" to the featured listing
     const isSimilarListing = (item: Listing): boolean => {
+        if (currentLocation || !centerListing) return false;
         // 1. Distance check (within selected radius)
         const dist = calculateDistance(centerListing.lat, centerListing.lng, item.lat, item.lng);
         if (dist > similarRadius) return false;
@@ -308,7 +330,7 @@ export const MapModal: React.FC<MapModalProps> = ({
     // Find neighbors within selected radius
     const nearbyRadius = 1; // Fixed 1km for nearby (gray pins)
     const neighbors = allListings.filter(l => {
-        if (l.id === centerListing.id || !l.lat || !l.lng) return false;
+        if (l.id === featuredId || !l.lat || !l.lng) return false;
 
         // Apply Status, Property Type, Sale Type, Direct, and Category filters
         const matchesStatus = (item: Listing): boolean => {
@@ -325,7 +347,9 @@ export const MapModal: React.FC<MapModalProps> = ({
         if (!matchesDirect(l)) return false;
         if (!matchesCategory(l)) return false;
 
-        const dist = calculateDistance(centerListing.lat, centerListing.lng, l.lat, l.lng);
+        // HERE shows all available mapped listings, not just the 1km neighborhood.
+        if (currentLocation) return true;
+        const dist = calculateDistance(origin.lat, origin.lng, l.lat, l.lng);
 
         const isSimilar = isSimilarListing(l);
 
@@ -345,12 +369,12 @@ export const MapModal: React.FC<MapModalProps> = ({
     // Create a set of similar listing IDs for icon coloring
     const similarListingIds = new Set(
         allListings
-            .filter(l => l.id !== centerListing.id && l.lat && l.lng && isSimilarListing(l))
+            .filter(l => l.id !== featuredId && l.lat && l.lng && isSimilarListing(l))
             .map(l => l.id)
     );
 
     // Group all relevant listings by coordinates
-    const allRelevant = [centerListing, ...neighbors];
+    const allRelevant = !currentLocation && centerListing ? [centerListing, ...neighbors] : neighbors;
     const selectedComparisons = allRelevant.filter(listing =>
         selectedComparisonIds.includes(listing.id) && salePricePerSqm(listing) > 0
     );
@@ -440,11 +464,13 @@ export const MapModal: React.FC<MapModalProps> = ({
                                 className="cursor-pointer hover:text-blue-600 transition-colors underline"
                                 title="Click to return to map"
                             >
-                                {centerListing.id}
+                                {currentLocation ? 'Current location' : featuredId}
                             </span>
                         </h3>
                         <p className="text-xs text-gray-500">
-                            {neighbors.length} neighbors found within 1km
+                            {currentLocation
+                                ? `${neighbors.length.toLocaleString()} ${showAllInMap ? '' : 'available '}listings with map coordinates`
+                                : `${neighbors.length} neighbors found within 1km`}
                         </p>
                     </div>
                     <button
@@ -460,6 +486,12 @@ export const MapModal: React.FC<MapModalProps> = ({
                     <div className="relative min-h-[45%] flex-1 md:min-h-0">
                     <MapContainer center={center} zoom={15} maxZoom={20} style={{ height: '100%', width: '100%' }}>
                         <FocusMapListing listing={mapFocusListing} />
+                        {currentLocation && <RecenterMap lat={currentLocation.lat} lng={currentLocation.lng} request={recenterKey} />}
+                        {currentLocation && (
+                            <CircleMarker center={center} radius={9} pathOptions={{ color: 'white', weight: 3, fillColor: '#2563eb', fillOpacity: 1 }}>
+                                <Tooltip>You are here</Tooltip>
+                            </CircleMarker>
+                        )}
                         <TileLayer
                             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -530,7 +562,7 @@ export const MapModal: React.FC<MapModalProps> = ({
                             }}
                         >
                             {Object.entries(groupedListings).map(([coordKey, listings]) => {
-                                const isCenterGroup = listings.some(l => l.id === centerListing.id);
+                                const isCenterGroup = listings.some(l => l.id === featuredId);
                                 const [lat, lng] = coordKey.split(',').map(Number);
 
                                 return (
@@ -546,8 +578,8 @@ export const MapModal: React.FC<MapModalProps> = ({
 
                                                 // Sort: Featured (Red) > Similar (Blue) > Nearby (Gray)
                                                 const sorted = [...listings].sort((a, b) => {
-                                                    const aIsCenter = a.id === centerListing.id;
-                                                    const bIsCenter = b.id === centerListing.id;
+                                                    const aIsCenter = a.id === featuredId;
+                                                    const bIsCenter = b.id === featuredId;
                                                     if (aIsCenter && !bIsCenter) return -1;
                                                     if (!aIsCenter && bIsCenter) return 1;
 
@@ -577,8 +609,8 @@ export const MapModal: React.FC<MapModalProps> = ({
                                                     {(() => {
                                                         // Sort listings to get the "best" one for the tooltip (Same logic as icon color)
                                                         const bestListing = [...listings].sort((a, b) => {
-                                                            const aIsCenter = a.id === centerListing.id;
-                                                            const bIsCenter = b.id === centerListing.id;
+                                                            const aIsCenter = a.id === featuredId;
+                                                            const bIsCenter = b.id === featuredId;
                                                             if (aIsCenter && !bIsCenter) return -1;
                                                             if (!aIsCenter && bIsCenter) return 1;
 
@@ -692,6 +724,12 @@ export const MapModal: React.FC<MapModalProps> = ({
                     {/* Footer Controls (Single Compact Pill) */}
                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000]">
                         <div className="flex items-center bg-white px-2 py-1 rounded-full shadow-2xl border border-gray-200">
+                            {currentLocation ? (
+                                <>
+                                    <button onClick={() => { setMapFocusListing(null); setRecenterKey(key => key + 1); }} className="px-2 py-1 text-xs font-bold text-blue-600 whitespace-nowrap">You are here</button>
+                                    <span className="px-2 text-xs text-gray-600 whitespace-nowrap">{neighbors.length.toLocaleString()} listings</span>
+                                </>
+                            ) : (<>
                             {/* Featured (Static) */}
                             <div className="flex items-center gap-1 px-1.5">
                                 <div className="w-[7px] h-[7px] rounded-full bg-[#ef4444]"></div>
@@ -737,6 +775,7 @@ export const MapModal: React.FC<MapModalProps> = ({
                                 <Users size={14} />
                                 Nearby 1km
                             </button>
+                            </>)}
 
                             {/* Filters Button */}
                             <button 
@@ -901,7 +940,7 @@ export const MapModal: React.FC<MapModalProps> = ({
                                     )}
 
                                     {/* Similarity Criteria */}
-                                    <div className="flex items-center justify-between py-4 border-t border-gray-50 pt-6">
+                                    {!currentLocation && <div className="flex items-center justify-between py-4 border-t border-gray-50 pt-6">
                                         <div className="flex flex-col">
                                             <span className="text-[10px] font-bold text-gray-900 uppercase tracking-widest">Similarity Criteria</span>
                                             <span className="text-[9px] text-gray-400">Apply price/area restrictions</span>
@@ -928,7 +967,7 @@ export const MapModal: React.FC<MapModalProps> = ({
                                                 AREA
                                             </button>
                                         </div>
-                                    </div>
+                                    </div>}
                                 </div>
                                 
                                 <div className="mt-8 flex gap-3">
@@ -978,7 +1017,7 @@ export const MapModal: React.FC<MapModalProps> = ({
                         </div>
                         <div className="min-h-0 flex-1 overflow-y-auto p-3">
                             <div className="space-y-2">
-                                {allRelevant.map(listing => {
+                                {allRelevant.slice(0, currentLocation ? sidebarLimit : allRelevant.length).map(listing => {
                                     const pricePerSqm = salePricePerSqm(listing);
                                     const isSelected = selectedComparisonIds.includes(listing.id);
                                     const difference = pricePerSqm - averagePricePerSqm;
@@ -995,7 +1034,7 @@ export const MapModal: React.FC<MapModalProps> = ({
                                             <span className="flex items-start gap-2">
                                                 <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[11px] ${isSelected ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-400'}`}>{isSelected ? '✓' : ''}</span>
                                                 <span className="min-w-0 flex-1">
-                                                    <span className="block font-bold text-gray-900">{listing.id}{listing.id === centerListing.id && <span className="ml-1 text-xs font-medium text-red-600">Featured</span>}</span>
+                                                    <span className="block font-bold text-gray-900">{listing.id}{listing.id === featuredId && <span className="ml-1 text-xs font-medium text-red-600">Featured</span>}</span>
                                                     <span className="mt-0.5 block truncate text-xs text-gray-500">{listing.barangay || listing.area || listing.city || 'Location unavailable'}</span>
                                                     {listing.price > 0 && <span className="mt-1 block text-xs text-gray-500">{formatPeso(listing.price)}{listing.lotArea > 0 ? ` · ${new Intl.NumberFormat('en-PH').format(listing.lotArea)} sqm lot` : ''}</span>}
                                                     <span className="mt-1 block text-sm font-semibold text-gray-800">{pricePerSqm > 0 ? `${formatPeso(pricePerSqm)}/sqm` : 'Sale price/sqm unavailable'}</span>
@@ -1010,6 +1049,11 @@ export const MapModal: React.FC<MapModalProps> = ({
                                         </button>
                                     );
                                 })}
+                                {currentLocation && allRelevant.length > sidebarLimit && (
+                                    <button onClick={() => setSidebarLimit(limit => limit + 100)} className="w-full py-3 text-sm font-bold text-blue-600 hover:bg-blue-50 rounded-xl">
+                                        Show more ({(allRelevant.length - sidebarLimit).toLocaleString()} remaining)
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </aside>
@@ -1047,7 +1091,7 @@ export const MapModal: React.FC<MapModalProps> = ({
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 max-w-5xl mx-auto">
                                 {groupedViewListings.map((listing, idx) => {
                                     // Determine variant for each card within the grid
-                                    const isCenter = listing.id === centerListing.id;
+                                    const isCenter = listing.id === featuredId;
                                     const isMatch = similarListingIds.has(listing.id);
                                     let variant: 'red' | 'blue' | 'gray' = 'gray';
                                     if (isCenter) variant = 'red';
@@ -1095,7 +1139,7 @@ export const MapModal: React.FC<MapModalProps> = ({
                                     onBack={() => setFocusedListing(null)}
                                     // Single focused view - usually coming from popup click so variant isn't driven by group logic here
                                     // But we can default to blue or match the listing status
-                                    backButtonVariant={focusedListing.id === centerListing.id ? 'red' : (similarListingIds.has(focusedListing.id) ? 'blue' : 'gray')}
+                                    backButtonVariant={focusedListing.id === featuredId ? 'red' : (similarListingIds.has(focusedListing.id) ? 'blue' : 'gray')}
                                     onNotesClick={handleNotesClick}
                                     onShowNote={onShowNote}
                                     rowNumber={rowNumbers?.[focusedListing.id] || localRowNumbers[focusedListing.id]}

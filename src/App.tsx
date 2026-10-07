@@ -1597,6 +1597,32 @@ function App() {
   // Map Modal State
   const [showMapModal, setShowMapModal] = useState(false);
   const [mapCenterListing, setMapCenterListing] = useState<Listing | null>(null);
+  const [mapCurrentLocation, setMapCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locatingHere, setLocatingHere] = useState(false);
+
+  const handleHereClick = () => {
+    if (role !== 'superadmin' || locatingHere) return;
+    if (!navigator.geolocation) {
+      alert('Your browser does not support location access.');
+      return;
+    }
+    setLocatingHere(true);
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        setLocatingHere(false);
+        setMapCenterListing(null);
+        setMapCurrentLocation({ lat: coords.latitude, lng: coords.longitude });
+        setShowMapModal(true);
+      },
+      (error) => {
+        setLocatingHere(false);
+        alert(error.code === 1
+          ? 'Location permission was denied. Allow location access in your browser to use HERE.'
+          : 'Could not find your current location. Please try HERE again.');
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+    );
+  };
 
   const handleMapClick = (listing: Listing) => {
     if (!listing.lat || !listing.lng) {
@@ -1604,6 +1630,7 @@ function App() {
       return;
     }
     setMapCenterListing(listing);
+    setMapCurrentLocation(null);
     setShowMapModal(true);
   };
 
@@ -2122,6 +2149,19 @@ function App() {
                 DIRECT
               </button>
             </div>
+
+            {role === 'superadmin' && (
+              <div className="inline-flex bg-gray-100 p-0.5 rounded-lg shadow-inner">
+                <button
+                  onClick={handleHereClick}
+                  disabled={locatingHere}
+                  title="Show available listings centered on your current location"
+                  className="px-2 sm:px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold min-w-[60px] whitespace-nowrap text-blue-600 hover:bg-blue-50 disabled:opacity-50"
+                >
+                  {locatingHere ? 'LOCATING…' : 'HERE'}
+                </button>
+              </div>
+            )}
 
             {/* Spacer - minimal */}
             <div className="w-0.5"></div>
@@ -3144,20 +3184,21 @@ function App() {
         isOpen={showMapModal}
         onClose={() => setShowMapModal(false)}
         centerListing={mapCenterListing}
+        currentLocation={mapCurrentLocation}
         allListings={visibleListings}
         filteredListingsIds={new Set(displayedResults.map(l => l.id))}
         onNotesClick={handleSendForm}
         onShowNote={handleShowNote}
         fullScreen={true}
-        initialPropertyTypes={selectedPropertyTypes}
+        initialPropertyTypes={mapCurrentLocation ? [] : selectedPropertyTypes}
         initialSaleTypes={
-          selectedType === 'Sale' ? ['FOR SALE'] :
+          mapCurrentLocation ? [] : selectedType === 'Sale' ? ['FOR SALE'] :
           selectedType === 'Lease' ? ['FOR LEASE'] :
           selectedType === 'Sale/Lease' ? ['FOR SALE', 'FOR LEASE'] :
           []
         }
-        initialCategories={selectedCategory ? [selectedCategory.toUpperCase()] : []}
-        initialDirect={selectedDirect}
+        initialCategories={!mapCurrentLocation && selectedCategory ? [selectedCategory.toUpperCase()] : []}
+        initialDirect={!mapCurrentLocation && selectedDirect}
         rowNumbers={rowNumbers}
       />
 
