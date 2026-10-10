@@ -135,7 +135,7 @@ export const MapModal: React.FC<MapModalProps> = ({
     const [sidebarLimit, setSidebarLimit] = useState(100);
     const [recenterKey, setRecenterKey] = useState(0);
     const [hereRadius, setHereRadius] = useState<1 | 3>(1);
-    const [hereSort, setHereSort] = useState<'price' | 'pricePerSqm' | null>(null);
+    const [hereSort, setHereSort] = useState<{ field: 'price' | 'pricePerSqm'; direction: 'desc' | 'asc' } | null>(null);
     const [localRowNumbers, setLocalRowNumbers] = useState<Record<string, number>>({});
     const localRowNumbersRef = useRef<Record<string, number>>({});
 
@@ -380,10 +380,15 @@ export const MapModal: React.FC<MapModalProps> = ({
     const allRelevant = !currentLocation && centerListing ? [centerListing, ...neighbors] : neighbors;
     const sidebarListings = currentLocation && hereSort
         ? [...allRelevant].sort((a, b) => {
-            const value = (listing: Listing) => hereSort === 'price'
+            const value = (listing: Listing) => hereSort.field === 'price'
                 ? (listing.price > 0 ? listing.price : 0)
                 : salePricePerSqm(listing);
-            return value(b) - value(a);
+            const aValue = value(a);
+            const bValue = value(b);
+            // Missing prices stay at the bottom in either direction.
+            if (aValue <= 0 && bValue > 0) return 1;
+            if (bValue <= 0 && aValue > 0) return -1;
+            return hereSort.direction === 'desc' ? bValue - aValue : aValue - bValue;
         })
         : allRelevant;
     const selectedComparisons = allRelevant.filter(listing =>
@@ -1026,20 +1031,26 @@ export const MapModal: React.FC<MapModalProps> = ({
                             <h4 className="font-bold text-gray-900">Listings on this map · {allRelevant.length}</h4>
                             <p className="mt-1 text-xs text-gray-500">Choose listings to compare sale price per sqm.</p>
                             {currentLocation && (
-                                <div className="mt-3 flex flex-wrap gap-2" aria-label="Sort listings from highest to lowest">
+                                <div className="mt-3 flex flex-wrap gap-2" aria-label="Sort listings by price or price per sqm">
                                     {(['price', 'pricePerSqm'] as const).map(sort => (
                                         <button
                                             key={sort}
                                             type="button"
-                                            aria-pressed={hereSort === sort}
-                                            title={`Sort sale ${sort === 'price' ? 'price' : 'price per sqm'} from high to low`}
+                                            aria-pressed={hereSort?.field === sort}
+                                            title={`Click to sort sale ${sort === 'price' ? 'price' : 'price per sqm'} ${hereSort?.field === sort && hereSort.direction === 'desc' ? 'low to high' : 'high to low'}`}
                                             onClick={() => {
-                                                setHereSort(current => current === sort ? null : sort);
+                                                setHereSort(current => ({
+                                                    field: sort,
+                                                    direction: current?.field === sort && current.direction === 'desc' ? 'asc' : 'desc'
+                                                }));
                                                 setSidebarLimit(100);
                                             }}
-                                            className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${hereSort === sort ? 'bg-blue-600 text-white' : 'bg-gray-100 text-blue-600 hover:bg-blue-50'}`}
+                                            className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${hereSort?.field === sort ? 'bg-blue-600 text-white' : 'bg-gray-100 text-blue-600 hover:bg-blue-50'}`}
                                         >
-                                            {sort === 'price' ? 'PRICE' : 'PRICE/SQM'} <ArrowDown size={13} />
+                                            {sort === 'price' ? 'PRICE' : 'PRICE/SQM'}
+                                            {hereSort?.field === sort && hereSort.direction === 'asc'
+                                                ? <ArrowUp size={13} aria-label="Low to high" />
+                                                : <ArrowDown size={13} aria-label="High to low" />}
                                         </button>
                                     ))}
                                 </div>
