@@ -3234,6 +3234,7 @@ function App() {
             <p className="font-semibold text-gray-500 mb-1 tracking-wider">CONFIDENTIALITY NOTICE</p>
             <p>This site is exclusively for the privileged few. All listings are strictly confidential—do not distribute or share without prior notice. Prices and property details are subject to change at any time without notice.</p>
           </div>
+          {role === 'superadmin' && (
           <div className="flex flex-wrap items-center justify-center gap-4">
             <a
               href="https://docs.google.com/spreadsheets/d/12Z8X3RmYRBMiihsxf-J0f650Ifj2irxRQsYC64Cgbw0/edit"
@@ -3252,6 +3253,7 @@ function App() {
               MASTERLIST
             </a>
           </div>
+          )}
           {(groupBranding?.messengerUrl || groupBranding?.facebookUrl || groupBranding?.instagramUrl || groupBranding?.tiktokUrl || groupBranding?.youtubeUrl) && (
             <div className="flex items-center justify-center gap-3">
               {groupBranding.messengerUrl && (
