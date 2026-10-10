@@ -135,6 +135,7 @@ export const MapModal: React.FC<MapModalProps> = ({
     const [sidebarLimit, setSidebarLimit] = useState(100);
     const [recenterKey, setRecenterKey] = useState(0);
     const [hereRadius, setHereRadius] = useState<1 | 3>(1);
+    const [hereSort, setHereSort] = useState<'price' | 'pricePerSqm' | null>(null);
     const [localRowNumbers, setLocalRowNumbers] = useState<Record<string, number>>({});
     const localRowNumbersRef = useRef<Record<string, number>>({});
 
@@ -220,6 +221,7 @@ export const MapModal: React.FC<MapModalProps> = ({
             setMapFocusListing(null);
             setSidebarLimit(100);
             setHereRadius(1);
+            setHereSort(null);
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen]);
@@ -376,6 +378,14 @@ export const MapModal: React.FC<MapModalProps> = ({
 
     // Group all relevant listings by coordinates
     const allRelevant = !currentLocation && centerListing ? [centerListing, ...neighbors] : neighbors;
+    const sidebarListings = currentLocation && hereSort
+        ? [...allRelevant].sort((a, b) => {
+            const value = (listing: Listing) => hereSort === 'price'
+                ? (listing.price > 0 ? listing.price : 0)
+                : salePricePerSqm(listing);
+            return value(b) - value(a);
+        })
+        : allRelevant;
     const selectedComparisons = allRelevant.filter(listing =>
         selectedComparisonIds.includes(listing.id) && salePricePerSqm(listing) > 0
     );
@@ -1015,6 +1025,25 @@ export const MapModal: React.FC<MapModalProps> = ({
                         <div className="border-b border-gray-100 p-4">
                             <h4 className="font-bold text-gray-900">Listings on this map · {allRelevant.length}</h4>
                             <p className="mt-1 text-xs text-gray-500">Choose listings to compare sale price per sqm.</p>
+                            {currentLocation && (
+                                <div className="mt-3 flex flex-wrap gap-2" aria-label="Sort listings from highest to lowest">
+                                    {(['price', 'pricePerSqm'] as const).map(sort => (
+                                        <button
+                                            key={sort}
+                                            type="button"
+                                            aria-pressed={hereSort === sort}
+                                            title={`Sort sale ${sort === 'price' ? 'price' : 'price per sqm'} from high to low`}
+                                            onClick={() => {
+                                                setHereSort(current => current === sort ? null : sort);
+                                                setSidebarLimit(100);
+                                            }}
+                                            className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${hereSort === sort ? 'bg-blue-600 text-white' : 'bg-gray-100 text-blue-600 hover:bg-blue-50'}`}
+                                        >
+                                            {sort === 'price' ? 'PRICE' : 'PRICE/SQM'} <ArrowDown size={13} />
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                             {selectedComparisons.length > 0 ? (
                                 <div className="mt-3 rounded-xl bg-blue-50 p-3">
                                     <p className="text-xs font-semibold text-blue-700">Average of {selectedComparisons.length} selected</p>
@@ -1031,7 +1060,7 @@ export const MapModal: React.FC<MapModalProps> = ({
                         </div>
                         <div className="min-h-0 flex-1 overflow-y-auto p-3">
                             <div className="space-y-2">
-                                {allRelevant.slice(0, currentLocation ? sidebarLimit : allRelevant.length).map(listing => {
+                                {sidebarListings.slice(0, currentLocation ? sidebarLimit : sidebarListings.length).map(listing => {
                                     const pricePerSqm = salePricePerSqm(listing);
                                     const isSelected = selectedComparisonIds.includes(listing.id);
                                     const difference = pricePerSqm - averagePricePerSqm;
